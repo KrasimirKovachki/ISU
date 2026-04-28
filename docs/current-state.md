@@ -633,6 +633,8 @@ Discovery:
 - Added `scripts/resolve_isu_event_results.py` to resolve official ISU event
   detail pages into external `Entries & Results` URLs and optionally register
   validated result URLs in `ingest.source_url_registry`.
+- The resolver also supports `--dry-run` with `--detail-url` for no-database
+  checks while PostgreSQL is offline.
 - The ISU flow is now:
   `filtered official catalog` -> `official event detail page` -> external
   result folder such as `https://www.deu-event.de/results/adult2025/`.

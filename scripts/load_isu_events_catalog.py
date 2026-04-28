@@ -11,8 +11,8 @@ from psycopg.types.json import Jsonb
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from discover_isu_events import EVENTS_URL, discover_from_html, fetch_text
 from isu_parser.local_config import database_dsn
+from scripts.discover_isu_events import EVENTS_URL, discover_from_html, fetch_text
 
 
 def load_catalog(url: str) -> dict[str, int | str]:

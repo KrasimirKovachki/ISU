@@ -13,6 +13,8 @@ may appear.
      guaranteed result URLs.
    - Use `scripts/resolve_isu_event_results.py` to open each detail page and
      extract the external `Entries & Results` URL when ISU exposes it.
+   - When PostgreSQL is offline, inspect one detail page without database writes:
+     `.venv/bin/python scripts/resolve_isu_event_results.py --detail-url <url> --dry-run`.
    - Store them in `ingest.event_discovery_catalog` with
      `catalog_only_needs_result_url`.
 

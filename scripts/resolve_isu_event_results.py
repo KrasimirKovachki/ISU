@@ -12,9 +12,9 @@ from psycopg.types.json import Jsonb
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from discover_isu_events import discover_detail_from_html, fetch_text
 from isu_parser.local_config import database_dsn
 from isu_parser.source_check import preflight_result_url
+from scripts.discover_isu_events import discover_detail_from_html, fetch_text
 
 
 def choose_parser_profile(summary: dict[str, Any]) -> str | None:
@@ -24,6 +24,35 @@ def choose_parser_profile(summary: dict[str, Any]) -> str | None:
     if content_kind == "html":
         return "fs_manager"
     return None
+
+
+def detail_result_summary(detail_url: str, validate: bool = False) -> dict[str, Any]:
+    detail = discover_detail_from_html(fetch_text(detail_url), detail_url)
+    validation_summary = None
+    parser_profile = None
+    registry_status = None
+    validation_status = None
+    if validate and detail.result_url:
+        source_check = preflight_result_url(detail.result_url)
+        validation_summary = source_check.summary()
+        parser_profile = choose_parser_profile(validation_summary)
+        validation_status = source_check.status if source_check.status in {"passed", "failed"} else "warning"
+        registry_status = "ready_for_import" if source_check.ok and parser_profile else "analyzed"
+    return {
+        "event_name": detail.event_name,
+        "date_range": detail.date_range,
+        "city": detail.city,
+        "country_code": detail.country_code,
+        "discipline": detail.discipline,
+        "source_kind": detail.source_kind,
+        "detail_url": detail_url,
+        "result_url": detail.result_url,
+        "status": detail.discovery_status,
+        "parser_profile": parser_profile,
+        "registry_status": registry_status,
+        "validation_status": validation_status,
+        "validation_summary": validation_summary,
+    }
 
 
 def upsert_registry_url(
@@ -265,11 +294,16 @@ def resolve_catalog(limit: int | None = None, register: bool = False, refresh: b
 def main() -> int:
     parser = argparse.ArgumentParser(description="Resolve ISU event detail pages to external Entries & Results URLs.")
     parser.add_argument("--detail-url", help="Resolve one ISU event detail page directly.")
+    parser.add_argument("--dry-run", action="store_true", help="Resolve and print detail-page information without touching PostgreSQL.")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--register", action="store_true", help="Validate and upsert discovered result URLs into source_url_registry.")
     parser.add_argument("--refresh", action="store_true", help="Refresh rows that already have result_url.")
     args = parser.parse_args()
-    if args.detail_url:
+    if args.dry_run:
+        if not args.detail_url:
+            parser.error("--dry-run requires --detail-url")
+        result = {"resolved": [detail_result_summary(args.detail_url, validate=args.register)], "count": 1}
+    elif args.detail_url:
         result = {"resolved": [register_detail(args.detail_url, register=args.register)], "count": 1}
     else:
         result = resolve_catalog(limit=args.limit, register=args.register, refresh=args.refresh)
