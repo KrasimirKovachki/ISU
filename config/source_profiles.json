@@ -1,0 +1,384 @@
+{
+  "profiles": [
+    {
+      "id": "denkova_staviski_2014_isu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2014/ISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "denkova_staviski_2014_nonisu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2014/NonISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "denkova_staviski_2015_isu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2015/ISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "denkova_staviski_2015_nonisu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2015/NonISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "denkova_staviski_2015_isucs",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2015/ISUCS"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISUCS",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "denkova_staviski_2016_isu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2016/ISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "denkova_staviski_2016_nonisu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2016/NonISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "denkova_staviski_2017_isu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2017/ISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "denkova_staviski_2017_nonisu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2017/NonISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "denkova_staviski_2018_isu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2018/ISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      },
+      "settings": {
+        "index_wrapper": "results_js",
+        "resolved_index": "pages/main.htm"
+      }
+    },
+    {
+      "id": "denkova_staviski_2018_nonisu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2018/NonISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      },
+      "settings": {
+        "index_wrapper": "results_js",
+        "resolved_index": "pages/main.htm"
+      }
+    },
+    {
+      "id": "denkova_staviski_2019_isu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2019/ISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      },
+      "settings": {
+        "index_wrapper": "results_js",
+        "resolved_index": "pages/main.html"
+      }
+    },
+    {
+      "id": "denkova_staviski_2019_nonisu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2019/NonISU"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      },
+      "settings": {
+        "index_wrapper": "results_js",
+        "resolved_index": "pages/main.html"
+      }
+    },
+    {
+      "id": "denkova_staviski_2024_isu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2024/ISU"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "denkova_staviski_2024_nonisu",
+      "match": {
+        "host": "cup.clubdenkovastaviski.com",
+        "event_path_prefix": "2024/NonISU"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "sofia_trophy_2026_isu",
+      "match": {
+        "host": "sofia-trophy.clubdenkovastaviski.com",
+        "event_path_prefix": "2026/ISU"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "sofia_trophy_2026_nonisu",
+      "match": {
+        "host": "sofia-trophy.clubdenkovastaviski.com",
+        "event_path_prefix": "2026/NonISU"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "bsf_national_championships",
+      "match": {
+        "host": "www.bsf.bg",
+        "event_path_prefix": "figure-skating/national-championships"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "club",
+      "representation": {
+        "primary": "club",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "bsf_priz_victoria",
+      "match": {
+        "host": "www.bsf.bg",
+        "event_path_prefix": "figure-skating/priz-victoria"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "club",
+      "representation": {
+        "primary": "club",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "bsf_black_sea_ice_cup",
+      "match": {
+        "host": "www.bsf.bg",
+        "event_path_prefix": "figure-skating/black-sea-ice-cup"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "club",
+      "representation": {
+        "primary": "club",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "bsf_kontrolno_sastezanie",
+      "match": {
+        "host": "www.bsf.bg",
+        "event_path_prefix": "figure-skating/kontrolno-sastezanie"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "club",
+      "representation": {
+        "primary": "club",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "bsf_spring_cup",
+      "match": {
+        "host": "www.bsf.bg",
+        "event_path_prefix": "figure-skating/spring-cup"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "club",
+      "representation": {
+        "primary": "club",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "bsf_ice_blade_adult_open_cup",
+      "match": {
+        "host": "www.bsf.bg",
+        "event_path_prefix": "figure-skating/ice-blade-adult-open-cup"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "club",
+      "representation": {
+        "primary": "club",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "bsf_test_mlad_figurist",
+      "match": {
+        "host": "www.bsf.bg",
+        "event_path_prefix": "figure-skating/test-mf"
+      },
+      "parser_profile": "pdf_result",
+      "competition_stream": "club_test",
+      "representation": {
+        "primary": "club",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "bsf_ice_peak_trophy",
+      "match": {
+        "host": "www.bsf.bg",
+        "event_path_prefix": "figure-skating/ice-peak-trophy"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "club",
+      "representation": {
+        "primary": "club",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ice_peak_trophy_2026",
+      "match": {
+        "host": "www.bsf.bg",
+        "event_path_prefix": "figure-skating/ice-peak-trophy/18-19.04.2026"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "club",
+      "representation": {
+        "primary": "club",
+        "store_nation": true,
+        "store_club": true
+      }
+    }
+  ]
+}
