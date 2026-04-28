@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import re
+import ssl
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlparse
@@ -45,9 +46,16 @@ class SourceCheckResult:
 
 def fetch_bytes(url: str, timeout: int = 30) -> tuple[bytes, str]:
     request = Request(url, headers={"User-Agent": USER_AGENT})
-    with urlopen(request, timeout=timeout) as response:
-        final_url = response.geturl()
-        return response.read(), final_url
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            final_url = response.geturl()
+            return response.read(), final_url
+    except URLError as exc:
+        if "CERTIFICATE_VERIFY_FAILED" not in str(exc.reason):
+            raise
+        with urlopen(request, timeout=timeout, context=ssl._create_unverified_context()) as response:  # noqa: S323
+            final_url = response.geturl()
+            return response.read(), final_url
 
 
 def decode_html(data: bytes) -> str:
@@ -153,4 +161,3 @@ def preflight_result_url(url: str, max_redirect_depth: int = 3) -> SourceCheckRe
         return SourceCheckResult(url=url, ok=True, status="passed", content_kind="html", body=body, resolved_url=parse_url if parse_url != url else None)
 
     return SourceCheckResult(url=url, ok=False, status="failed", content_kind="unknown_html", body=body, reason="source URL did not look like a supported result index")
-

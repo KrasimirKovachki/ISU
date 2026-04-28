@@ -89,11 +89,15 @@ validation decides which parser profile and representation profile are correct.
 Recommended discovery stages:
 
 1. Official catalogs:
-   - `https://www.isu-skating.com/figure-skating/events/`
+   - `https://www.isu-skating.com/events/?month=All&discipline=FIGURE+SKATING&season=2025%2F2026&event_type=All+ISU+Events`
    - useful for international events, Challenger Series, Junior Grand Prix,
      championships, and adult international competitions.
-   - this page is a catalog source; it does not always expose direct result
-     URLs in static HTML, so rows should start as `catalog_only_needs_result_url`.
+   - this page is a catalog source; it exposes official event detail pages, not
+     always direct result URLs.
+   - resolve each detail page and use `pageinfos.detail_result_url` / the
+     `Entries & Results` button as the external result source when available.
+   - future events often have empty result URLs; keep them in
+     `catalog_only_needs_result_url` or `manual_review` for later refresh.
 
 2. National federations:
    - Bulgarian federation source is already handled by
@@ -140,4 +144,3 @@ import-control project. The web/API can be a separate application that reads:
 - charts from `mart`/`analytics`.
 - source evidence from archive/manifest links.
 - coach and club dashboards from future assignment tables plus mart facts.
-

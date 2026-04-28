@@ -32,10 +32,11 @@ def load_catalog(url: str) -> dict[str, int | str]:
                       country_code,
                       discipline,
                       discovery_status,
+                      result_url,
                       metadata,
                       last_seen_at
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
                     ON CONFLICT (
                       source_name,
                       source_page_url,
@@ -47,6 +48,7 @@ def load_catalog(url: str) -> dict[str, int | str]:
                     DO UPDATE SET
                       source_kind = EXCLUDED.source_kind,
                       discipline = EXCLUDED.discipline,
+                      result_url = COALESCE(EXCLUDED.result_url, ingest.event_discovery_catalog.result_url),
                       discovery_status = CASE
                         WHEN ingest.event_discovery_catalog.discovery_status IN ('registered', 'skipped')
                           THEN ingest.event_discovery_catalog.discovery_status
@@ -65,7 +67,13 @@ def load_catalog(url: str) -> dict[str, int | str]:
                         event.country_code,
                         event.discipline,
                         event.discovery_status,
-                        Jsonb({"discovered_by": "scripts/load_isu_events_catalog.py"}),
+                        event.result_url,
+                        Jsonb(
+                            {
+                                "discovered_by": "scripts/load_isu_events_catalog.py",
+                                "detail_url": event.detail_url,
+                            }
+                        ),
                     ),
                 )
         conn.commit()

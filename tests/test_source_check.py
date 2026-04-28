@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 from unittest.mock import patch
+from urllib.error import URLError
 
 from isu_parser.source_check import preflight_result_url
 
@@ -61,7 +62,24 @@ class SourceCheckTest(unittest.TestCase):
         self.assertFalse(result.ok)
         self.assertEqual(result.content_kind, "html_fallback")
 
+    def test_retries_certificate_verification_failure_with_unverified_context(self) -> None:
+        calls = []
+
+        def fake_urlopen(request, timeout=30, context=None):
+            calls.append(context)
+            if context is None:
+                raise URLError("CERTIFICATE_VERIFY_FAILED")
+            return _Response(request.full_url, b"<html><body>FS Manager JudgesDetailsperSkater.pdf</body></html>")
+
+        with patch("isu_parser.source_check.urlopen", side_effect=fake_urlopen):
+            result = preflight_result_url("https://example.test/index.htm")
+
+        self.assertTrue(result.ok)
+        self.assertEqual(result.content_kind, "html")
+        self.assertEqual(len(calls), 2)
+        self.assertIsNone(calls[0])
+        self.assertIsNotNone(calls[1])
+
 
 if __name__ == "__main__":
     unittest.main()
-

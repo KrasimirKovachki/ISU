@@ -9,7 +9,10 @@ may appear.
 1. Official ISU catalog
    - Use `scripts/discover_isu_events.py`.
    - Load rows with `scripts/load_isu_events_catalog.py`.
-   - These rows are event catalog rows, not guaranteed result URLs.
+   - These rows are event catalog rows with ISU event-detail URLs, not
+     guaranteed result URLs.
+   - Use `scripts/resolve_isu_event_results.py` to open each detail page and
+     extract the external `Entries & Results` URL when ISU exposes it.
    - Store them in `ingest.event_discovery_catalog` with
      `catalog_only_needs_result_url`.
 
@@ -47,6 +50,11 @@ New FS Manager / Swiss Timing style:
 - `JudgesDetailsperSkater.pdf`
 - event protocol PDF link
 - modern component labels such as `CO`, `PR`, `SK`
+- Example from the ISU official event flow:
+  `https://www.isu-skating.com/figure-skating/events/eventdetail/international-adult-competition/`
+  exposes `https://www.deu-event.de/results/adult2025/`.
+  The `deu-event.de` host may require the importer/preflight SSL fallback
+  because its certificate chain can fail normal Python verification.
 
 Fallback/unavailable:
 
@@ -63,6 +71,11 @@ Fallback/unavailable:
 
 2. Result URL discovery:
    - Try result links from catalog pages.
+   - For the ISU official site, resolve event detail pages first; the external
+     result URL is normally in the detail-page `pageinfos.detail_result_url`
+     payload and also appears as the `Entries & Results` button when available.
+   - Future ISU events may have empty detail result URLs. Keep these as catalog
+     rows for refresh, but do not import them.
    - Try common folder forms: `index.htm`, `index.html`, `ISU/index.htm`,
      `NonISU/index.htm`, `pages/main.htm`, `pages/main.html`.
    - Avoid importing until preflight validation identifies the source shape.
@@ -119,4 +132,3 @@ Discovery must feed the database, not a list in code. The progression should be:
 
 `catalog row` -> `candidate result URL` -> `validated registry row` ->
 `imported run` -> `archive evidence` -> `analytics/mart facts`.
-

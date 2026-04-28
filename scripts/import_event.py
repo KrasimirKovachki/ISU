@@ -5,12 +5,14 @@ import argparse
 import hashlib
 import json
 import mimetypes
+import ssl
 import sys
 import tempfile
 import re
 from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlparse
+from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 import psycopg
@@ -29,8 +31,14 @@ USER_AGENT = "isu-skating-data-importer/0.1"
 
 def fetch_bytes(url: str) -> bytes:
     request = Request(url, headers={"User-Agent": USER_AGENT})
-    with urlopen(request, timeout=60) as response:
-        return response.read()
+    try:
+        with urlopen(request, timeout=60) as response:
+            return response.read()
+    except URLError as exc:
+        if "CERTIFICATE_VERIFY_FAILED" not in str(exc.reason):
+            raise
+        with urlopen(request, timeout=60, context=ssl._create_unverified_context()) as response:  # noqa: S323
+            return response.read()
 
 
 def decode_html(data: bytes) -> str:

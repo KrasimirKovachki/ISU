@@ -625,14 +625,24 @@ Discovery:
 - Added `docs/analytics-and-discovery-strategy.md`.
 - Added `docs/european-source-discovery-playbook.md`.
 - Added `scripts/discover_isu_events.py` for the official ISU figure-skating
-  events catalog.
+  events catalog. It now targets the filtered official catalog URL, captures
+  event detail URLs, ignores non-figure-skating rows from the streamed page
+  payload, and de-duplicates repeated rendered rows.
 - Added `db/23_event_discovery_catalog.sql` and
   `scripts/load_isu_events_catalog.py`.
-- Loaded 17 current official ISU catalog rows from
-  `https://www.isu-skating.com/figure-skating/events/`.
-- These rows are catalog discoveries, not direct result URLs, so their status is
-  `catalog_only_needs_result_url`. They are stored separately from
-  `ingest.source_url_registry`, which remains for URLs that can be validated and
-  imported.
+- Added `scripts/resolve_isu_event_results.py` to resolve official ISU event
+  detail pages into external `Entries & Results` URLs and optionally register
+  validated result URLs in `ingest.source_url_registry`.
+- The ISU flow is now:
+  `filtered official catalog` -> `official event detail page` -> external
+  result folder such as `https://www.deu-event.de/results/adult2025/`.
+- The `deu-event.de` adult competition example is FS Manager / Swiss Timing
+  style and may require the SSL verification fallback added to source preflight
+  and import fetching.
+- Loaded 17 filtered 2025/2026 official ISU figure-skating catalog rows from
+  `https://www.isu-skating.com/events/?month=All&discipline=FIGURE+SKATING&season=2025%2F2026&event_type=All+ISU+Events`.
+- Those 2026/2027 season rows are mostly future events and currently have empty
+  external result URLs, so they remain catalog discoveries for refresh rather
+  than importable result URLs.
 - Added `db/24_validate_mart_and_discovery.sql` for reusable mart/archive/
   discovery validation.
