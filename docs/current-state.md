@@ -648,3 +648,6 @@ Discovery:
   than importable result URLs.
 - Added `db/24_validate_mart_and_discovery.sql` for reusable mart/archive/
   discovery validation.
+- Added `docs/next-db-actions.md` with the exact no-database checks and the
+  next PostgreSQL command sequence for ISU official catalog refresh, detail
+  resolution, registry import, and validation.
