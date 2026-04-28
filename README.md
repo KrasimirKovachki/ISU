@@ -1,5 +1,9 @@
 # ISU Skating Data
 
+This project centralizes data from figure skating competitions so skater scores,
+competition history, source evidence, and analytics can be reviewed in one
+place.
+
 Initial parser and validation work for the old ISUCalcFS result format used by:
 
 `https://cup.clubdenkovastaviski.com/2013/ISU/index.htm`
