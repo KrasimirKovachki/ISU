@@ -246,7 +246,7 @@ def resolve_catalog(limit: int | None = None, register: bool = False, refresh: b
                     continue
 
                 result_url = detail.result_url or current_result_url
-                status = "candidate_result_url" if result_url else "manual_review"
+                status = "candidate_result_url" if result_url else "catalog_only_needs_result_url"
                 extra_metadata = {
                     "detail_url": detail_url,
                     "resolved_by": "scripts/resolve_isu_event_results.py",

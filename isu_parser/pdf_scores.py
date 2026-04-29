@@ -198,13 +198,18 @@ def validate_judges_scores(parsed: dict[str, Any]) -> list[dict[str, str]]:
         if not parsed.get("test_results"):
             return [{"level": "error", "code": "missing_mlad_figurist_results", "message": "No Mlad figurist test rows parsed."}]
         return []
-    for field_name in ["event_name", "category", "segment", "report_type"]:
+    for field_name in ["category", "segment", "report_type"]:
         if not parsed.get(field_name):
             issues.append({"level": "error", "code": f"missing_pdf_{field_name}", "message": f"Missing PDF {field_name}."})
     if not parsed.get("skaters"):
         issues.append({"level": "error", "code": "missing_pdf_skaters", "message": "No skater score summaries parsed from PDF text."})
     for skater in parsed.get("skaters", []):
-        if abs((skater["total_element_score"] + skater["total_program_component_score"] - skater["total_deductions"]) - skater["total_segment_score"]) > 0.02:
+        combined_score = skater["total_element_score"] + skater["total_program_component_score"] - skater["total_deductions"]
+        averaged_score = ((skater["total_element_score"] + skater["total_program_component_score"]) / 2) - skater["total_deductions"]
+        if (
+            abs(combined_score - skater["total_segment_score"]) > 0.02
+            and abs(averaged_score - skater["total_segment_score"]) > 0.02
+        ):
             issues.append(
                 {
                     "level": "warning",
@@ -431,7 +436,15 @@ def _first_non_empty(lines: list[str]) -> str:
 
 
 def _split_category_segment(value: str) -> tuple[str, str]:
-    for segment in ["SHORT PROGRAM", "FREE SKATING", "RHYTHM DANCE", "FREE DANCE", "PATTERN DANCE"]:
+    for segment in [
+        "PATTERN DANCE 1 (WITHOUT KEY POINTS)",
+        "PATTERN DANCE 2 (WITHOUT KEY POINTS)",
+        "SHORT PROGRAM",
+        "FREE SKATING",
+        "RHYTHM DANCE",
+        "FREE DANCE",
+        "PATTERN DANCE",
+    ]:
         suffix = f" {segment}"
         if value.upper().endswith(suffix):
             return value[: -len(suffix)].strip(), segment
@@ -509,7 +522,7 @@ def _parse_fs_manager_judges_scores_text(text: str) -> dict[str, Any]:
         printed_at = _clean_line(printed_match.group(1))
 
     skaters = []
-    block_pattern = re.compile(r"RankName NationStartingNumber.*?TotalDeductions(?P<summary>.*?)#Executed Elements", re.DOTALL)
+    block_pattern = re.compile(r"RankName NationStartingNumber.*?Total\s*Deductions(?P<summary>.*?)#Executed Elements", re.DOTALL)
     for match in block_pattern.finditer(text):
         summary = _clean_line(match.group("summary"))
         parsed = _parse_fs_manager_summary(summary)
@@ -558,6 +571,17 @@ def _parse_fs_manager_score_chunk(value: str) -> dict[str, float] | None:
             return {"tss": tss, "tes": tes, "pcs": pcs, "deductions": positive_deductions}
         if abs((tes + pcs + deductions) - tss) <= 0.02:
             return {"tss": tss, "tes": tes, "pcs": pcs, "deductions": positive_deductions}
+        if abs(((tes + pcs) / 2 - positive_deductions) - tss) <= 0.02:
+            return {"tss": tss, "tes": tes, "pcs": pcs, "deductions": positive_deductions}
+        if abs(((tes + pcs) / 2 + deductions) - tss) <= 0.02:
+            return {"tss": tss, "tes": tes, "pcs": pcs, "deductions": positive_deductions}
+    artistic_candidates = _split_compact_scores(compact, 3)
+    for tss, pcs, deductions in artistic_candidates:
+        positive_deductions = abs(deductions)
+        if abs((pcs - positive_deductions) - tss) <= 0.02:
+            return {"tss": tss, "tes": 0.0, "pcs": pcs, "deductions": positive_deductions}
+        if abs((pcs + deductions) - tss) <= 0.02:
+            return {"tss": tss, "tes": 0.0, "pcs": pcs, "deductions": positive_deductions}
     return None
 
 

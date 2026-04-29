@@ -39,6 +39,13 @@ Run validation after import:
 db/psql_local.sh -f db/24_validate_mart_and_discovery.sql
 ```
 
+After adding new external ISU result hosts, add/apply a source profile SQL so
+imports are not anonymous. Current example:
+
+```bash
+db/psql_local.sh -v ON_ERROR_STOP=1 -f db/25_seed_isu_external_source_profiles.sql
+```
+
 ## No-Database Checks
 
 Discover catalog rows without touching PostgreSQL:

@@ -174,6 +174,28 @@ Info BaseValueGOEJ1J2J3J4J5J6J7J8J9 Ref.Scores ofPanel
 """
 
 
+FS_MANAGER_ARTISTIC_PDF_TEXT = """
+JUDGES DETAILS PER SKATERMASTERS MEN II ARTISTIC FREE SKATING FREE SKATING
+printed:   30.06.2025 19:16
+RankName NationStartingNumberTotalSegmentScoreTotalElementScoreTotal Program ComponentScore (factored)Total Deductions
+1Robert NIEMANNGER 1 13.92 13.92 0.00#Executed Elements
+Info BaseValueGOEJ1J2J3J4J5J6J7J8J9 Ref.Scores ofPanel0.00 0.00Program ComponentsFactorComposition 1.004.254.504.505.254.75 4.58Presentation 1.004.504.754.755.504.50 4.67Skating Skills 1.004.254.754.505.254.75 4.67Judges Total Program Component Score (factored)13.92Deductions: 0.00
+RankName NationStartingNumberTotalSegmentScoreTotalElementScoreTotal Program ComponentScore (factored)Total Deductions
+2Marcin ZAMOJSKIPOL 2 13.59 13.59 0.00#Executed Elements
+"""
+
+
+FS_MANAGER_PATTERN_DANCE_PDF_TEXT = """
+JUDGES DETAILS PER SKATERICE DANCE MASTERS PATTERN DANCE PATTERN DANCE 1 (WITHOUT KEY POINTS)
+printed:   02.07.2025 21:18
+RankName NationStartingNumberTotalSegmentScoreTotalElementScoreTotal Program ComponentScore (factored)Total Deductions
+1Diana BARKLEY / Geoffrey SQUIRESCAN 2 15.4015.58 15.21 0.00#Executed Elements
+Info BaseValueGOEJ1J2J3J4J5J6J7J8J9 Ref.Scores ofPanel1SW1Sq1Se1 3.500.531 1 1 -1 1 4.032SW1Sq2Se1 3.500.701 2 1 0 2 4.20Program ComponentsFactorTiming 1.174.504.504.503.753.75 4.25Presentation 1.174.754.754.504.004.00 4.42Skating Skills 1.174.504.754.504.004.00 4.33Judges Total Program Component Score (factored)15.21Deductions: 0.00
+RankName NationStartingNumberTotalSegmentScoreTotalElementScoreTotal Program ComponentScore (factored)Total Deductions
+2Rachel KUHN / Anthony MAKARUSA 1 14.2914.53 14.04 0.00#Executed Elements
+"""
+
+
 PDFPLUMBER_SKATER_TABLE = [
     [
         "Total Total Total Program\nStarting Total\nRank Name Nation Segment Element Component Score\nNumber Deductions\nScore Score (factored)\n1 Lev VINOKUR ISR 4 82.97 45.24 37.73 0.00"
@@ -370,6 +392,31 @@ class OldISUCalcFSTest(unittest.TestCase):
         self.assertEqual(parsed["skaters"][0]["name"], "Alis YORDANOVA")
         self.assertEqual(parsed["skaters"][0]["nation"], "BUL")
         self.assertEqual(parsed["skaters"][0]["total_element_score"], 7.02)
+        self.assertEqual(validate_judges_scores(parsed), [])
+
+    def test_parse_fs_manager_artistic_judges_scores_pdf_text(self) -> None:
+        parsed = parse_judges_scores_text(FS_MANAGER_ARTISTIC_PDF_TEXT)
+
+        self.assertEqual(parsed["event_name"], "")
+        self.assertEqual(parsed["category"], "MASTERS MEN II ARTISTIC FREE SKATING")
+        self.assertEqual(parsed["segment"], "FREE SKATING")
+        self.assertEqual(parsed["skaters"][0]["name"], "Robert NIEMANN")
+        self.assertEqual(parsed["skaters"][0]["nation"], "GER")
+        self.assertEqual(parsed["skaters"][0]["total_segment_score"], 13.92)
+        self.assertEqual(parsed["skaters"][0]["total_element_score"], 0.0)
+        self.assertEqual(parsed["skaters"][0]["total_program_component_score"], 13.92)
+        self.assertEqual(validate_judges_scores(parsed), [])
+
+    def test_parse_fs_manager_pattern_dance_judges_scores_pdf_text(self) -> None:
+        parsed = parse_judges_scores_text(FS_MANAGER_PATTERN_DANCE_PDF_TEXT)
+
+        self.assertEqual(parsed["category"], "ICE DANCE MASTERS PATTERN DANCE")
+        self.assertEqual(parsed["segment"], "PATTERN DANCE 1 (WITHOUT KEY POINTS)")
+        self.assertEqual(parsed["skaters"][0]["name"], "Diana BARKLEY / Geoffrey SQUIRES")
+        self.assertEqual(parsed["skaters"][0]["nation"], "CAN")
+        self.assertEqual(parsed["skaters"][0]["total_segment_score"], 15.40)
+        self.assertEqual(parsed["skaters"][0]["total_element_score"], 15.58)
+        self.assertEqual(parsed["skaters"][0]["total_program_component_score"], 15.21)
         self.assertEqual(validate_judges_scores(parsed), [])
 
     def test_parse_pdfplumber_skater_table_details(self) -> None:

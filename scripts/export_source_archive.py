@@ -5,8 +5,10 @@ import argparse
 import csv
 import hashlib
 import json
+import ssl
 import sys
 from pathlib import Path
+from urllib.error import URLError
 from urllib.parse import parse_qsl, quote, urlparse
 from urllib.request import Request, urlopen
 
@@ -46,8 +48,14 @@ def ensure_parent_dir(path: Path, archive_root: Path) -> None:
 
 def fetch_url_bytes(url: str, timeout: int = 60) -> bytes:
     request = Request(url, headers={"User-Agent": USER_AGENT})
-    with urlopen(request, timeout=timeout) as response:
-        return response.read()
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            return response.read()
+    except URLError as exc:
+        if "CERTIFICATE_VERIFY_FAILED" not in str(exc.reason):
+            raise
+        with urlopen(request, timeout=timeout, context=ssl._create_unverified_context()) as response:  # noqa: S323
+            return response.read()
 
 
 def is_pdf_document(url: str, document_type: str | None) -> bool:

@@ -651,3 +651,35 @@ Discovery:
 - Added `docs/next-db-actions.md` with the exact no-database checks and the
   next PostgreSQL command sequence for ISU official catalog refresh, detail
   resolution, registry import, and validation.
+
+2026-04-29 ISU official detail import:
+
+- Cleaned obsolete duplicate official ISU catalog rows from the older
+  `https://www.isu-skating.com/figure-skating/events/` source page. Current
+  official discovery catalog has 17 filtered future figure-skating rows with
+  `catalog_only_needs_result_url` and one resolved Adult Competition detail row
+  with `candidate_result_url`.
+- Registered and imported the official ISU Adult Competition detail result:
+  `https://www.isu-skating.com/figure-skating/events/eventdetail/international-adult-competition/`
+  -> `https://www.deu-event.de/results/adult2025/`.
+- Added `db/25_seed_isu_external_source_profiles.sql` for the external
+  `deu-event.de` FS Manager result folder discovered from the official ISU site.
+  Latest import run 219 is assigned to source profile
+  `isu_official_adult_2025_deu_event`.
+- Final Adult Competition import run 219 completed with zero parse issues:
+  86 categories, 91 segments, 738 entries, 738 category results, 759 segment
+  results, 808 official assignments, and 742 PDF score summaries.
+- Parser improvements from this source:
+  - FS Manager artistic free skating PDFs with no executed elements and
+    component-only scoring.
+  - FS Manager pattern dance PDFs where segment total is based on the average
+    of TES and PCS.
+  - Pattern dance segment labels such as
+    `PATTERN DANCE 1 (WITHOUT KEY POINTS)`.
+- Duplicate completed imports were cleaned again with
+  `db/14_delete_duplicate_import_runs.sql`; zero exact duplicate completed
+  imports remain.
+- Source archive was refreshed after adding TLS fallback to
+  `scripts/export_source_archive.py`. All mart source-evidence rows now have an
+  archive path: 40453/40453.
+- Full test suite passes: 38 tests.

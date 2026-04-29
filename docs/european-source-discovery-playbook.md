@@ -57,6 +57,10 @@ New FS Manager / Swiss Timing style:
   exposes `https://www.deu-event.de/results/adult2025/`.
   The `deu-event.de` host may require the importer/preflight SSL fallback
   because its certificate chain can fail normal Python verification.
+- Adult/FS Manager variants now seen in `adult2025`:
+  - artistic free skating PDFs can be component-only with zero TES.
+  - pattern dance PDFs can use an averaged TES/PCS segment-total formula.
+  - pattern dance labels may include `WITHOUT KEY POINTS`.
 
 Fallback/unavailable:
 
