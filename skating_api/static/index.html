@@ -93,6 +93,38 @@
       text-transform: uppercase;
     }
     .badge.warn { background: #fbf0d9; color: var(--warn); }
+    .pill {
+      display: inline-block;
+      padding: 1px 6px;
+      margin-right: 3px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .02em;
+      cursor: help;
+      border: 1px solid transparent;
+    }
+    .pill.negative { background: #fbe5e2; color: #8a2d22; border-color: #f1c4bd; }
+    .pill.info     { background: #fbf0d9; color: var(--warn);  border-color: #efd8a4; }
+    .pill.positive { background: #def0e1; color: #225f31;  border-color: #b9dec0; }
+    .pill.neutral  { background: #eef2ec; color: var(--muted); border-color: var(--line); }
+    .num.pos { color: #225f31; font-weight: 600; }
+    .num.neg { color: #8a2d22; font-weight: 600; }
+    .num.bonus { background: #def0e1; color: #225f31; padding: 1px 5px; border-radius: 4px; font-weight: 600; }
+    .judge-trim {
+      position: relative;
+      color: var(--muted);
+      text-decoration: line-through;
+      cursor: help;
+    }
+    .legend-key {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
     .tabs button[aria-selected="true"] { background: var(--accent-dark); color: white; }
     .list {
       display: grid;
@@ -224,8 +256,90 @@
       currentClub: null,
       clubSkaterSort: { key: "skater_name", direction: "asc" },
       clubSkaterPage: 1,
-      clubSkaterPageSize: 50
+      clubSkaterPageSize: 50,
+      legend: null
     };
+
+    // ISU element-marker severity. negative = base value or GOE penalty;
+    // info = informational/no automatic deduction; positive = credit/bonus.
+    const MARKER_SEVERITY = {
+      "<<": "negative", "<": "negative", e: "negative", F: "negative", "*": "negative",
+      "!": "info", q: "info", REP: "info", b: "info",
+      x: "positive"
+    };
+    const MARKER_FALLBACK = {
+      "<<": "Downgraded jump",
+      "<": "Under-rotated jump",
+      e: "Wrong edge",
+      "!": "Not clear edge",
+      q: "Landed on the quarter",
+      F: "Fall associated with the element",
+      "*": "Invalid element",
+      x: "Highlight distribution bonus (later-program credit)",
+      b: "Source-specific bonus marker",
+      REP: "Repetition"
+    };
+
+    async function ensureLegend() {
+      if (state.legend) return state.legend;
+      try {
+        const data = await getJson("/api/legend");
+        state.legend = {};
+        for (const row of data.markers || []) state.legend[row.code] = row;
+      } catch (e) {
+        state.legend = {};
+      }
+      return state.legend;
+    }
+
+    function markerMeaning(code) {
+      const entry = state.legend && state.legend[code];
+      if (entry && entry.meaning) return `${entry.label}: ${entry.meaning}`;
+      if (MARKER_FALLBACK[code]) return MARKER_FALLBACK[code];
+      return code;
+    }
+
+    function renderMarkerPills(markers) {
+      if (!Array.isArray(markers) || markers.length === 0) return '<span class="muted">—</span>';
+      return markers.map((code) => {
+        const sev = MARKER_SEVERITY[code] || "neutral";
+        const tip = markerMeaning(code).replace(/"/g, "&quot;");
+        return `<span class="pill ${sev}" title="${tip}">${fmt(code)}</span>`;
+      }).join("");
+    }
+
+    // ISU panel-score rule (current): drop the highest and the lowest judge
+    // mark per element/component, then average the remaining marks. Mark
+    // those two trimmed cells visually so the panel-score arithmetic is
+    // legible at a glance.
+    function trimmedJudgeIndices(judgeMarks) {
+      if (!Array.isArray(judgeMarks) || judgeMarks.length < 3) return new Set();
+      const numeric = judgeMarks
+        .map((mark, idx) => ({ idx, score: mark.score }))
+        .filter((entry) => typeof entry.score === "number");
+      if (numeric.length < 3) return new Set();
+      let high = numeric[0];
+      let low = numeric[0];
+      for (const entry of numeric) {
+        if (entry.score > high.score) high = entry;
+        if (entry.score < low.score) low = entry;
+      }
+      const trim = new Set();
+      trim.add(high.idx);
+      if (low.idx !== high.idx) trim.add(low.idx);
+      return trim;
+    }
+
+    function numCell(value, mode) {
+      if (value === null || value === undefined || value === "") return '<td class="muted">—</td>';
+      const num = typeof value === "number" ? value : Number(value);
+      if (Number.isNaN(num)) return `<td>${fmt(value)}</td>`;
+      const cls = mode === "goe" ? (num > 0 ? "num pos" : num < 0 ? "num neg" : "")
+                : mode === "bonus" ? (num !== 0 ? "num bonus" : "muted")
+                : "";
+      const text = mode === "bonus" && num > 0 ? `+${num.toFixed(2)}` : num.toFixed(2);
+      return `<td class="${cls}">${text}</td>`;
+    }
     const results = document.querySelector("#results");
     const detail = document.querySelector("#detail");
     const search = document.querySelector("#search");
@@ -407,6 +521,11 @@
               <tr><td>${fmt(m.scope_hint)}</td><td>${fmt(m.competition_stream)}</td><td>${fmt(m.competition_level)}</td><td>${fmt(m.events)}</td><td>${fmt(m.skaters_with_appearances)}</td><td>${fmt(m.clubs_with_appearances)}</td><td>${fmt(m.segment_scores)}</td></tr>`).join(""))}
           </div>
           <div class="panel">
+            <h3>Active Clubs</h3>
+            ${table(["Club", "Country", "Skaters", "Events", "Scores", "Best"], (data.clubs || []).map((c) => `
+              <tr><td><a href="#" data-club="${encodeURIComponent(c.club_name)}">${fmt(c.club_name)}</a></td><td>${fmt(c.country_display || c.country_code)}</td><td>${fmt(c.skaters)}</td><td>${fmt(c.events)}</td><td>${fmt(c.segment_scores)}</td><td>${points(c.best_tss)}</td></tr>`).join(""))}
+          </div>
+          <div class="panel">
             <h3>Active Nationalities</h3>
             ${table(["Nationality", "Skaters", "Mlad", "Converted", "Events", "Scores", "Best"], data.nationalities.map((n) => `
               <tr><td><a href="#" data-nation="${encodeURIComponent(n.nation_code)}">${fmt(n.nation_display)}</a></td><td>${fmt(n.skaters)}</td><td>${fmt(n.development_skaters)}</td><td>${fmt(n.converted_development_skaters)}</td><td>${fmt(n.events)}</td><td>${fmt(n.segment_scores)}</td><td>${points(n.best_tss)}</td></tr>`).join(""))}
@@ -579,10 +698,19 @@
     }
 
     function judgeCells(row, judges) {
-      const byJudge = new Map((row.judge_marks || []).map((mark) => [mark.judge_number, mark]));
-      return judges.map((judge) => {
-        const mark = byJudge.get(judge.judge_number);
-        return `<td title="${mark ? fmt(mark.judge_name) : ""}">${fmt(mark && mark.score)}</td>`;
+      const orderedMarks = judges.map((judge) =>
+        (row.judge_marks || []).find((mark) => mark.judge_number === judge.judge_number) || null
+      );
+      const trim = trimmedJudgeIndices(orderedMarks.map((mark, idx) => mark || { judge_number: judges[idx].judge_number, score: null }));
+      return judges.map((judge, idx) => {
+        const mark = orderedMarks[idx];
+        const isTrimmed = trim.has(idx);
+        const judgeName = mark && mark.judge_name ? mark.judge_name : `J${judge.judge_number}`;
+        const baseTitle = isTrimmed
+          ? `${judgeName} — trimmed (highest/lowest excluded from panel score per ISU rule)`
+          : judgeName;
+        const cls = isTrimmed ? "judge-trim" : "";
+        return `<td class="${cls}" title="${baseTitle.replace(/"/g, "&quot;")}">${fmt(mark && mark.score)}</td>`;
       }).join("");
     }
 
@@ -593,11 +721,19 @@
     }
 
     async function showScore(id) {
+      await ensureLegend();
       const score = await getJson(`/api/scores/${id}`);
       const judges = judgeHeaders(score);
       const judgeCols = judges.map((judge) => `<th title="${judgeName(judge)}">J${judge.judge_number}</th>`).join("");
       const hasElements = Array.isArray(score.elements) && score.elements.length > 0;
       const hasComponents = Array.isArray(score.components) && score.components.length > 0;
+      const legendKey = (hasElements || hasComponents) ? `
+        <div class="legend-key">
+          <span><span class="pill negative">&lt;&lt;</span> Base/GOE penalty</span>
+          <span><span class="pill info">q</span> Information call</span>
+          <span><span class="pill positive">x</span> Bonus credit</span>
+          <span><span class="judge-trim">8.0</span> Highest/lowest trimmed (ISU panel rule)</span>
+        </div>` : "";
       const elementsPanel = hasElements
         ? `<div class="panel">
             <h3>Elements</h3>
@@ -607,14 +743,15 @@
                 <tr>
                   <td>${fmt(e.element_no)}</td>
                   <td title="${fmt(e.raw_element)}">${fmt(e.element_code)}</td>
-                  <td>${Array.isArray(e.markers) && e.markers.length ? e.markers.join(" ") : "—"}</td>
-                  <td>${points(e.base_value)}</td>
-                  <td>${points(e.goe)}</td>
-                  <td>${points(e.bonus)}</td>
-                  <td>${points(e.panel_score)}</td>
+                  <td>${renderMarkerPills(e.markers)}</td>
+                  ${numCell(e.base_value)}
+                  ${numCell(e.goe, "goe")}
+                  ${numCell(e.bonus, "bonus")}
+                  ${numCell(e.panel_score)}
                   ${judgeCells(e, judges)}
                 </tr>`).join("")}</tbody>
             </table>
+            ${legendKey}
           </div>`
         : "";
       const componentsPanel = hasComponents
@@ -622,8 +759,13 @@
             <h3>Components</h3>
             <table>
               <thead><tr><th>Component</th><th>Factor</th><th>Score</th>${judgeCols}</tr></thead>
-              <tbody>${score.components.map((c) => `
-                <tr><td>${fmt(c.component_name)}</td><td>${points(c.factor)}</td><td>${points(c.score)}</td>${judgeCells(c, judges)}</tr>`).join("")}</tbody>
+              <tbody>${score.components.map((c) => {
+                const factor = typeof c.factor === "number" ? c.factor : Number(c.factor);
+                const factorCell = !Number.isNaN(factor) && factor !== 1
+                  ? `<td><span class="badge" title="ISU factor multiplier applied to averaged judge marks">× ${factor.toFixed(2)}</span></td>`
+                  : `<td>${points(c.factor)}</td>`;
+                return `<tr><td>${fmt(c.component_name)}</td>${factorCell}${numCell(c.score)}${judgeCells(c, judges)}</tr>`;
+              }).join("")}</tbody>
             </table>
           </div>`
         : "";

@@ -27,11 +27,17 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/api/legend")
+def legend(conn: Any = Depends(connection_dependency)) -> dict[str, Any]:
+    return {"markers": repository.list_marker_legend(conn)}
+
+
 @app.get("/api/dashboard")
 def dashboard(conn: Any = Depends(connection_dependency)) -> dict[str, Any]:
     return {
         "overview": repository.dashboard_overview(conn),
         "competition_mix": repository.competition_mix(conn),
+        "clubs": repository.list_clubs(conn, limit=15),
         "nationalities": repository.list_nationalities(conn, limit=15),
     }
 

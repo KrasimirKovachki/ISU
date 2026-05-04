@@ -234,6 +234,18 @@ LIMIT %(limit)s
     )
 
 
+def list_marker_legend(conn: Any) -> list[dict[str, Any]]:
+    return fetch_all(
+        conn,
+        """
+SELECT code, label, meaning
+FROM core.validation_legend
+WHERE legend_group = 'element_marker'
+ORDER BY code
+""",
+    )
+
+
 def nationality_detail(conn: Any, nation_code: str) -> dict[str, Any] | None:
     rows = list_nationalities(conn, nation_code, limit=1)
     matches = [row for row in rows if row.get("nation_code", "").upper() == nation_code.upper()]
