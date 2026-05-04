@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skating Data</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f4;
+      --panel: #ffffff;
+      --ink: #20231f;
+      --muted: #687066;
+      --line: #d9ded6;
+      --accent: #2f6f73;
+      --accent-dark: #214f52;
+      --warn: #8a5a12;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    h1, h2, h3 { margin: 0; line-height: 1.15; }
+    h1 { font-size: 20px; }
+    h2 { font-size: 18px; }
+    h3 { font-size: 15px; }
+    main {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      min-height: calc(100vh - 65px);
+    }
+    aside {
+      border-right: 1px solid var(--line);
+      background: #fbfcfa;
+      padding: 16px;
+    }
+    section { padding: 18px 22px; }
+    .search {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    input, button, select {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font: inherit;
+    }
+    input, select { padding: 8px 10px; background: white; color: var(--ink); }
+    button {
+      padding: 8px 12px;
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      cursor: pointer;
+    }
+    button.secondary {
+      background: white;
+      color: var(--accent-dark);
+      border-color: #9bb8b9;
+    }
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .tabs button { font-size: 13px; padding: 6px 8px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #eef2ec;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .badge.warn { background: #fbf0d9; color: var(--warn); }
+    .tabs button[aria-selected="true"] { background: var(--accent-dark); color: white; }
+    .list {
+      display: grid;
+      gap: 8px;
+      max-height: calc(100vh - 210px);
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .item {
+      width: 100%;
+      text-align: left;
+      background: white;
+      color: var(--ink);
+      border-color: var(--line);
+      min-height: 0;
+    }
+    .item strong { display: block; font-size: 14px; margin-bottom: 3px; }
+    .muted { color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .metric, .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .metric .label { color: var(--muted); font-size: 12px; }
+    .metric .value { font-size: 20px; font-weight: 700; margin-top: 4px; }
+    .stack { display: grid; gap: 14px; }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .controls label { color: var(--muted); font-size: 12px; }
+    .pager {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .pager button { min-height: 32px; padding: 5px 10px; }
+    .pager button:disabled {
+      cursor: default;
+      opacity: .45;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; background: #fbfcfa; }
+    tr:last-child td { border-bottom: 0; }
+    a { color: var(--accent-dark); }
+    .empty {
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      color: var(--muted);
+      background: rgba(255,255,255,.55);
+    }
+    @media (max-width: 860px) {
+      header { align-items: flex-start; flex-direction: column; }
+      main { grid-template-columns: 1fr; }
+      aside { border-right: 0; border-bottom: 1px solid var(--line); }
+      .list { max-height: 280px; }
+      .grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      section { padding: 16px; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Skating Data</h1>
+      <div class="muted">Skaters, competitions, score details, and source evidence</div>
+    </div>
+    <button class="secondary" id="refresh">Refresh</button>
+  </header>
+  <main>
+    <aside>
+      <div class="tabs" role="tablist">
+        <button id="dashboard-tab" aria-selected="true">Dashboard</button>
+        <button id="club-tab" class="secondary" aria-selected="false">Clubs</button>
+        <button id="skater-tab" class="secondary" aria-selected="false">Skaters</button>
+        <button id="event-tab" class="secondary" aria-selected="false">Events</button>
+        <button id="nationality-tab" class="secondary" aria-selected="false">Nations</button>
+      </div>
+      <form class="search" id="search-form">
+        <input id="search" type="search" placeholder="Search">
+        <button type="submit">Go</button>
+      </form>
+      <div class="list" id="results"></div>
+    </aside>
+    <section id="detail">
+      <div class="empty">Loading dashboard...</div>
+    </section>
+  </main>
+  <script>
+    const state = {
+      mode: "dashboard",
+      items: [],
+      currentClub: null,
+      clubSkaterSort: { key: "skater_name", direction: "asc" },
+      clubSkaterPage: 1,
+      clubSkaterPageSize: 50
+    };
+    const results = document.querySelector("#results");
+    const detail = document.querySelector("#detail");
+    const search = document.querySelector("#search");
+
+    const fmt = (value) => value === null || value === undefined || value === "" ? "—" : value;
+    const points = (value) => typeof value === "number" ? value.toFixed(2) : fmt(value);
+    const statusLabel = (value) => ({
+      national_competitor: "National",
+      recreational: "Recreational",
+      mixed: "Mixed",
+      development: "Mlad Figurist"
+    }[value] || fmt(value));
+    const developmentLabel = (skater) => {
+      if (!skater.has_development_event) return "—";
+      return skater.competitor_status === "development" ? "Mlad only" : "Converted";
+    };
+    const sortLabels = {
+      skater_name: "Skater",
+      development_path: "Mlad Path",
+      competitions: "Competitions",
+      best_tss: "Best TSS",
+      latest_seen_date: "Latest"
+    };
+
+    async function getJson(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    function setTabState(mode) {
+      ["dashboard", "club", "skater", "event", "nationality"].forEach((name) => {
+        const tab = document.querySelector(`#${name}-tab`);
+        if (!tab) return;
+        const selected = mode === `${name}s` || mode === name;
+        tab.setAttribute("aria-selected", selected);
+        tab.className = selected ? "" : "secondary";
+      });
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      setTabState(mode);
+      if (mode === "dashboard") {
+        results.innerHTML = "";
+        loadDashboard();
+      } else {
+        loadList();
+      }
+    }
+
+    async function loadList() {
+      results.innerHTML = '<div class="muted">Loading...</div>';
+      const q = encodeURIComponent(search.value.trim());
+      const data = await getJson(`/api/${state.mode}?limit=40${q ? `&q=${q}` : ""}`);
+      state.items = data.items;
+      results.innerHTML = data.items.map((item) => {
+        if (state.mode === "skaters") {
+          return `<button class="item" data-id="${item.skater_key}">
+            <strong>${fmt(item.skater_name)}</strong>
+            <span class="muted">${fmt(item.nation_display)} · ${fmt(item.club_name)} · ${fmt(item.competitions)} competitions</span>
+          </button>`;
+        }
+        if (state.mode === "clubs") {
+          return `<button class="item" data-id="${encodeURIComponent(item.club_name)}">
+            <strong>${fmt(item.club_name)}</strong>
+            <span class="muted">${fmt(item.country_display)} · ${fmt(item.skaters)} skaters · ${fmt(item.events)} events · best ${points(item.best_tss)}</span>
+          </button>`;
+        }
+        if (state.mode === "nationalities") {
+          return `<button class="item" data-id="${encodeURIComponent(item.nation_code)}">
+            <strong>${fmt(item.nation_display)}</strong>
+            <span class="muted">${fmt(item.skaters)} skaters · ${fmt(item.events)} events · best ${points(item.best_tss)}</span>
+          </button>`;
+        }
+        return `<button class="item" data-id="${item.event_key}">
+          <strong>${fmt(item.event_name)}</strong>
+          <span class="muted">${fmt(item.event_start_date)} · ${fmt(item.location)} · ${fmt(item.competition_level)}</span>
+        </button>`;
+      }).join("") || '<div class="empty">No matches.</div>';
+    }
+
+    function renderClubList(items) {
+      results.innerHTML = items.map((item) => `<button class="item" data-id="${encodeURIComponent(item.club_name)}">
+        <strong>${fmt(item.club_name)}</strong>
+        <span class="muted">${fmt(item.country_display)} · ${fmt(item.skaters)} skaters · ${fmt(item.events)} events · best ${points(item.best_tss)}</span>
+      </button>`).join("") || '<div class="empty">No clubs.</div>';
+    }
+
+    function table(headers, rows) {
+      return `<table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function clubSkaterSortValue(skater, key) {
+      if (key === "development_path") return developmentLabel(skater);
+      return skater[key];
+    }
+
+    function compareValues(a, b, direction) {
+      const emptyA = a === null || a === undefined || a === "";
+      const emptyB = b === null || b === undefined || b === "";
+      if (emptyA && emptyB) return 0;
+      if (emptyA) return 1;
+      if (emptyB) return -1;
+      const result = typeof a === "number" && typeof b === "number"
+        ? a - b
+        : String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+      return direction === "asc" ? result : -result;
+    }
+
+    function sortedClubSkaters(rows) {
+      const { key, direction } = state.clubSkaterSort;
+      return [...rows].sort((a, b) => {
+        const first = compareValues(clubSkaterSortValue(a, key), clubSkaterSortValue(b, key), direction);
+        return first || compareValues(a.skater_name, b.skater_name, "asc");
+      });
+    }
+
+    function pagedClubSkaters(rows) {
+      const sorted = sortedClubSkaters(rows);
+      const total = sorted.length;
+      const pageSize = state.clubSkaterPageSize;
+      const pages = Math.max(1, Math.ceil(total / pageSize));
+      state.clubSkaterPage = Math.min(Math.max(1, state.clubSkaterPage), pages);
+      const start = (state.clubSkaterPage - 1) * pageSize;
+      return {
+        rows: sorted.slice(start, start + pageSize),
+        total,
+        start,
+        end: Math.min(start + pageSize, total),
+        pages
+      };
+    }
+
+    function renderClubSkaterRows(rows) {
+      return pagedClubSkaters(rows).rows.map((s) => `
+        <tr><td><a href="#" data-skater="${s.skater_key}">${fmt(s.skater_name)}</a></td><td>${fmt(s.nation_display)}</td><td>${statusLabel(s.competitor_status)}</td><td>${developmentLabel(s)}</td><td>${fmt(s.competitions)}</td><td>${points(s.best_tss)}</td><td>${fmt(s.latest_seen_date)}</td></tr>`).join("");
+    }
+
+    function refreshClubSkaterRows() {
+      const tbody = document.querySelector("#club-skater-rows");
+      if (!tbody || !state.currentClub) return;
+      const page = pagedClubSkaters(state.currentClub.skater_rows || []);
+      tbody.innerHTML = page.rows.map((s) => `
+        <tr><td><a href="#" data-skater="${s.skater_key}">${fmt(s.skater_name)}</a></td><td>${fmt(s.nation_display)}</td><td>${statusLabel(s.competitor_status)}</td><td>${developmentLabel(s)}</td><td>${fmt(s.competitions)}</td><td>${points(s.best_tss)}</td><td>${fmt(s.latest_seen_date)}</td></tr>`).join("");
+      const count = document.querySelector("#club-skater-count");
+      if (count) count.textContent = page.total ? `${page.start + 1}-${page.end} of ${page.total}` : "0 of 0";
+      const prev = document.querySelector("#club-skater-prev");
+      const next = document.querySelector("#club-skater-next");
+      if (prev) prev.disabled = state.clubSkaterPage <= 1;
+      if (next) next.disabled = state.clubSkaterPage >= page.pages;
+    }
+
+    async function loadDashboard() {
+      detail.innerHTML = '<div class="empty">Loading dashboard...</div>';
+      const data = await getJson("/api/dashboard");
+      const o = data.overview;
+      detail.innerHTML = `
+        <div class="stack">
+          <div>
+            <h2>Dashboard</h2>
+            <div class="muted">${fmt(o.first_event_date)} to ${fmt(o.latest_event_date)}</div>
+          </div>
+          <div class="grid">
+            <div class="metric"><div class="label">Events</div><div class="value">${fmt(o.events)}</div></div>
+            <div class="metric"><div class="label">Skaters</div><div class="value">${fmt(o.skaters)}</div></div>
+            <div class="metric"><div class="label">Clubs</div><div class="value">${fmt(o.scoring_clubs)}</div></div>
+            <div class="metric"><div class="label">Segment Scores</div><div class="value">${fmt(o.segment_scores)}</div></div>
+          </div>
+          <div class="grid">
+            <button class="metric item" data-scope="international"><div class="label">International</div><div class="value">${fmt(o.international_events)}</div></button>
+            <button class="metric item" data-scope="federation"><div class="label">Federation</div><div class="value">${fmt(o.federation_events)}</div></button>
+            <button class="metric item" data-scope="club_or_open"><div class="label">Club/Open</div><div class="value">${fmt(o.club_or_open_events)}</div></button>
+            <div class="metric"><div class="label">Mlad Figurist</div><div class="value">${fmt(o.development_skaters)}</div></div>
+          </div>
+          <div class="panel">
+            <h3>Competition Mix</h3>
+            ${table(["Scope", "Stream", "Level", "Events", "Skaters", "Clubs", "Scores"], data.competition_mix.map((m) => `
+              <tr><td>${fmt(m.scope_hint)}</td><td>${fmt(m.competition_stream)}</td><td>${fmt(m.competition_level)}</td><td>${fmt(m.events)}</td><td>${fmt(m.skaters_with_appearances)}</td><td>${fmt(m.clubs_with_appearances)}</td><td>${fmt(m.segment_scores)}</td></tr>`).join(""))}
+          </div>
+          <div class="panel">
+            <h3>Active Nationalities</h3>
+            ${table(["Nationality", "Skaters", "Mlad", "Converted", "Events", "Scores", "Best"], data.nationalities.map((n) => `
+              <tr><td><a href="#" data-nation="${encodeURIComponent(n.nation_code)}">${fmt(n.nation_display)}</a></td><td>${fmt(n.skaters)}</td><td>${fmt(n.development_skaters)}</td><td>${fmt(n.converted_development_skaters)}</td><td>${fmt(n.events)}</td><td>${fmt(n.segment_scores)}</td><td>${points(n.best_tss)}</td></tr>`).join(""))}
+          </div>
+        </div>`;
+    }
+
+    async function showSkater(id) {
+      const skater = await getJson(`/api/skaters/${id}`);
+      detail.innerHTML = `
+        <div class="stack">
+          <div>
+            <h2>${fmt(skater.skater_name)}</h2>
+            <div class="muted">${fmt(skater.nation_display)} · ${fmt(skater.club_name)} · seen ${fmt(skater.first_seen_date)} to ${fmt(skater.latest_seen_date)}</div>
+          </div>
+          <div class="grid">
+            <div class="metric"><div class="label">Best TSS</div><div class="value">${points(skater.best_tss)}</div></div>
+            <div class="metric"><div class="label">Best TES</div><div class="value">${points(skater.best_tes)}</div></div>
+            <div class="metric"><div class="label">Best PCS</div><div class="value">${points(skater.best_pcs)}</div></div>
+            <div class="metric"><div class="label">Competitions</div><div class="value">${fmt(skater.competitions)}</div></div>
+          </div>
+          <div class="panel">
+            <h3>Scores</h3>
+            ${table(["Date", "Competition", "Category", "Segment", "TSS", "TES", "PCS", ""], skater.scores.map((s) => `
+              <tr>
+                <td>${fmt(s.event_start_date)}</td>
+                <td>${fmt(s.event_name)}</td>
+                <td>${fmt(s.category_name)}</td>
+                <td>${fmt(s.segment_name)}</td>
+                <td>${points(s.tss)}</td>
+                <td>${points(s.tes)}</td>
+                <td>${points(s.pcs)}</td>
+                <td><a href="#" data-score="${s.segment_score_key}">detail</a></td>
+              </tr>`).join(""))}
+          </div>
+          <div class="panel">
+            <h3>Recent Elements</h3>
+            ${table(["Date", "Segment", "#", "Element", "BV", "GOE", "Score"], skater.elements.map((e) => `
+              <tr><td>${fmt(e.date_key)}</td><td>${fmt(e.segment_name)}</td><td>${fmt(e.element_no)}</td><td>${fmt(e.element_code)}</td><td>${points(e.base_value)}</td><td>${points(e.goe)}</td><td>${points(e.panel_score)}</td></tr>`).join(""))}
+          </div>
+        </div>`;
+    }
+
+    async function showEvent(id) {
+      const event = await getJson(`/api/events/${id}`);
+      detail.innerHTML = `
+        <div class="stack">
+          <div>
+            <h2>${fmt(event.event_name)}</h2>
+            <div class="muted">${fmt(event.event_start_date)} · ${fmt(event.location)} · ${fmt(event.venue)}</div>
+            <div><a href="${event.root_url}" target="_blank" rel="noreferrer">${fmt(event.root_url)}</a></div>
+          </div>
+          <div class="panel">
+            <h3>Results</h3>
+            ${table(["Category", "Place", "Skater", "Nation", "Club", "Points"], event.results.map((r) => `
+              <tr><td>${fmt(r.category_name)}</td><td>${fmt(r.final_place)}</td><td>${fmt(r.skater_name)}</td><td>${fmt(r.nation_display)}</td><td>${fmt(r.club_name)}</td><td>${points(r.points)}</td></tr>`).join(""))}
+          </div>
+        </div>`;
+    }
+
+    async function showClub(id) {
+      const club = await getJson(`/api/clubs/${id}`);
+      state.currentClub = club;
+      state.clubSkaterPage = 1;
+      const skaterPage = pagedClubSkaters(club.skater_rows || []);
+      detail.innerHTML = `
+        <div class="stack">
+          <div>
+            <h2>${fmt(club.club_name)}</h2>
+            <div class="muted">${fmt(club.country_display)} · ${fmt(club.first_seen_date)} to ${fmt(club.latest_seen_date)}</div>
+          </div>
+          <div class="grid">
+            <div class="metric"><div class="label">Skaters</div><div class="value">${fmt(club.skaters)}</div></div>
+            <div class="metric"><div class="label">Events</div><div class="value">${fmt(club.events)}</div></div>
+            <div class="metric"><div class="label">Scores</div><div class="value">${fmt(club.segment_scores)}</div></div>
+            <div class="metric"><div class="label">Best TSS</div><div class="value">${points(club.best_tss)}</div></div>
+          </div>
+          <div class="grid">
+            <div class="metric"><div class="label">International</div><div class="value">${fmt(club.international_events)}</div></div>
+            <div class="metric"><div class="label">Federation</div><div class="value">${fmt(club.federation_events)}</div></div>
+            <div class="metric"><div class="label">Club/Open</div><div class="value">${fmt(club.club_or_open_events)}</div></div>
+            <div class="metric"><div class="label">Best TES</div><div class="value">${points(club.best_tes)}</div></div>
+          </div>
+          <div class="grid">
+            <div class="metric"><div class="label">National Competitors</div><div class="value">${fmt(club.national_competitors)}</div></div>
+            <div class="metric"><div class="label">Recreational Only</div><div class="value">${fmt(club.recreational_only_skaters)}</div></div>
+            <div class="metric"><div class="label">Mixed</div><div class="value">${fmt(club.mixed_competitors)}</div></div>
+            <div class="metric"><div class="label">Best PCS</div><div class="value">${points(club.best_pcs)}</div></div>
+          </div>
+          <div class="grid">
+            <div class="metric"><div class="label">Mlad Figurist</div><div class="value">${fmt(club.development_skaters)}</div></div>
+            <div class="metric"><div class="label">Development Only</div><div class="value">${fmt(club.development_only_skaters)}</div></div>
+            <div class="metric"><div class="label">Converted</div><div class="value">${fmt(club.converted_development_skaters)}</div></div>
+          </div>
+          <div class="panel">
+            <div class="toolbar">
+              <h3>Skaters</h3>
+              <div class="controls">
+                <label for="club-skater-sort">Sort</label>
+                <select id="club-skater-sort">
+                  ${Object.entries(sortLabels).map(([key, label]) => `<option value="${key}"${state.clubSkaterSort.key === key ? " selected" : ""}>${label}</option>`).join("")}
+                </select>
+                <select id="club-skater-direction">
+                  <option value="asc"${state.clubSkaterSort.direction === "asc" ? " selected" : ""}>Ascending</option>
+                  <option value="desc"${state.clubSkaterSort.direction === "desc" ? " selected" : ""}>Descending</option>
+                </select>
+                <label for="club-skater-page-size">Rows</label>
+                <select id="club-skater-page-size">
+                  ${[25, 50, 100, 250, 500].map((size) => `<option value="${size}"${state.clubSkaterPageSize === size ? " selected" : ""}>${size}</option>`).join("")}
+                </select>
+              </div>
+            </div>
+            <table>
+              <thead><tr><th>Skater</th><th>Nation</th><th>Status</th><th>Mlad Path</th><th>Competitions</th><th>Best TSS</th><th>Latest</th></tr></thead>
+              <tbody id="club-skater-rows">${skaterPage.rows.map((s) => `
+                <tr><td><a href="#" data-skater="${s.skater_key}">${fmt(s.skater_name)}</a></td><td>${fmt(s.nation_display)}</td><td>${statusLabel(s.competitor_status)}</td><td>${developmentLabel(s)}</td><td>${fmt(s.competitions)}</td><td>${points(s.best_tss)}</td><td>${fmt(s.latest_seen_date)}</td></tr>`).join("")}</tbody>
+            </table>
+            <div class="pager">
+              <span class="muted" id="club-skater-count">${skaterPage.total ? `${skaterPage.start + 1}-${skaterPage.end} of ${skaterPage.total}` : "0 of 0"}</span>
+              <button class="secondary" id="club-skater-prev" data-page-step="-1"${state.clubSkaterPage <= 1 ? " disabled" : ""}>Previous</button>
+              <button class="secondary" id="club-skater-next" data-page-step="1"${state.clubSkaterPage >= skaterPage.pages ? " disabled" : ""}>Next</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    async function showNationality(code) {
+      const nation = await getJson(`/api/nationalities/${encodeURIComponent(code)}`);
+      const skaters = nation.skaters_list || [];
+      detail.innerHTML = `
+        <div class="stack">
+          <div>
+            <h2>${fmt(nation.nation_display)}</h2>
+            <div class="muted">${fmt(nation.first_seen_date)} to ${fmt(nation.latest_seen_date)}</div>
+          </div>
+          <div class="grid">
+            <div class="metric"><div class="label">Skaters</div><div class="value">${fmt(nation.skaters)}</div></div>
+            <div class="metric"><div class="label">Events</div><div class="value">${fmt(nation.events)}</div></div>
+            <div class="metric"><div class="label">Scores</div><div class="value">${fmt(nation.segment_scores)}</div></div>
+            <div class="metric"><div class="label">Best TSS</div><div class="value">${points(nation.best_tss)}</div></div>
+          </div>
+          <div class="grid">
+            <div class="metric"><div class="label">Mlad Figurist</div><div class="value">${fmt(nation.development_skaters)}</div></div>
+            <div class="metric"><div class="label">Development Only</div><div class="value">${fmt(nation.development_only_skaters)}</div></div>
+            <div class="metric"><div class="label">Converted</div><div class="value">${fmt(nation.converted_development_skaters)}</div></div>
+            <div class="metric"><div class="label">Best PCS</div><div class="value">${points(nation.best_pcs)}</div></div>
+          </div>
+          <div class="panel">
+            <h3>Skaters</h3>
+            ${skaters.length ? table(["Skater", "Club", "Competitions", "Best TSS", "Latest"], skaters.map((s) => `
+              <tr><td><a href="#" data-skater="${s.skater_key}">${fmt(s.skater_name)}</a></td><td>${fmt(s.club_name)}</td><td>${fmt(s.competitions)}</td><td>${points(s.best_tss)}</td><td>${fmt(s.latest_seen_date)}</td></tr>`).join("")) : '<div class="muted">No skaters indexed for this nation yet.</div>'}
+          </div>
+        </div>`;
+    }
+
+    function judgeHeaders(score) {
+      if (score.judges && score.judges.length) return score.judges;
+      const numbers = new Set();
+      [...(score.elements || []), ...(score.components || [])].forEach((row) => {
+        (row.judge_marks || []).forEach((mark) => numbers.add(mark.judge_number));
+      });
+      return [...numbers].sort((a, b) => a - b).map((judge_number) => ({ judge_number }));
+    }
+
+    function judgeName(judge) {
+      const label = judge.function_text || `J${judge.judge_number}`;
+      const nation = judge.nation_code ? ` ${judge.nation_code}` : "";
+      const name = judge.name ? ` · ${judge.name}` : "";
+      return `${label}${nation}${name}`;
+    }
+
+    function judgeCells(row, judges) {
+      const byJudge = new Map((row.judge_marks || []).map((mark) => [mark.judge_number, mark]));
+      return judges.map((judge) => {
+        const mark = byJudge.get(judge.judge_number);
+        return `<td title="${mark ? fmt(mark.judge_name) : ""}">${fmt(mark && mark.score)}</td>`;
+      }).join("");
+    }
+
+    function scoreSourceBadge(source) {
+      if (source === "pdf_score_summary") return '<span class="badge">PDF score summary</span>';
+      if (source === "html_segment_result") return '<span class="badge warn">HTML fallback (no PDF detail)</span>';
+      return source ? `<span class="badge">${fmt(source)}</span>` : "";
+    }
+
+    async function showScore(id) {
+      const score = await getJson(`/api/scores/${id}`);
+      const judges = judgeHeaders(score);
+      const judgeCols = judges.map((judge) => `<th title="${judgeName(judge)}">J${judge.judge_number}</th>`).join("");
+      const hasElements = Array.isArray(score.elements) && score.elements.length > 0;
+      const hasComponents = Array.isArray(score.components) && score.components.length > 0;
+      const elementsPanel = hasElements
+        ? `<div class="panel">
+            <h3>Elements</h3>
+            <table>
+              <thead><tr><th>#</th><th>Element</th><th>Markers</th><th>Base</th><th>GOE</th><th>Bonus</th><th>Score</th>${judgeCols}</tr></thead>
+              <tbody>${score.elements.map((e) => `
+                <tr>
+                  <td>${fmt(e.element_no)}</td>
+                  <td title="${fmt(e.raw_element)}">${fmt(e.element_code)}</td>
+                  <td>${Array.isArray(e.markers) && e.markers.length ? e.markers.join(" ") : "—"}</td>
+                  <td>${points(e.base_value)}</td>
+                  <td>${points(e.goe)}</td>
+                  <td>${points(e.bonus)}</td>
+                  <td>${points(e.panel_score)}</td>
+                  ${judgeCells(e, judges)}
+                </tr>`).join("")}</tbody>
+            </table>
+          </div>`
+        : "";
+      const componentsPanel = hasComponents
+        ? `<div class="panel">
+            <h3>Components</h3>
+            <table>
+              <thead><tr><th>Component</th><th>Factor</th><th>Score</th>${judgeCols}</tr></thead>
+              <tbody>${score.components.map((c) => `
+                <tr><td>${fmt(c.component_name)}</td><td>${points(c.factor)}</td><td>${points(c.score)}</td>${judgeCells(c, judges)}</tr>`).join("")}</tbody>
+            </table>
+          </div>`
+        : "";
+      const noDetailNote = (!hasElements && !hasComponents)
+        ? '<div class="empty">No PDF score detail available — only HTML placement was published for this segment.</div>'
+        : "";
+      detail.innerHTML = `
+        <div class="stack">
+          <div>
+            <h2>${fmt(score.skater_name)} · ${fmt(score.segment_name)}</h2>
+            <div class="muted">${fmt(score.event_name)} · ${fmt(score.category_name)} · ${fmt(score.event_start_date)} ${scoreSourceBadge(score.score_source)}</div>
+          </div>
+          <div class="grid">
+            <div class="metric"><div class="label">TSS</div><div class="value">${points(score.tss)}</div></div>
+            <div class="metric"><div class="label">TES</div><div class="value">${points(score.tes)}</div></div>
+            <div class="metric"><div class="label">PCS</div><div class="value">${points(score.pcs)}</div></div>
+            <div class="metric"><div class="label">Deduction</div><div class="value">${points(score.deduction)}</div></div>
+          </div>
+          <div class="panel">
+            <h3>Judges</h3>
+            ${judges.length ? table(["#", "Name", "Nation", "Function"], judges.map((j) => `
+              <tr><td>${fmt(j.judge_number)}</td><td>${fmt(j.name)}</td><td>${fmt(j.nation_display || j.nation_code)}</td><td>${fmt(j.function_text)}</td></tr>`).join("")) : '<div class="muted">No judge panel recorded.</div>'}
+          </div>
+          ${noDetailNote}
+          ${elementsPanel}
+          ${componentsPanel}
+          <div class="panel">
+            <h3>Evidence</h3>
+            ${(score.evidence || []).map((e) => `<div><a href="${e.source_url}" target="_blank" rel="noreferrer">${fmt(e.document_type)}</a> <span class="muted">${fmt(e.archive_status)} ${fmt(e.content_hash)}</span></div>`).join("") || '<div class="muted">No source document linked.</div>'}
+          </div>
+        </div>`;
+    }
+
+    document.querySelector("#dashboard-tab").addEventListener("click", () => setMode("dashboard"));
+    document.querySelector("#club-tab").addEventListener("click", () => setMode("clubs"));
+    document.querySelector("#skater-tab").addEventListener("click", () => setMode("skaters"));
+    document.querySelector("#event-tab").addEventListener("click", () => setMode("events"));
+    document.querySelector("#nationality-tab").addEventListener("click", () => setMode("nationalities"));
+    document.querySelector("#refresh").addEventListener("click", () => {
+      state.mode === "dashboard" ? loadDashboard() : loadList();
+    });
+    document.querySelector("#search-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      state.mode === "dashboard" ? loadDashboard() : loadList();
+    });
+    results.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-id]");
+      if (!button) return;
+      if (state.mode === "skaters") showSkater(button.dataset.id);
+      if (state.mode === "clubs") showClub(button.dataset.id);
+      if (state.mode === "events") showEvent(button.dataset.id);
+      if (state.mode === "nationalities") showNationality(button.dataset.id);
+    });
+    detail.addEventListener("click", (event) => {
+      const link = event.target.closest("[data-score]");
+      const club = event.target.closest("[data-club]");
+      const skater = event.target.closest("[data-skater]");
+      const nation = event.target.closest("[data-nation]");
+      const scope = event.target.closest("[data-scope]");
+      if (link) {
+        event.preventDefault();
+        showScore(link.dataset.score);
+      }
+      if (club) {
+        event.preventDefault();
+        showClub(club.dataset.club);
+      }
+      if (skater) {
+        event.preventDefault();
+        showSkater(skater.dataset.skater);
+      }
+      if (nation) {
+        event.preventDefault();
+        setTabState("nationalities");
+        state.mode = "nationalities";
+        showNationality(nation.dataset.nation);
+      }
+      if (scope) {
+        event.preventDefault();
+        state.mode = "clubs";
+        setTabState("clubs");
+        getJson(`/api/clubs?scope=${scope.dataset.scope}&limit=40`).then((data) => {
+          state.items = data.items;
+          renderClubList(data.items);
+        });
+      }
+      const pageStep = event.target.closest("[data-page-step]");
+      if (pageStep && state.currentClub) {
+        event.preventDefault();
+        state.clubSkaterPage += Number(pageStep.dataset.pageStep);
+        refreshClubSkaterRows();
+      }
+    });
+    detail.addEventListener("change", (event) => {
+      if (event.target.id === "club-skater-sort") {
+        state.clubSkaterSort.key = event.target.value;
+        state.clubSkaterPage = 1;
+        refreshClubSkaterRows();
+      }
+      if (event.target.id === "club-skater-direction") {
+        state.clubSkaterSort.direction = event.target.value;
+        state.clubSkaterPage = 1;
+        refreshClubSkaterRows();
+      }
+      if (event.target.id === "club-skater-page-size") {
+        state.clubSkaterPageSize = Number(event.target.value);
+        state.clubSkaterPage = 1;
+        refreshClubSkaterRows();
+      }
+    });
+    loadDashboard().catch((error) => {
+      detail.innerHTML = `<div class="empty">API error: ${error.message}</div>`;
+    });
+  </script>
+</body>
+</html>

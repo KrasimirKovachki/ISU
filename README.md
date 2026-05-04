@@ -73,6 +73,46 @@ python3 scripts/validate_import.py 1
 
 Use `config/local.env.example` as the non-secret template for another machine.
 
+### Local PostgreSQL 17 With Docker
+
+For laptop testing, start an isolated PostgreSQL 17 container:
+
+```bash
+docker compose up -d postgres
+```
+
+The container creates the same local app database/user used by the project:
+
+- database: `skating_data`
+- user: `skating_app`
+- host port: `55432`
+
+Point project scripts at the container:
+
+```bash
+cp config/local.docker.env.example config/local.env
+```
+
+Then apply the schema and seed scripts you need for the current task:
+
+```bash
+db/psql_local.sh -v ON_ERROR_STOP=1 -f db/01_ingest_schema.sql
+db/psql_local.sh -v ON_ERROR_STOP=1 -f db/02_seed_source_profiles.sql
+db/psql_local.sh -v ON_ERROR_STOP=1 -f db/03_seed_validation_legend.sql
+db/psql_local.sh -v ON_ERROR_STOP=1 -f db/06_source_url_registry.sql
+```
+
+To override local credentials or the exposed port, create a repo-local `.env`
+file. It is ignored by git:
+
+```env
+SKATING_POSTGRES_PORT=55432
+POSTGRES_PASSWORD=postgres
+SKATING_APP_DB=skating_data
+SKATING_APP_USER=skating_app
+SKATING_APP_PASSWORD=change_me_strong_password
+```
+
 ## PDF Parsing
 
 Judges-score PDFs are source data and should be imported, not treated only as attachments.
@@ -104,3 +144,21 @@ python3 scripts/parse_judges_pdf.py https://cup.clubdenkovastaviski.com/2024/Non
 python3 scripts/parse_judges_pdf.py https://sofia-trophy.clubdenkovastaviski.com/2026/ISU/FSKMSINGLES-----------QUAL000100--_JudgesDetailsperSkater.pdf --validate
 python3 scripts/parse_judges_pdf.py https://www.bsf.bg/figure-skating/ice-peak-trophy/18-19.04.2026/FSKWSINGLES-BASNOV----FNL-000100--_JudgesDetailsperSkater.pdf --validate
 ```
+
+## Web API And Dashboard
+
+The app reads from the analytics/mart views and a small API-facing cache layer.
+Build or refresh the API materialized views after imports and mart rebuilds:
+
+```bash
+db/psql_local.sh -v ON_ERROR_STOP=1 -f db/28_api_dashboard_views.sql
+```
+
+Run the local dashboard:
+
+```bash
+.venv/bin/python -m uvicorn skating_api.app:app --host 127.0.0.1 --port 8000
+```
+
+Open `http://127.0.0.1:8000`. The first screen shows the dashboard; the side
+rail supports club, skater, and event search.

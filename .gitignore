@@ -3,6 +3,8 @@
 __pycache__/
 *.pyc
 config/local.env
+.env
 .DS_Store
 *.egg-info/
 data/source_archive/
+data/video_cache/
