@@ -74,7 +74,7 @@ def parse_judges_scores_pdf(path: str | Path) -> dict[str, Any]:
     mlad_figurist = parse_mlad_figurist_pdf(path)
     if mlad_figurist:
         return mlad_figurist
-    table_skaters = _parse_pdfplumber_skater_tables(path)
+    table_skaters = _parse_pdfplumber_skater_tables(path, parsed.get("skaters", []))
     if table_skaters:
         parsed["skaters"] = table_skaters
     return parsed
@@ -204,12 +204,16 @@ def validate_judges_scores(parsed: dict[str, Any]) -> list[dict[str, str]]:
     if not parsed.get("skaters"):
         issues.append({"level": "error", "code": "missing_pdf_skaters", "message": "No skater score summaries parsed from PDF text."})
     for skater in parsed.get("skaters", []):
-        combined_score = skater["total_element_score"] + skater["total_program_component_score"] - skater["total_deductions"]
-        averaged_score = ((skater["total_element_score"] + skater["total_program_component_score"]) / 2) - skater["total_deductions"]
-        if (
-            abs(combined_score - skater["total_segment_score"]) > 0.02
-            and abs(averaged_score - skater["total_segment_score"]) > 0.02
-        ):
+        tes = skater["total_element_score"]
+        pcs = skater["total_program_component_score"]
+        deductions = skater["total_deductions"]
+        possible_scores = [
+            tes + pcs - deductions,
+            tes + pcs + deductions,
+            ((tes + pcs) / 2) - deductions,
+            ((tes + pcs) / 2) + deductions,
+        ]
+        if all(abs(score - skater["total_segment_score"]) > 0.02 for score in possible_scores):
             issues.append(
                 {
                     "level": "warning",
@@ -220,19 +224,31 @@ def validate_judges_scores(parsed: dict[str, Any]) -> list[dict[str, str]]:
     return issues
 
 
-def _parse_pdfplumber_skater_tables(path: str | Path) -> list[dict[str, Any]]:
+def _parse_pdfplumber_skater_tables(path: str | Path, summaries: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
     try:
         import pdfplumber  # type: ignore
     except ModuleNotFoundError:
         return []
 
     skaters: list[dict[str, Any]] = []
+    detail_tables: list[dict[str, Any]] = []
     with pdfplumber.open(str(path)) as pdf:
         for page in pdf.pages:
             for table in page.extract_tables():
                 skater = _parse_pdfplumber_skater_table(table)
                 if skater:
                     skaters.append(skater)
+                    continue
+                details = _parse_pdfplumber_detail_table(table)
+                if details:
+                    detail_tables.append(details)
+    if skaters:
+        return skaters
+    if summaries and detail_tables and len(detail_tables) >= len(summaries):
+        merged: list[dict[str, Any]] = []
+        for summary, details in zip(summaries, detail_tables):
+            merged.append({**summary, **details})
+        return merged
     return skaters
 
 
@@ -245,6 +261,16 @@ def _parse_pdfplumber_skater_table(table: list[list[str | None]]) -> dict[str, A
     details = _parse_pdfplumber_details(table[1][0] or "")
     deductions_detail = _parse_pdfplumber_deductions(table[2][0] if len(table) > 2 and table[2] else "")
     return {**summary, **details, "deductions_detail": deductions_detail}
+
+
+def _parse_pdfplumber_detail_table(table: list[list[str | None]]) -> dict[str, Any] | None:
+    if not table or not table[0]:
+        return None
+    details = _parse_pdfplumber_details(table[0][0] or "")
+    if not details.get("elements") and not details.get("program_components"):
+        return None
+    deductions_detail = _parse_pdfplumber_deductions(table[1][0] if len(table) > 1 and table[1] else "")
+    return {**details, "deductions_detail": deductions_detail}
 
 
 def _parse_pdfplumber_summary(value: str) -> dict[str, Any] | None:

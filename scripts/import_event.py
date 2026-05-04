@@ -343,7 +343,26 @@ def insert_appearance(
 def import_entries(cur, import_run_id, profile_id, event_id, category_id, parser_mod, link, profile=None):
     if not link:
         return 0
-    body = fetch_bytes(link["url"])
+    try:
+        body = fetch_bytes(link["url"])
+    except Exception as exc:  # noqa: BLE001 - preserve the import when one linked report is missing.
+        doc_id = insert_source_document(
+            cur,
+            import_run_id,
+            profile_id,
+            link["url"],
+            parser_mod.parse_index.__module__.split(".")[-1],
+            b"",
+            parse_status="failed",
+            metadata={"link": link, "fetch_error": str(exc)},
+        )
+        insert_parse_issues(
+            cur,
+            import_run_id,
+            doc_id,
+            [{"level": "warning", "code": "entry_page_fetch_failed", "message": str(exc), "url": link["url"]}],
+        )
+        return 0
     doc_id = insert_source_document(cur, import_run_id, profile_id, link["url"], parser_mod.parse_index.__module__.split(".")[-1], body)
     try:
         parsed = parser_mod.parse_entries(decode_html(body), link["url"])
@@ -363,7 +382,26 @@ def import_entries(cur, import_run_id, profile_id, event_id, category_id, parser
 def import_category_result(cur, import_run_id, profile_id, event_id, category_id, parser_mod, link, profile=None):
     if not link:
         return 0
-    body = fetch_bytes(link["url"])
+    try:
+        body = fetch_bytes(link["url"])
+    except Exception as exc:  # noqa: BLE001 - preserve the import when one linked report is missing.
+        doc_id = insert_source_document(
+            cur,
+            import_run_id,
+            profile_id,
+            link["url"],
+            parser_mod.parse_index.__module__.split(".")[-1],
+            b"",
+            parse_status="failed",
+            metadata={"link": link, "fetch_error": str(exc)},
+        )
+        insert_parse_issues(
+            cur,
+            import_run_id,
+            doc_id,
+            [{"level": "warning", "code": "category_result_page_fetch_failed", "message": str(exc), "url": link["url"]}],
+        )
+        return 0
     doc_id = insert_source_document(cur, import_run_id, profile_id, link["url"], parser_mod.parse_index.__module__.split(".")[-1], body)
     try:
         parsed = parser_mod.parse_category_result(decode_html(body), link["url"])
@@ -400,7 +438,26 @@ def import_category_result(cur, import_run_id, profile_id, event_id, category_id
 def import_segment_details(cur, import_run_id, profile_id, event_id, category_id, segment_id, parser_mod, link, profile=None):
     if not link:
         return 0
-    body = fetch_bytes(link["url"])
+    try:
+        body = fetch_bytes(link["url"])
+    except Exception as exc:  # noqa: BLE001 - preserve the import when one linked report is missing.
+        doc_id = insert_source_document(
+            cur,
+            import_run_id,
+            profile_id,
+            link["url"],
+            parser_mod.parse_index.__module__.split(".")[-1],
+            b"",
+            parse_status="failed",
+            metadata={"link": link, "fetch_error": str(exc)},
+        )
+        insert_parse_issues(
+            cur,
+            import_run_id,
+            doc_id,
+            [{"level": "warning", "code": "segment_result_page_fetch_failed", "message": str(exc), "url": link["url"]}],
+        )
+        return 0
     doc_id = insert_source_document(cur, import_run_id, profile_id, link["url"], parser_mod.parse_index.__module__.split(".")[-1], body)
     try:
         parsed = parser_mod.parse_segment_result(decode_html(body), link["url"])
@@ -442,7 +499,26 @@ def import_segment_details(cur, import_run_id, profile_id, event_id, category_id
 def import_officials(cur, import_run_id, profile_id, segment_id, parser_mod, link):
     if not link:
         return 0
-    body = fetch_bytes(link["url"])
+    try:
+        body = fetch_bytes(link["url"])
+    except Exception as exc:  # noqa: BLE001 - preserve the import when one linked report is missing.
+        doc_id = insert_source_document(
+            cur,
+            import_run_id,
+            profile_id,
+            link["url"],
+            parser_mod.parse_index.__module__.split(".")[-1],
+            b"",
+            parse_status="failed",
+            metadata={"link": link, "fetch_error": str(exc)},
+        )
+        insert_parse_issues(
+            cur,
+            import_run_id,
+            doc_id,
+            [{"level": "warning", "code": "officials_page_fetch_failed", "message": str(exc), "url": link["url"]}],
+        )
+        return 0
     doc_id = insert_source_document(cur, import_run_id, profile_id, link["url"], parser_mod.parse_index.__module__.split(".")[-1], body)
     parsed = parser_mod.parse_officials(decode_html(body), link["url"])
     for idx, official in enumerate(parsed.get("officials", []), start=1):
@@ -473,7 +549,32 @@ def import_officials(cur, import_run_id, profile_id, segment_id, parser_mod, lin
 def import_pdf(cur, import_run_id, profile_id, event_id, category_id, segment_id, parser_profile, link, category_name=None, segment_name=None, profile=None):
     if not link:
         return 0
-    body = fetch_bytes(link["url"])
+    try:
+        body = fetch_bytes(link["url"])
+    except Exception as exc:  # noqa: BLE001 - preserve the import when one published PDF link is missing.
+        doc_id = insert_source_document(
+            cur,
+            import_run_id,
+            profile_id,
+            link["url"],
+            parser_profile,
+            b"",
+            parse_status="failed",
+            metadata={"link": link, "fetch_error": str(exc)},
+        )
+        insert_parse_issues(
+            cur,
+            import_run_id,
+            doc_id,
+            [
+                {
+                    "level": "warning",
+                    "code": "pdf_fetch_failed",
+                    "message": f"Could not fetch judges-score PDF: {exc}",
+                }
+            ],
+        )
+        return 0
     doc_id = insert_source_document(
         cur,
         import_run_id,
