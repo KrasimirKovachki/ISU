@@ -8,7 +8,7 @@ from psycopg.rows import dict_row
 
 
 DEFAULT_LIMIT = 25
-MAX_LIMIT = 500
+MAX_LIMIT = 2000
 
 ISO3_TO_ISO2 = {
     "AND": "AD", "ARE": "AE", "ARG": "AR", "ARM": "AM", "AUS": "AU", "AUT": "AT",

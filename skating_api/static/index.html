@@ -185,6 +185,9 @@
     }
     [hidden] { display: none !important; }
     #list-controls { margin-bottom: 10px; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { background: #eef2ec; }
+    th .sort-arrow { font-size: 10px; margin-left: 3px; }
     .controls label { color: var(--muted); font-size: 12px; }
     .pager {
       display: flex;
@@ -333,7 +336,62 @@
       listPageSize: 50,
       dashboardData: null,
       dashboardPage: { competition_mix: 1, clubs: 1, nationalities: 1 },
-      dashboardPageSize: 10
+      dashboardPageSize: 10,
+      dashboardSort: {
+        competition_mix: { key: "events", direction: "desc" },
+        clubs: { key: "segment_scores", direction: "desc" },
+        nationalities: { key: "segment_scores", direction: "desc" }
+      },
+      currentNation: null,
+      nationSkaterSort: { key: "best_tss", direction: "desc" },
+      nationSkaterPage: 1,
+      nationSkaterPageSize: 50
+    };
+
+    const NATION_SKATER_COLUMNS = [
+      { label: "Skater",        key: "skater_name",      kind: "text" },
+      { label: "Club",          key: "club_name",        kind: "text" },
+      { label: "Competitions",  key: "competitions",     kind: "num"  },
+      { label: "Best TSS",      key: "best_tss",         kind: "num"  },
+      { label: "Latest",        key: "latest_seen_date", kind: "text" }
+    ];
+
+    const DASHBOARD_PANELS = {
+      competition_mix: {
+        title: "Competition Mix",
+        columns: [
+          { label: "Scope",   key: "scope_hint",                kind: "text" },
+          { label: "Stream",  key: "competition_stream",        kind: "text" },
+          { label: "Level",   key: "competition_level",         kind: "text" },
+          { label: "Events",  key: "events",                    kind: "num"  },
+          { label: "Skaters", key: "skaters_with_appearances",  kind: "num"  },
+          { label: "Clubs",   key: "clubs_with_appearances",    kind: "num"  },
+          { label: "Scores",  key: "segment_scores",            kind: "num"  }
+        ]
+      },
+      clubs: {
+        title: "Active Clubs",
+        columns: [
+          { label: "Club",    key: "club_name",      kind: "text" },
+          { label: "Country", key: "country_code",   kind: "text" },
+          { label: "Skaters", key: "skaters",        kind: "num"  },
+          { label: "Events",  key: "events",         kind: "num"  },
+          { label: "Scores",  key: "segment_scores", kind: "num"  },
+          { label: "Best",    key: "best_tss",       kind: "num"  }
+        ]
+      },
+      nationalities: {
+        title: "Active Nationalities",
+        columns: [
+          { label: "Nationality", key: "nation_code",                    kind: "text" },
+          { label: "Skaters",     key: "skaters",                        kind: "num"  },
+          { label: "Mlad",        key: "development_skaters",            kind: "num"  },
+          { label: "Converted",   key: "converted_development_skaters",  kind: "num"  },
+          { label: "Events",      key: "events",                         kind: "num"  },
+          { label: "Scores",      key: "segment_scores",                 kind: "num"  },
+          { label: "Best",        key: "best_tss",                       kind: "num"  }
+        ]
+      }
     };
 
     // ISU element-marker severity. negative = base value or GOE penalty;
@@ -722,7 +780,25 @@
       if (next) next.disabled = state.clubSkaterPage >= page.pages;
     }
 
-    function dashboardPanel(panelKey, title, columns, items, rowFn) {
+    function sortedDashboardItems(panelKey) {
+      const items = (state.dashboardData && state.dashboardData[panelKey]) || [];
+      const sort = state.dashboardSort[panelKey];
+      if (!sort) return items;
+      return [...items].sort((a, b) => compareValues(a[sort.key], b[sort.key], sort.direction)
+        || compareValues(a.club_name || a.nation_code || a.competition_stream, b.club_name || b.nation_code || b.competition_stream, "asc"));
+    }
+
+    function sortIndicator(panelKey, columnKey) {
+      const sort = state.dashboardSort[panelKey];
+      if (!sort || sort.key !== columnKey) return '<span style="opacity:.25">↕</span>';
+      return sort.direction === "desc" ? "▼" : "▲";
+    }
+
+    function dashboardPanel(panelKey) {
+      const config = DASHBOARD_PANELS[panelKey];
+      if (!config) return "";
+      const rowFn = ROW_RENDERERS[panelKey];
+      const items = sortedDashboardItems(panelKey);
       const total = items.length;
       const pageSize = state.dashboardPageSize;
       const pages = Math.max(1, Math.ceil(total / pageSize));
@@ -734,7 +810,6 @@
       const counter = total ? `${start + 1}-${end} of ${total}` : "0 of 0";
       const prevDisabled = page <= 1 ? " disabled" : "";
       const nextDisabled = page >= pages ? " disabled" : "";
-      const body = slice.map(rowFn).join("");
       const showPager = total > pageSize;
       const pager = showPager ? `
         <div class="controls">
@@ -742,15 +817,27 @@
           <button class="secondary" data-dashboard-step="-1" data-dashboard-target="${panelKey}"${prevDisabled}>Prev</button>
           <button class="secondary" data-dashboard-step="1" data-dashboard-target="${panelKey}"${nextDisabled}>Next</button>
         </div>` : `<div class="muted" style="font-size:11px">${counter}</div>`;
+      const headerRow = config.columns.map((col) =>
+        `<th class="sortable" data-dashboard-sort="${panelKey}" data-sort-key="${col.key}" title="Sort by ${col.label}">${col.label} <span class="sort-arrow">${sortIndicator(panelKey, col.key)}</span></th>`
+      ).join("");
+      const body = slice.map(rowFn).join("");
       return `
         <div class="panel" data-dashboard-panel="${panelKey}">
           <div class="toolbar">
-            <h3>${title}</h3>
+            <h3>${config.title}</h3>
             ${pager}
           </div>
-          ${body ? table(columns, body) : '<div class="muted">No rows.</div>'}
+          ${body
+            ? `<table><thead><tr>${headerRow}</tr></thead><tbody>${body}</tbody></table>`
+            : '<div class="muted">No rows.</div>'}
         </div>`;
     }
+
+    const ROW_RENDERERS = {
+      competition_mix: (m) => competitionMixRow(m),
+      clubs: (c) => activeClubRow(c),
+      nationalities: (n) => activeNationalityRow(n)
+    };
 
     function competitionMixRow(m) {
       return `<tr><td>${fmt(m.scope_hint)}</td><td>${fmt(m.competition_stream)}</td><td>${fmt(m.competition_level)}</td><td>${fmt(m.events)}</td><td>${fmt(m.skaters_with_appearances)}</td><td>${fmt(m.clubs_with_appearances)}</td><td>${fmt(m.segment_scores)}</td></tr>`;
@@ -764,17 +851,7 @@
 
     function renderDashboardPanels() {
       if (!state.dashboardData) return "";
-      return [
-        dashboardPanel("competition_mix", "Competition Mix",
-          ["Scope", "Stream", "Level", "Events", "Skaters", "Clubs", "Scores"],
-          state.dashboardData.competition_mix || [], competitionMixRow),
-        dashboardPanel("clubs", "Active Clubs",
-          ["Club", "Country", "Skaters", "Events", "Scores", "Best"],
-          state.dashboardData.clubs || [], activeClubRow),
-        dashboardPanel("nationalities", "Active Nationalities",
-          ["Nationality", "Skaters", "Mlad", "Converted", "Events", "Scores", "Best"],
-          state.dashboardData.nationalities || [], activeNationalityRow)
-      ].join("");
+      return ["competition_mix", "clubs", "nationalities"].map(dashboardPanel).join("");
     }
 
     async function loadDashboard() {
@@ -807,22 +884,9 @@
 
     function refreshDashboardPanel(panelKey) {
       const node = document.querySelector(`[data-dashboard-panel="${panelKey}"]`);
-      if (!node) return;
+      if (!node || !DASHBOARD_PANELS[panelKey]) return;
       const wrapper = document.createElement("div");
-      const sliceMap = {
-        competition_mix: ["Competition Mix",
-          ["Scope", "Stream", "Level", "Events", "Skaters", "Clubs", "Scores"],
-          state.dashboardData.competition_mix || [], competitionMixRow],
-        clubs: ["Active Clubs",
-          ["Club", "Country", "Skaters", "Events", "Scores", "Best"],
-          state.dashboardData.clubs || [], activeClubRow],
-        nationalities: ["Active Nationalities",
-          ["Nationality", "Skaters", "Mlad", "Converted", "Events", "Scores", "Best"],
-          state.dashboardData.nationalities || [], activeNationalityRow]
-      };
-      const args = sliceMap[panelKey];
-      if (!args) return;
-      wrapper.innerHTML = dashboardPanel(panelKey, ...args);
+      wrapper.innerHTML = dashboardPanel(panelKey);
       node.replaceWith(wrapper.firstElementChild);
     }
 
@@ -964,9 +1028,72 @@
         </div>`;
     }
 
+    function nationSkaterPage() {
+      const items = (state.currentNation && state.currentNation.skaters_list) || [];
+      const sort = state.nationSkaterSort;
+      const sorted = [...items].sort((a, b) =>
+        compareValues(a[sort.key], b[sort.key], sort.direction)
+        || compareValues(a.skater_name, b.skater_name, "asc"));
+      const total = sorted.length;
+      const pageSize = state.nationSkaterPageSize;
+      const pages = Math.max(1, Math.ceil(total / pageSize));
+      state.nationSkaterPage = Math.min(Math.max(1, state.nationSkaterPage), pages);
+      const start = (state.nationSkaterPage - 1) * pageSize;
+      const end = Math.min(start + pageSize, total);
+      return { rows: sorted.slice(start, end), total, start, end, pages };
+    }
+
+    function nationSortIndicator(columnKey) {
+      const sort = state.nationSkaterSort;
+      if (sort.key !== columnKey) return '<span style="opacity:.25">↕</span>';
+      return sort.direction === "desc" ? "▼" : "▲";
+    }
+
+    function renderNationSkaterTable() {
+      const page = nationSkaterPage();
+      const headerRow = NATION_SKATER_COLUMNS.map((col) =>
+        `<th class="sortable" data-nation-sort data-sort-key="${col.key}" title="Sort by ${col.label}">${col.label} <span class="sort-arrow">${nationSortIndicator(col.key)}</span></th>`
+      ).join("");
+      const body = page.rows.map((s) => `
+        <tr>
+          <td><a href="#" data-skater="${s.skater_key}">${fmt(s.skater_name)}</a></td>
+          <td>${s.club_name ? `<a href="#" data-club="${encodeURIComponent(s.club_name)}">${fmt(s.club_name)}</a>` : '<span class="muted">—</span>'}</td>
+          <td>${fmt(s.competitions)}</td>
+          <td>${points(s.best_tss)}</td>
+          <td>${fmt(s.latest_seen_date)}</td>
+        </tr>`).join("");
+      const counter = page.total ? `${page.start + 1}-${page.end} of ${page.total}` : "0 of 0";
+      const showPager = page.total > state.nationSkaterPageSize;
+      const pager = showPager ? `
+        <div class="controls">
+          <span class="muted">${counter}</span>
+          <button class="secondary" data-nation-page-step="-1"${page.pages <= 1 || state.nationSkaterPage <= 1 ? " disabled" : ""}>Prev</button>
+          <button class="secondary" data-nation-page-step="1"${state.nationSkaterPage >= page.pages ? " disabled" : ""}>Next</button>
+        </div>` : `<div class="muted" style="font-size:11px">${counter}</div>`;
+      return `
+        <div class="panel" id="nation-skater-panel">
+          <div class="toolbar">
+            <h3>Skaters</h3>
+            ${pager}
+          </div>
+          ${page.total
+            ? `<table><thead><tr>${headerRow}</tr></thead><tbody>${body}</tbody></table>`
+            : '<div class="muted">No skaters indexed for this nation yet.</div>'}
+        </div>`;
+    }
+
+    function refreshNationSkaterTable() {
+      const node = document.querySelector("#nation-skater-panel");
+      if (!node) return;
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = renderNationSkaterTable();
+      node.replaceWith(wrapper.firstElementChild);
+    }
+
     async function showNationality(code) {
       const nation = await getJson(`/api/nationalities/${encodeURIComponent(code)}`);
-      const skaters = nation.skaters_list || [];
+      state.currentNation = nation;
+      state.nationSkaterPage = 1;
       detail.innerHTML = `
         <div class="stack">
           <div>
@@ -985,11 +1112,7 @@
             <div class="metric"><div class="label">Converted</div><div class="value">${fmt(nation.converted_development_skaters)}</div></div>
             <div class="metric"><div class="label">Best PCS</div><div class="value">${points(nation.best_pcs)}</div></div>
           </div>
-          <div class="panel">
-            <h3>Skaters</h3>
-            ${skaters.length ? table(["Skater", "Club", "Competitions", "Best TSS", "Latest"], skaters.map((s) => `
-              <tr><td><a href="#" data-skater="${s.skater_key}">${fmt(s.skater_name)}</a></td><td>${fmt(s.club_name)}</td><td>${fmt(s.competitions)}</td><td>${points(s.best_tss)}</td><td>${fmt(s.latest_seen_date)}</td></tr>`).join("")) : '<div class="muted">No skaters indexed for this nation yet.</div>'}
-          </div>
+          ${renderNationSkaterTable()}
         </div>`;
     }
 
@@ -1226,6 +1349,37 @@
         const key = dashStep.dataset.dashboardTarget;
         state.dashboardPage[key] = (state.dashboardPage[key] || 1) + Number(dashStep.dataset.dashboardStep);
         refreshDashboardPanel(key);
+      }
+      const dashSortHeader = event.target.closest("[data-dashboard-sort]");
+      if (dashSortHeader && state.dashboardData) {
+        event.preventDefault();
+        const panelKey = dashSortHeader.dataset.dashboardSort;
+        const sortKey = dashSortHeader.dataset.sortKey;
+        const current = state.dashboardSort[panelKey] || { key: null, direction: "desc" };
+        const direction = current.key === sortKey
+          ? (current.direction === "desc" ? "asc" : "desc")
+          : "desc";
+        state.dashboardSort[panelKey] = { key: sortKey, direction };
+        state.dashboardPage[panelKey] = 1;
+        refreshDashboardPanel(panelKey);
+      }
+      const nationSortHeader = event.target.closest("[data-nation-sort]");
+      if (nationSortHeader && state.currentNation) {
+        event.preventDefault();
+        const sortKey = nationSortHeader.dataset.sortKey;
+        const current = state.nationSkaterSort;
+        const direction = current.key === sortKey
+          ? (current.direction === "desc" ? "asc" : "desc")
+          : "desc";
+        state.nationSkaterSort = { key: sortKey, direction };
+        state.nationSkaterPage = 1;
+        refreshNationSkaterTable();
+      }
+      const nationPageStep = event.target.closest("[data-nation-page-step]");
+      if (nationPageStep && !nationPageStep.disabled && state.currentNation) {
+        event.preventDefault();
+        state.nationSkaterPage += Number(nationPageStep.dataset.nationPageStep);
+        refreshNationSkaterTable();
       }
     });
     detail.addEventListener("change", (event) => {

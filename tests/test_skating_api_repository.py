@@ -49,7 +49,7 @@ def test_public_row_serializes_dates_and_decimals():
 def test_search_skaters_adds_safe_pattern_and_clamps_limit():
     conn = FakeConnection([[{"skater_key": 1, "skater_name": "A"}]])
 
-    rows = repository.search_skaters(conn, "  eva  ", 500)
+    rows = repository.search_skaters(conn, "  eva  ", repository.MAX_LIMIT + 100)
 
     assert rows == [{"skater_key": 1, "skater_name": "A"}]
     assert "ILIKE %(pattern)s" in conn.cursors[0].sql

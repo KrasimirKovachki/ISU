@@ -61,7 +61,7 @@ def nationality_detail(nation_code: str, conn: Any = Depends(connection_dependen
     nationality = repository.nationality_detail(conn, nation_code)
     if nationality is None:
         raise HTTPException(status_code=404, detail="Nationality not found")
-    nationality["skaters_list"] = repository.nationality_skaters(conn, nation_code, 200)
+    nationality["skaters_list"] = repository.nationality_skaters(conn, nation_code, 2000)
     return nationality
 
 
