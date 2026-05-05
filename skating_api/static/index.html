@@ -114,8 +114,15 @@
     .judge-trim {
       position: relative;
       color: var(--muted);
-      text-decoration: line-through;
+      font-style: italic;
       cursor: help;
+    }
+    .judge-trim::after {
+      content: "∅";
+      font-size: 9px;
+      vertical-align: super;
+      margin-left: 2px;
+      opacity: .65;
     }
     .legend-key {
       display: flex;
@@ -396,7 +403,7 @@
     // CCoSp4, FSSp4V, ChSq1, StSq3, SEQ/REP markers into human-readable
     // labels for tooltips and for the contextual legend below the table.
     const JUMP_LETTERS = {
-      A: "Axel", F: "Flip", Lz: "Lutz", Lo: "Loop", S: "Salchow", T: "Toe Loop"
+      A: "Axel", F: "Flip", Lz: "Lutz", Lo: "Loop", S: "Salchow", T: "Toe Loop", Eu: "Euler"
     };
     const ROTATION_NAMES = ["", "Single", "Double", "Triple", "Quad"];
     const SPIN_PREFIXES = [
@@ -426,19 +433,29 @@
       ["PiF",  "Pivot Figure"]
     ];
 
+    // ISU markers can appear embedded in element_code text (e.g. "3F!",
+    // "2Lo<x", "3Lz<<"). They never appear inside the structural prefix —
+    // only at the end of a single token. Keep parsing structural-prefix-aware
+    // so we don't strip jump letters (F = Flip, S = Salchow) or spin-prefix
+    // letters (FCSp, FSSp) by accident.
+    const MARKER_TAIL = /(?:<<|<|!|e|q|\*|F|x|b)+$/;
+
     function describeElementToken(token) {
       const raw = String(token || "").trim();
       if (!raw) return "";
       if (/^SEQ$/i.test(raw)) return "Jump Sequence";
       if (/^REP$/i.test(raw)) return "Repetition";
-      const jump = raw.match(/^(\d)(A|F|Lz|Lo|S|T)\b/);
+      // Jump: leading digit + jump letters. Try longest letter prefix first
+      // (Lz / Lo / Eu before single-letter A/F/S/T).
+      const jump = raw.match(/^(\d)(Lz|Lo|Eu|A|F|S|T)/);
       if (jump) {
         const rotation = ROTATION_NAMES[Number(jump[1])] || `${jump[1]}-rotation`;
         return `${rotation} ${JUMP_LETTERS[jump[2]] || jump[2]}`;
       }
+      // Spin: longest prefix wins (SPIN_PREFIXES is ordered from longest).
       for (const [prefix, label] of SPIN_PREFIXES) {
         if (raw.startsWith(prefix)) {
-          const tail = raw.slice(prefix.length);
+          const tail = raw.slice(prefix.length).replace(MARKER_TAIL, "");
           const level = tail.replace(/V$/i, "");
           const variation = /V$/i.test(tail) ? " (feature variation)" : "";
           return `${label}${level ? ` lvl ${level}` : ""}${variation}`;
@@ -446,7 +463,7 @@
       }
       for (const [prefix, label] of STEP_PREFIXES) {
         if (raw.startsWith(prefix)) {
-          const tail = raw.slice(prefix.length);
+          const tail = raw.slice(prefix.length).replace(MARKER_TAIL, "");
           return `${label}${tail ? ` lvl ${tail}` : ""}`;
         }
       }
@@ -456,11 +473,8 @@
     function describeElement(code) {
       const raw = String(code || "").trim();
       if (!raw) return "";
-      // Strip trailing/embedded ISU markers; they are surfaced as pills.
-      const stripped = raw.replace(/(<<|<|!|e|q|\*|F|x|b)+/g, "");
-      const parts = stripped.split("+").filter((part) => part.length > 0);
-      const described = parts.map(describeElementToken).filter(Boolean);
-      return described.join(" + ");
+      const parts = raw.split("+").filter((part) => part.length > 0);
+      return parts.map(describeElementToken).filter(Boolean).join(" + ");
     }
 
     function elementLegendEntries(elements) {
@@ -478,8 +492,11 @@
       if (value === null || value === undefined || value === "") return '<td class="muted">—</td>';
       const num = typeof value === "number" ? value : Number(value);
       if (Number.isNaN(num)) return `<td>${fmt(value)}</td>`;
+      // Bonus column: zero is meaningful (no bonus applied) and should read
+      // as a dash rather than "0.00", which looks like a real value.
+      if (mode === "bonus" && num === 0) return '<td class="muted">—</td>';
       const cls = mode === "goe" ? (num > 0 ? "num pos" : num < 0 ? "num neg" : "")
-                : mode === "bonus" ? (num !== 0 ? "num bonus" : "muted")
+                : mode === "bonus" ? "num bonus"
                 : "";
       const text = mode === "bonus" && num > 0 ? `+${num.toFixed(2)}` : num.toFixed(2);
       return `<td class="${cls}">${text}</td>`;
@@ -902,7 +919,19 @@
       return `${label}${nation}${name}`;
     }
 
-    function judgeCells(row, judges) {
+    // ISU element GOE marks are integers (-5..+5); ISU PCS marks are 0.25-step
+    // values (e.g. 4.50, 4.75). Use 2-decimal formatting for non-integer
+    // marks so component rows look uniform (4.50 alongside 4.75) instead of
+    // 4.5 alongside 4.75.
+    function formatJudgeScore(value, mode) {
+      if (value === null || value === undefined || value === "") return "—";
+      const num = typeof value === "number" ? value : Number(value);
+      if (Number.isNaN(num)) return String(value);
+      if (mode === "component") return num.toFixed(2);
+      return Number.isInteger(num) ? String(num) : num.toFixed(2);
+    }
+
+    function judgeCells(row, judges, mode) {
       const orderedMarks = judges.map((judge) =>
         (row.judge_marks || []).find((mark) => mark.judge_number === judge.judge_number) || null
       );
@@ -915,7 +944,8 @@
           ? `${judgeName} — trimmed (highest/lowest excluded from panel score per ISU rule)`
           : judgeName;
         const cls = isTrimmed ? "judge-trim" : "";
-        return `<td class="${cls}" title="${baseTitle.replace(/"/g, "&quot;")}">${fmt(mark && mark.score)}</td>`;
+        const text = formatJudgeScore(mark && mark.score, mode);
+        return `<td class="${cls}" title="${baseTitle.replace(/"/g, "&quot;")}">${text}</td>`;
       }).join("");
     }
 
@@ -981,7 +1011,7 @@
                 const factorCell = !Number.isNaN(factor) && factor !== 1
                   ? `<td><span class="badge" title="ISU factor multiplier applied to averaged judge marks">× ${factor.toFixed(2)}</span></td>`
                   : `<td>${points(c.factor)}</td>`;
-                return `<tr><td>${fmt(c.component_name)}</td>${factorCell}${numCell(c.score)}${judgeCells(c, judges)}</tr>`;
+                return `<tr><td>${fmt(c.component_name)}</td>${factorCell}${numCell(c.score)}${judgeCells(c, judges, "component")}</tr>`;
               }).join("")}</tbody>
             </table>
           </div>`

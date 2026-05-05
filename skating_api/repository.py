@@ -158,76 +158,31 @@ def list_nationalities(
     query: str | None = None,
     limit: int | None = None,
 ) -> list[dict[str, Any]]:
-    filters = ["nation_code IS NOT NULL"]
+    where = ""
     params: dict[str, Any] = {"limit": clamp_limit(limit)}
     if query:
-        filters.append("nation_code ILIKE %(pattern)s")
+        where = "WHERE nation_code ILIKE %(pattern)s"
         params["pattern"] = f"%{query.strip().lower()}%"
 
     return fetch_all(
         conn,
         f"""
-WITH nationality_appearances AS (
-  SELECT DISTINCT
-    sac.nation_code,
-    sac.event_id,
-    sac.event_start_date,
-    api.skater_identity_key(
-      sac.skater_name,
-      sac.nation_code,
-      COALESCE(sac.canonical_club_name, sac.club_name)
-    ) AS identity_key,
-    sac.category_name ILIKE 'Mlad Figurist%%' AS is_development
-  FROM analytics.v_skater_appearances_with_club sac
-  WHERE {' AND '.join(filters)}
-),
-nationality_identity_flags AS (
-  SELECT
-    nation_code,
-    identity_key,
-    bool_or(is_development) AS has_development_event,
-    bool_or(NOT is_development) AS has_standard_event
-  FROM nationality_appearances
-  GROUP BY nation_code, identity_key
-),
-nationality_scores AS (
-  SELECT
-    nation_code,
-    count(*) AS segment_scores,
-    max(tss) AS best_tss,
-    max(tes) AS best_tes,
-    max(pcs) AS best_pcs
-  FROM mart.fact_segment_score
-  WHERE nation_code IS NOT NULL
-  GROUP BY nation_code
-),
-nationality_events AS (
-  SELECT
-    nation_code,
-    count(DISTINCT event_id) AS events,
-    min(event_start_date) AS first_seen_date,
-    max(event_start_date) AS latest_seen_date
-  FROM nationality_appearances
-  GROUP BY nation_code
-)
 SELECT
-  nif.nation_code,
-  count(DISTINCT nif.identity_key) AS skaters,
-  COALESCE(max(ne.events), 0) AS events,
-  COALESCE(max(ns.segment_scores), 0) AS segment_scores,
-  count(*) FILTER (WHERE nif.has_development_event) AS development_skaters,
-  count(*) FILTER (WHERE nif.has_development_event AND NOT nif.has_standard_event) AS development_only_skaters,
-  count(*) FILTER (WHERE nif.has_development_event AND nif.has_standard_event) AS converted_development_skaters,
-  max(ns.best_tss) AS best_tss,
-  max(ns.best_tes) AS best_tes,
-  max(ns.best_pcs) AS best_pcs,
-  min(ne.first_seen_date) AS first_seen_date,
-  max(ne.latest_seen_date) AS latest_seen_date
-FROM nationality_identity_flags nif
-LEFT JOIN nationality_events ne ON ne.nation_code = nif.nation_code
-LEFT JOIN nationality_scores ns ON ns.nation_code = nif.nation_code
-GROUP BY nif.nation_code
-ORDER BY segment_scores DESC, skaters DESC, latest_seen_date DESC NULLS LAST, nif.nation_code
+  nation_code,
+  skaters,
+  events,
+  segment_scores,
+  development_skaters,
+  development_only_skaters,
+  converted_development_skaters,
+  best_tss,
+  best_tes,
+  best_pcs,
+  first_seen_date,
+  latest_seen_date
+FROM api.mv_nationality_dashboard
+{where}
+ORDER BY segment_scores DESC, skaters DESC, latest_seen_date DESC NULLS LAST, nation_code
 LIMIT %(limit)s
 """,
         params,
@@ -470,7 +425,7 @@ SELECT
   fss.element_score_total,
   fss.judge_count,
   de.root_url
-FROM mart.fact_segment_score fss
+FROM api.mv_segment_score fss
 JOIN api.mv_skater_search mss
   ON mss.identity_key = api.skater_identity_key(fss.skater_name, fss.nation_code, fss.club_name)
 LEFT JOIN mart.dim_event de ON de.event_key = fss.event_key
@@ -505,9 +460,9 @@ SELECT
   goe,
   bonus,
   panel_score
-FROM mart.fact_element_score
+FROM api.mv_element_score
 JOIN api.mv_skater_search mss
-  ON mss.identity_key = api.skater_identity_key(mart.fact_element_score.skater_name, mart.fact_element_score.nation_code, mart.fact_element_score.club_name)
+  ON mss.identity_key = api.skater_identity_key(api.mv_element_score.skater_name, api.mv_element_score.nation_code, api.mv_element_score.club_name)
 WHERE mss.skater_key = %(skater_key)s
 ORDER BY date_key DESC NULLS LAST, segment_score_key DESC, element_no
 LIMIT %(limit)s
@@ -591,7 +546,7 @@ SELECT
   fcr.final_place,
   fcr.points,
   fcr.segment_places
-FROM mart.fact_competition_result fcr
+FROM api.mv_competition_result fcr
 LEFT JOIN mart.dim_category dc ON dc.category_key = fcr.category_key
 WHERE fcr.event_key = %(event_key)s
 ORDER BY dc.category_name, fcr.final_place NULLS LAST, fcr.points DESC NULLS LAST
@@ -627,7 +582,7 @@ SELECT
   fss.element_score_total,
   fss.judge_count,
   de.root_url
-FROM mart.fact_segment_score fss
+FROM api.mv_segment_score fss
 LEFT JOIN mart.dim_event de ON de.event_key = fss.event_key
 LEFT JOIN mart.dim_category dc ON dc.category_key = fss.category_key
 LEFT JOIN mart.dim_segment dseg ON dseg.segment_key = fss.segment_key
@@ -669,7 +624,7 @@ SELECT
   goe,
   bonus,
   panel_score
-FROM mart.fact_element_score
+FROM api.mv_element_score
 WHERE segment_score_key = %(segment_score_key)s
 ORDER BY element_no
 """,
@@ -685,7 +640,7 @@ SELECT
   oa.name AS judge_name,
   oa.nation_code AS judge_nation_code,
   oa.function_text AS judge_function
-FROM mart.fact_element_judge_mark fejm
+FROM api.mv_element_judge_mark fejm
 LEFT JOIN ingest.official_assignments oa
   ON oa.segment_id = fejm.segment_key
  AND oa.judge_number = fejm.judge_number
@@ -709,7 +664,7 @@ SELECT
   component_name,
   factor,
   score
-FROM mart.fact_component_score
+FROM api.mv_component_score
 WHERE segment_score_key = %(segment_score_key)s
 ORDER BY component_score_key
 """,

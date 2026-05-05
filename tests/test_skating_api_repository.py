@@ -83,8 +83,7 @@ def test_list_nationalities_groups_by_nation_code():
             "nation_display": "🇧🇬 BUL",
         }
     ]
-    assert "nationality_appearances" in conn.cursors[0].sql
-    assert "mart.fact_segment_score" in conn.cursors[0].sql
+    assert "api.mv_nationality_dashboard" in conn.cursors[0].sql
     assert "nation_code ILIKE %(pattern)s" in conn.cursors[0].sql
     assert conn.cursors[0].params["pattern"] == "%bul%"
 
@@ -135,7 +134,8 @@ def test_score_detail_attaches_elements_components_and_evidence():
 
 
 def test_score_detail_passes_negative_keys_unchanged():
-    # mart.fact_segment_score encodes score_source into the key by negating
+    # api.mv_segment_score (snapshot of mart.fact_segment_score) encodes
+    # score_source into the key by negating
     # html_segment_result rows. score_detail must thread the negative integer
     # straight through to PostgreSQL without sanitizing it; otherwise an HTML
     # fallback row would resolve to the unrelated PDF row that shares the
@@ -173,6 +173,6 @@ def test_score_detail_passes_negative_keys_unchanged():
     assert score["score_source"] == "html_segment_result"
     assert score["elements"] == []
     assert score["components"] == []
-    assert "fact_segment_score" in conn.cursors[0].sql
+    assert "mv_segment_score" in conn.cursors[0].sql
     assert "segment_score_key = %(segment_score_key)s" in conn.cursors[0].sql
     assert conn.cursors[0].params["segment_score_key"] == -588
