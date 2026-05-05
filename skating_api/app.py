@@ -37,8 +37,8 @@ def dashboard(conn: Any = Depends(connection_dependency)) -> dict[str, Any]:
     return {
         "overview": repository.dashboard_overview(conn),
         "competition_mix": repository.competition_mix(conn),
-        "clubs": repository.list_clubs(conn, limit=15),
-        "nationalities": repository.list_nationalities(conn, limit=15),
+        "clubs": repository.list_clubs(conn, limit=100),
+        "nationalities": repository.list_nationalities(conn, limit=100),
     }
 
 

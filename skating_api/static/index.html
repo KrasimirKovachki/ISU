@@ -111,10 +111,13 @@
     .num.pos { color: #225f31; font-weight: 600; }
     .num.neg { color: #8a2d22; font-weight: 600; }
     .num.bonus { background: #def0e1; color: #225f31; padding: 1px 5px; border-radius: 4px; font-weight: 600; }
+    /* Trimmed judge marks (ISU rule: drop highest + lowest before averaging).
+       Keep the value at full color/weight so it stays readable; flag the cell
+       with a soft warm tint and a tiny ∅ superscript that doesn't compete
+       with the number. Tooltip explains the rule. */
     .judge-trim {
       position: relative;
-      color: var(--muted);
-      font-style: italic;
+      background: #fbf6e6;
       cursor: help;
     }
     .judge-trim::after {
@@ -122,6 +125,7 @@
       font-size: 9px;
       vertical-align: super;
       margin-left: 2px;
+      color: var(--warn);
       opacity: .65;
     }
     .legend-key {
@@ -326,7 +330,10 @@
       legend: null,
       listSort: { ...LIST_DEFAULT_SORT },
       listPage: 1,
-      listPageSize: 50
+      listPageSize: 50,
+      dashboardData: null,
+      dashboardPage: { competition_mix: 1, clubs: 1, nationalities: 1 },
+      dashboardPageSize: 10
     };
 
     // ISU element-marker severity. negative = base value or GOE penalty;
@@ -715,9 +722,66 @@
       if (next) next.disabled = state.clubSkaterPage >= page.pages;
     }
 
+    function dashboardPanel(panelKey, title, columns, items, rowFn) {
+      const total = items.length;
+      const pageSize = state.dashboardPageSize;
+      const pages = Math.max(1, Math.ceil(total / pageSize));
+      state.dashboardPage[panelKey] = Math.min(Math.max(1, state.dashboardPage[panelKey] || 1), pages);
+      const page = state.dashboardPage[panelKey];
+      const start = (page - 1) * pageSize;
+      const end = Math.min(start + pageSize, total);
+      const slice = items.slice(start, end);
+      const counter = total ? `${start + 1}-${end} of ${total}` : "0 of 0";
+      const prevDisabled = page <= 1 ? " disabled" : "";
+      const nextDisabled = page >= pages ? " disabled" : "";
+      const body = slice.map(rowFn).join("");
+      const showPager = total > pageSize;
+      const pager = showPager ? `
+        <div class="controls">
+          <span class="muted" data-dashboard-count>${counter}</span>
+          <button class="secondary" data-dashboard-step="-1" data-dashboard-target="${panelKey}"${prevDisabled}>Prev</button>
+          <button class="secondary" data-dashboard-step="1" data-dashboard-target="${panelKey}"${nextDisabled}>Next</button>
+        </div>` : `<div class="muted" style="font-size:11px">${counter}</div>`;
+      return `
+        <div class="panel" data-dashboard-panel="${panelKey}">
+          <div class="toolbar">
+            <h3>${title}</h3>
+            ${pager}
+          </div>
+          ${body ? table(columns, body) : '<div class="muted">No rows.</div>'}
+        </div>`;
+    }
+
+    function competitionMixRow(m) {
+      return `<tr><td>${fmt(m.scope_hint)}</td><td>${fmt(m.competition_stream)}</td><td>${fmt(m.competition_level)}</td><td>${fmt(m.events)}</td><td>${fmt(m.skaters_with_appearances)}</td><td>${fmt(m.clubs_with_appearances)}</td><td>${fmt(m.segment_scores)}</td></tr>`;
+    }
+    function activeClubRow(c) {
+      return `<tr><td><a href="#" data-club="${encodeURIComponent(c.club_name)}">${fmt(c.club_name)}</a></td><td>${fmt(c.country_display || c.country_code)}</td><td>${fmt(c.skaters)}</td><td>${fmt(c.events)}</td><td>${fmt(c.segment_scores)}</td><td>${points(c.best_tss)}</td></tr>`;
+    }
+    function activeNationalityRow(n) {
+      return `<tr><td><a href="#" data-nation="${encodeURIComponent(n.nation_code)}">${fmt(n.nation_display)}</a></td><td>${fmt(n.skaters)}</td><td>${fmt(n.development_skaters)}</td><td>${fmt(n.converted_development_skaters)}</td><td>${fmt(n.events)}</td><td>${fmt(n.segment_scores)}</td><td>${points(n.best_tss)}</td></tr>`;
+    }
+
+    function renderDashboardPanels() {
+      if (!state.dashboardData) return "";
+      return [
+        dashboardPanel("competition_mix", "Competition Mix",
+          ["Scope", "Stream", "Level", "Events", "Skaters", "Clubs", "Scores"],
+          state.dashboardData.competition_mix || [], competitionMixRow),
+        dashboardPanel("clubs", "Active Clubs",
+          ["Club", "Country", "Skaters", "Events", "Scores", "Best"],
+          state.dashboardData.clubs || [], activeClubRow),
+        dashboardPanel("nationalities", "Active Nationalities",
+          ["Nationality", "Skaters", "Mlad", "Converted", "Events", "Scores", "Best"],
+          state.dashboardData.nationalities || [], activeNationalityRow)
+      ].join("");
+    }
+
     async function loadDashboard() {
       detail.innerHTML = '<div class="empty">Loading dashboard...</div>';
       const data = await getJson("/api/dashboard");
+      state.dashboardData = data;
+      state.dashboardPage = { competition_mix: 1, clubs: 1, nationalities: 1 };
       const o = data.overview;
       detail.innerHTML = `
         <div class="stack">
@@ -737,22 +801,29 @@
             <button class="metric item" data-scope="club_or_open"><div class="label">Club/Open</div><div class="value">${fmt(o.club_or_open_events)}</div></button>
             <div class="metric"><div class="label">Mlad Figurist</div><div class="value">${fmt(o.development_skaters)}</div></div>
           </div>
-          <div class="panel">
-            <h3>Competition Mix</h3>
-            ${table(["Scope", "Stream", "Level", "Events", "Skaters", "Clubs", "Scores"], data.competition_mix.map((m) => `
-              <tr><td>${fmt(m.scope_hint)}</td><td>${fmt(m.competition_stream)}</td><td>${fmt(m.competition_level)}</td><td>${fmt(m.events)}</td><td>${fmt(m.skaters_with_appearances)}</td><td>${fmt(m.clubs_with_appearances)}</td><td>${fmt(m.segment_scores)}</td></tr>`).join(""))}
-          </div>
-          <div class="panel">
-            <h3>Active Clubs</h3>
-            ${table(["Club", "Country", "Skaters", "Events", "Scores", "Best"], (data.clubs || []).map((c) => `
-              <tr><td><a href="#" data-club="${encodeURIComponent(c.club_name)}">${fmt(c.club_name)}</a></td><td>${fmt(c.country_display || c.country_code)}</td><td>${fmt(c.skaters)}</td><td>${fmt(c.events)}</td><td>${fmt(c.segment_scores)}</td><td>${points(c.best_tss)}</td></tr>`).join(""))}
-          </div>
-          <div class="panel">
-            <h3>Active Nationalities</h3>
-            ${table(["Nationality", "Skaters", "Mlad", "Converted", "Events", "Scores", "Best"], data.nationalities.map((n) => `
-              <tr><td><a href="#" data-nation="${encodeURIComponent(n.nation_code)}">${fmt(n.nation_display)}</a></td><td>${fmt(n.skaters)}</td><td>${fmt(n.development_skaters)}</td><td>${fmt(n.converted_development_skaters)}</td><td>${fmt(n.events)}</td><td>${fmt(n.segment_scores)}</td><td>${points(n.best_tss)}</td></tr>`).join(""))}
-          </div>
+          ${renderDashboardPanels()}
         </div>`;
+    }
+
+    function refreshDashboardPanel(panelKey) {
+      const node = document.querySelector(`[data-dashboard-panel="${panelKey}"]`);
+      if (!node) return;
+      const wrapper = document.createElement("div");
+      const sliceMap = {
+        competition_mix: ["Competition Mix",
+          ["Scope", "Stream", "Level", "Events", "Skaters", "Clubs", "Scores"],
+          state.dashboardData.competition_mix || [], competitionMixRow],
+        clubs: ["Active Clubs",
+          ["Club", "Country", "Skaters", "Events", "Scores", "Best"],
+          state.dashboardData.clubs || [], activeClubRow],
+        nationalities: ["Active Nationalities",
+          ["Nationality", "Skaters", "Mlad", "Converted", "Events", "Scores", "Best"],
+          state.dashboardData.nationalities || [], activeNationalityRow]
+      };
+      const args = sliceMap[panelKey];
+      if (!args) return;
+      wrapper.innerHTML = dashboardPanel(panelKey, ...args);
+      node.replaceWith(wrapper.firstElementChild);
     }
 
     async function showSkater(id) {
@@ -793,18 +864,37 @@
 
     async function showEvent(id) {
       const event = await getJson(`/api/events/${id}`);
+      const byCategory = new Map();
+      for (const result of event.results || []) {
+        const key = result.category_name || "(no category)";
+        if (!byCategory.has(key)) byCategory.set(key, []);
+        byCategory.get(key).push(result);
+      }
+      const sortedCategories = [...byCategory.entries()].sort(([a], [b]) => a.localeCompare(b));
+      const categoryPanels = sortedCategories.map(([category, rows]) => {
+        const sortedRows = [...rows].sort((a, b) => compareValues(a.final_place, b.final_place, "asc"));
+        return `
+          <div class="panel">
+            <h3>${fmt(category)} <span class="muted" style="font-weight:400;font-size:12px">· ${rows.length} ${rows.length === 1 ? "skater" : "skaters"}</span></h3>
+            ${table(["Place", "Skater", "Nation", "Club", "Points"], sortedRows.map((r) => `
+              <tr>
+                <td>${fmt(r.final_place)}</td>
+                <td>${r.skater_key ? `<a href="#" data-skater="${r.skater_key}">${fmt(r.skater_name)}</a>` : fmt(r.skater_name)}</td>
+                <td>${fmt(r.nation_display)}</td>
+                <td>${r.club_name ? `<a href="#" data-club="${encodeURIComponent(r.club_name)}">${fmt(r.club_name)}</a>` : '<span class="muted">—</span>'}</td>
+                <td>${points(r.points)}</td>
+              </tr>`).join(""))}
+          </div>`;
+      }).join("");
       detail.innerHTML = `
         <div class="stack">
           <div>
             <h2>${fmt(event.event_name)}</h2>
             <div class="muted">${fmt(event.event_start_date)} · ${fmt(event.location)} · ${fmt(event.venue)}</div>
             <div><a href="${event.root_url}" target="_blank" rel="noreferrer">${fmt(event.root_url)}</a></div>
+            <div class="muted" style="margin-top:6px">${sortedCategories.length} ${sortedCategories.length === 1 ? "category" : "categories"} · ${(event.results || []).length} total entries</div>
           </div>
-          <div class="panel">
-            <h3>Results</h3>
-            ${table(["Category", "Place", "Skater", "Nation", "Club", "Points"], event.results.map((r) => `
-              <tr><td>${fmt(r.category_name)}</td><td>${fmt(r.final_place)}</td><td>${fmt(r.skater_name)}</td><td>${fmt(r.nation_display)}</td><td>${fmt(r.club_name)}</td><td>${points(r.points)}</td></tr>`).join(""))}
-          </div>
+          ${categoryPanels || '<div class="empty">No results recorded for this event.</div>'}
         </div>`;
     }
 
@@ -1129,6 +1219,13 @@
         event.preventDefault();
         state.clubSkaterPage += Number(pageStep.dataset.pageStep);
         refreshClubSkaterRows();
+      }
+      const dashStep = event.target.closest("[data-dashboard-step]");
+      if (dashStep && !dashStep.disabled && state.dashboardData) {
+        event.preventDefault();
+        const key = dashStep.dataset.dashboardTarget;
+        state.dashboardPage[key] = (state.dashboardPage[key] || 1) + Number(dashStep.dataset.dashboardStep);
+        refreshDashboardPanel(key);
       }
     });
     detail.addEventListener("change", (event) => {
