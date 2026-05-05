@@ -172,6 +172,8 @@
       gap: 8px;
       flex-wrap: wrap;
     }
+    [hidden] { display: none !important; }
+    #list-controls { margin-bottom: 10px; }
     .controls label { color: var(--muted); font-size: 12px; }
     .pager {
       display: flex;
@@ -243,13 +245,70 @@
         <input id="search" type="search" placeholder="Search">
         <button type="submit">Go</button>
       </form>
+      <div class="controls" id="list-controls" hidden>
+        <label for="list-sort">Sort</label>
+        <select id="list-sort"></select>
+        <select id="list-direction">
+          <option value="desc">Desc</option>
+          <option value="asc">Asc</option>
+        </select>
+        <label for="list-page-size">Rows</label>
+        <select id="list-page-size">
+          <option value="25">25</option>
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+          <option value="250">250</option>
+        </select>
+      </div>
       <div class="list" id="results"></div>
+      <div class="pager" id="list-pager" hidden>
+        <span class="muted" id="list-count"></span>
+        <button class="secondary" id="list-prev">Previous</button>
+        <button class="secondary" id="list-next">Next</button>
+      </div>
     </aside>
     <section id="detail">
       <div class="empty">Loading dashboard...</div>
     </section>
   </main>
   <script>
+    const LIST_SORT_OPTIONS = {
+      clubs: [
+        ["segment_scores", "Segment scores"],
+        ["skaters", "Skaters"],
+        ["events", "Events"],
+        ["best_tss", "Best TSS"],
+        ["latest_seen_date", "Latest activity"],
+        ["club_name", "Club name"]
+      ],
+      skaters: [
+        ["latest_seen_date", "Latest activity"],
+        ["best_tss", "Best TSS"],
+        ["competitions", "Competitions"],
+        ["source_appearances", "Source appearances"],
+        ["skater_name", "Skater name"]
+      ],
+      events: [
+        ["event_start_date", "Event date"],
+        ["event_name", "Event name"]
+      ],
+      nationalities: [
+        ["segment_scores", "Segment scores"],
+        ["skaters", "Skaters"],
+        ["events", "Events"],
+        ["best_tss", "Best TSS"],
+        ["development_skaters", "Mlad Figurist"],
+        ["nation_code", "Nation code"]
+      ]
+    };
+    const LIST_DEFAULT_SORT = {
+      clubs: { key: "segment_scores", direction: "desc" },
+      skaters: { key: "latest_seen_date", direction: "desc" },
+      events: { key: "event_start_date", direction: "desc" },
+      nationalities: { key: "segment_scores", direction: "desc" }
+    };
+    const LIST_FETCH_LIMIT = 500;
+
     const state = {
       mode: "dashboard",
       items: [],
@@ -257,7 +316,10 @@
       clubSkaterSort: { key: "skater_name", direction: "asc" },
       clubSkaterPage: 1,
       clubSkaterPageSize: 50,
-      legend: null
+      legend: null,
+      listSort: { ...LIST_DEFAULT_SORT },
+      listPage: 1,
+      listPageSize: 50
     };
 
     // ISU element-marker severity. negative = base value or GOE penalty;
@@ -308,16 +370,16 @@
       }).join("");
     }
 
-    // ISU panel-score rule (current): drop the highest and the lowest judge
-    // mark per element/component, then average the remaining marks. Mark
-    // those two trimmed cells visually so the panel-score arithmetic is
-    // legible at a glance.
+    // ISU panel-score rule (current): with a panel of 5+ judges, drop the
+    // highest and the lowest judge mark per element/component and average
+    // the remaining. With smaller panels (3 or 4 judges) every mark is
+    // averaged — trimming would leave too few values.
     function trimmedJudgeIndices(judgeMarks) {
-      if (!Array.isArray(judgeMarks) || judgeMarks.length < 3) return new Set();
+      if (!Array.isArray(judgeMarks)) return new Set();
       const numeric = judgeMarks
-        .map((mark, idx) => ({ idx, score: mark.score }))
+        .map((mark, idx) => ({ idx, score: mark && mark.score }))
         .filter((entry) => typeof entry.score === "number");
-      if (numeric.length < 3) return new Set();
+      if (numeric.length < 5) return new Set();
       let high = numeric[0];
       let low = numeric[0];
       for (const entry of numeric) {
@@ -328,6 +390,88 @@
       trim.add(high.idx);
       if (low.idx !== high.idx) trim.add(low.idx);
       return trim;
+    }
+
+    // ISU element-code dictionary. Decomposes codes like 4T, 2Lz+3T,
+    // CCoSp4, FSSp4V, ChSq1, StSq3, SEQ/REP markers into human-readable
+    // labels for tooltips and for the contextual legend below the table.
+    const JUMP_LETTERS = {
+      A: "Axel", F: "Flip", Lz: "Lutz", Lo: "Loop", S: "Salchow", T: "Toe Loop"
+    };
+    const ROTATION_NAMES = ["", "Single", "Double", "Triple", "Quad"];
+    const SPIN_PREFIXES = [
+      ["FCCoSp", "Flying Change Combination Spin"],
+      ["CCoSp", "Change Combination Spin"],
+      ["CoSp", "Combination Spin"],
+      ["FCSSp", "Flying Change Sit Spin"],
+      ["FCLSp", "Flying Change Layback Spin"],
+      ["FCCSp", "Flying Change Camel Spin"],
+      ["FSSp", "Flying Sit Spin"],
+      ["FCSp", "Flying Camel Spin"],
+      ["FLSp", "Flying Layback Spin"],
+      ["CSSp", "Change Sit Spin"],
+      ["CLSp", "Change Layback Spin"],
+      ["CCSp", "Change Camel Spin"],
+      ["SSp", "Sit Spin"],
+      ["LSp", "Layback Spin"],
+      ["CSp", "Camel Spin"],
+      ["USp", "Upright Spin"]
+    ];
+    const STEP_PREFIXES = [
+      ["StSq", "Step Sequence"],
+      ["ChSq", "Choreographic Sequence"],
+      ["ChSt", "Choreographic Step Sequence"],
+      ["ChSp", "Choreographic Spin"],
+      ["SpSq", "Spiral Sequence"],
+      ["PiF",  "Pivot Figure"]
+    ];
+
+    function describeElementToken(token) {
+      const raw = String(token || "").trim();
+      if (!raw) return "";
+      if (/^SEQ$/i.test(raw)) return "Jump Sequence";
+      if (/^REP$/i.test(raw)) return "Repetition";
+      const jump = raw.match(/^(\d)(A|F|Lz|Lo|S|T)\b/);
+      if (jump) {
+        const rotation = ROTATION_NAMES[Number(jump[1])] || `${jump[1]}-rotation`;
+        return `${rotation} ${JUMP_LETTERS[jump[2]] || jump[2]}`;
+      }
+      for (const [prefix, label] of SPIN_PREFIXES) {
+        if (raw.startsWith(prefix)) {
+          const tail = raw.slice(prefix.length);
+          const level = tail.replace(/V$/i, "");
+          const variation = /V$/i.test(tail) ? " (feature variation)" : "";
+          return `${label}${level ? ` lvl ${level}` : ""}${variation}`;
+        }
+      }
+      for (const [prefix, label] of STEP_PREFIXES) {
+        if (raw.startsWith(prefix)) {
+          const tail = raw.slice(prefix.length);
+          return `${label}${tail ? ` lvl ${tail}` : ""}`;
+        }
+      }
+      return raw;
+    }
+
+    function describeElement(code) {
+      const raw = String(code || "").trim();
+      if (!raw) return "";
+      // Strip trailing/embedded ISU markers; they are surfaced as pills.
+      const stripped = raw.replace(/(<<|<|!|e|q|\*|F|x|b)+/g, "");
+      const parts = stripped.split("+").filter((part) => part.length > 0);
+      const described = parts.map(describeElementToken).filter(Boolean);
+      return described.join(" + ");
+    }
+
+    function elementLegendEntries(elements) {
+      const seen = new Map();
+      for (const element of elements || []) {
+        const code = element.base_element_code || element.element_code;
+        if (!code || seen.has(code)) continue;
+        const description = describeElement(code);
+        if (description && description !== code) seen.set(code, description);
+      }
+      return [...seen.entries()];
     }
 
     function numCell(value, mode) {
@@ -385,41 +529,102 @@
       setTabState(mode);
       if (mode === "dashboard") {
         results.innerHTML = "";
+        document.querySelector("#list-controls").hidden = true;
+        document.querySelector("#list-pager").hidden = true;
         loadDashboard();
       } else {
         loadList();
       }
     }
 
-    async function loadList() {
-      results.innerHTML = '<div class="muted">Loading...</div>';
-      const q = encodeURIComponent(search.value.trim());
-      const data = await getJson(`/api/${state.mode}?limit=40${q ? `&q=${q}` : ""}`);
-      state.items = data.items;
-      results.innerHTML = data.items.map((item) => {
-        if (state.mode === "skaters") {
-          return `<button class="item" data-id="${item.skater_key}">
-            <strong>${fmt(item.skater_name)}</strong>
-            <span class="muted">${fmt(item.nation_display)} · ${fmt(item.club_name)} · ${fmt(item.competitions)} competitions</span>
-          </button>`;
-        }
-        if (state.mode === "clubs") {
-          return `<button class="item" data-id="${encodeURIComponent(item.club_name)}">
-            <strong>${fmt(item.club_name)}</strong>
-            <span class="muted">${fmt(item.country_display)} · ${fmt(item.skaters)} skaters · ${fmt(item.events)} events · best ${points(item.best_tss)}</span>
-          </button>`;
-        }
-        if (state.mode === "nationalities") {
-          return `<button class="item" data-id="${encodeURIComponent(item.nation_code)}">
-            <strong>${fmt(item.nation_display)}</strong>
-            <span class="muted">${fmt(item.skaters)} skaters · ${fmt(item.events)} events · best ${points(item.best_tss)}</span>
-          </button>`;
-        }
-        return `<button class="item" data-id="${item.event_key}">
-          <strong>${fmt(item.event_name)}</strong>
-          <span class="muted">${fmt(item.event_start_date)} · ${fmt(item.location)} · ${fmt(item.competition_level)}</span>
+    function listItemHtml(item) {
+      if (state.mode === "skaters") {
+        return `<button class="item" data-id="${item.skater_key}">
+          <strong>${fmt(item.skater_name)}</strong>
+          <span class="muted">${fmt(item.nation_display)} · ${fmt(item.club_name)} · ${fmt(item.competitions)} competitions · best ${points(item.best_tss)}</span>
         </button>`;
-      }).join("") || '<div class="empty">No matches.</div>';
+      }
+      if (state.mode === "clubs") {
+        return `<button class="item" data-id="${encodeURIComponent(item.club_name)}">
+          <strong>${fmt(item.club_name)}</strong>
+          <span class="muted">${fmt(item.country_display)} · ${fmt(item.skaters)} skaters · ${fmt(item.events)} events · best ${points(item.best_tss)}</span>
+        </button>`;
+      }
+      if (state.mode === "nationalities") {
+        return `<button class="item" data-id="${encodeURIComponent(item.nation_code)}">
+          <strong>${fmt(item.nation_display)}</strong>
+          <span class="muted">${fmt(item.skaters)} skaters · ${fmt(item.events)} events · best ${points(item.best_tss)}</span>
+        </button>`;
+      }
+      return `<button class="item" data-id="${item.event_key}">
+        <strong>${fmt(item.event_name)}</strong>
+        <span class="muted">${fmt(item.event_start_date)} · ${fmt(item.location)} · ${fmt(item.competition_level)}</span>
+      </button>`;
+    }
+
+    function sortedListItems() {
+      const sort = state.listSort[state.mode] || LIST_DEFAULT_SORT[state.mode];
+      if (!sort) return state.items;
+      return [...state.items].sort((a, b) => compareValues(a[sort.key], b[sort.key], sort.direction)
+        || compareValues(a.skater_name || a.club_name || a.nation_code || a.event_name,
+                         b.skater_name || b.club_name || b.nation_code || b.event_name,
+                         "asc"));
+    }
+
+    function pagedListItems() {
+      const sorted = sortedListItems();
+      const total = sorted.length;
+      const pages = Math.max(1, Math.ceil(total / state.listPageSize));
+      state.listPage = Math.min(Math.max(1, state.listPage), pages);
+      const start = (state.listPage - 1) * state.listPageSize;
+      const end = Math.min(start + state.listPageSize, total);
+      return { rows: sorted.slice(start, end), total, start, end, pages };
+    }
+
+    function renderListControls() {
+      const controls = document.querySelector("#list-controls");
+      const pager = document.querySelector("#list-pager");
+      if (!LIST_SORT_OPTIONS[state.mode]) {
+        controls.hidden = true;
+        pager.hidden = true;
+        return;
+      }
+      controls.hidden = false;
+      const sort = state.listSort[state.mode] || LIST_DEFAULT_SORT[state.mode];
+      const sortSelect = document.querySelector("#list-sort");
+      sortSelect.innerHTML = LIST_SORT_OPTIONS[state.mode]
+        .map(([key, label]) => `<option value="${key}"${sort.key === key ? " selected" : ""}>${label}</option>`)
+        .join("");
+      document.querySelector("#list-direction").value = sort.direction;
+      document.querySelector("#list-page-size").value = String(state.listPageSize);
+    }
+
+    function renderList() {
+      renderListControls();
+      const pager = document.querySelector("#list-pager");
+      const page = pagedListItems();
+      if (page.total === 0) {
+        results.innerHTML = '<div class="empty">No matches.</div>';
+        pager.hidden = true;
+        return;
+      }
+      results.innerHTML = page.rows.map(listItemHtml).join("");
+      pager.hidden = false;
+      const cappedHint = state.items.length >= LIST_FETCH_LIMIT ? " (capped — refine search)" : "";
+      document.querySelector("#list-count").textContent = `${page.start + 1}-${page.end} of ${page.total}${cappedHint}`;
+      document.querySelector("#list-prev").disabled = state.listPage <= 1;
+      document.querySelector("#list-next").disabled = state.listPage >= page.pages;
+    }
+
+    async function loadList() {
+      renderListControls();
+      results.innerHTML = '<div class="muted">Loading...</div>';
+      document.querySelector("#list-pager").hidden = true;
+      const q = encodeURIComponent(search.value.trim());
+      const data = await getJson(`/api/${state.mode}?limit=${LIST_FETCH_LIMIT}${q ? `&q=${q}` : ""}`);
+      state.items = data.items || [];
+      state.listPage = 1;
+      renderList();
     }
 
     function renderClubList(items) {
@@ -734,24 +939,36 @@
           <span><span class="pill positive">x</span> Bonus credit</span>
           <span><span class="judge-trim">8.0</span> Highest/lowest trimmed (ISU panel rule)</span>
         </div>` : "";
+      const elementLegend = elementLegendEntries(score.elements);
+      const elementLegendBlock = elementLegend.length ? `
+        <div class="legend-key">
+          ${elementLegend.map(([code, desc]) => `<span><strong>${fmt(code)}</strong> · ${fmt(desc)}</span>`).join("")}
+        </div>` : "";
       const elementsPanel = hasElements
         ? `<div class="panel">
             <h3>Elements</h3>
             <table>
               <thead><tr><th>#</th><th>Element</th><th>Markers</th><th>Base</th><th>GOE</th><th>Bonus</th><th>Score</th>${judgeCols}</tr></thead>
-              <tbody>${score.elements.map((e) => `
+              <tbody>${score.elements.map((e) => {
+                const codeTooltip = [describeElement(e.element_code), e.raw_element]
+                  .filter(Boolean)
+                  .join(" — ")
+                  .replace(/"/g, "&quot;");
+                return `
                 <tr>
                   <td>${fmt(e.element_no)}</td>
-                  <td title="${fmt(e.raw_element)}">${fmt(e.element_code)}</td>
+                  <td title="${codeTooltip}">${fmt(e.element_code)}</td>
                   <td>${renderMarkerPills(e.markers)}</td>
                   ${numCell(e.base_value)}
                   ${numCell(e.goe, "goe")}
                   ${numCell(e.bonus, "bonus")}
                   ${numCell(e.panel_score)}
                   ${judgeCells(e, judges)}
-                </tr>`).join("")}</tbody>
+                </tr>`;
+              }).join("")}</tbody>
             </table>
             ${legendKey}
+            ${elementLegendBlock}
           </div>`
         : "";
       const componentsPanel = hasComponents
@@ -804,6 +1021,31 @@
     document.querySelector("#skater-tab").addEventListener("click", () => setMode("skaters"));
     document.querySelector("#event-tab").addEventListener("click", () => setMode("events"));
     document.querySelector("#nationality-tab").addEventListener("click", () => setMode("nationalities"));
+
+    document.querySelector("#list-sort").addEventListener("change", (event) => {
+      const sort = state.listSort[state.mode] || { ...LIST_DEFAULT_SORT[state.mode] };
+      state.listSort[state.mode] = { key: event.target.value, direction: sort.direction };
+      state.listPage = 1;
+      renderList();
+    });
+    document.querySelector("#list-direction").addEventListener("change", (event) => {
+      const sort = state.listSort[state.mode] || { ...LIST_DEFAULT_SORT[state.mode] };
+      state.listSort[state.mode] = { key: sort.key, direction: event.target.value };
+      state.listPage = 1;
+      renderList();
+    });
+    document.querySelector("#list-page-size").addEventListener("change", (event) => {
+      state.listPageSize = Number(event.target.value);
+      state.listPage = 1;
+      renderList();
+    });
+    document.querySelector("#list-prev").addEventListener("click", () => {
+      if (state.listPage > 1) { state.listPage -= 1; renderList(); }
+    });
+    document.querySelector("#list-next").addEventListener("click", () => {
+      state.listPage += 1;
+      renderList();
+    });
     document.querySelector("#refresh").addEventListener("click", () => {
       state.mode === "dashboard" ? loadDashboard() : loadList();
     });
