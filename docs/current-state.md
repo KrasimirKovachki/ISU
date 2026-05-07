@@ -972,3 +972,37 @@ Discovery:
   iso_code_as_club_no_nation rows unchanged).
 - Dashboard latency unchanged at ~30ms.
 - Full test suite passes locally: 53 tests.
+
+2026-05-07 isuresults.com parser-profile fix + local fetch cache:
+
+- Investigation of `season1920/ec2020/` (and 9 sibling runs that
+  imported with status=completed but 0 categories) showed the body
+  sniff in `scripts/import_event.py` was matching `<meta
+  generator="ISUCalcFS X.X.X by Swiss Timing">` and routing to
+  `old_isucalcfs.parse_index`, which returns 0 categories on these
+  pages. The same pages parse cleanly with `fs_manager` (link
+  convention is `CAT###EN.htm`, `SEG###.htm`,
+  `*_JudgesDetailsperSkater.pdf`).
+- Added `db/32_seed_isuresults_archive_profile.sql` — source profile
+  pinning `host=www.isuresults.com / event_path_prefix=results/` to
+  `parser_profile=fs_manager`. This is the per-platform configuration
+  pattern already used for clubdenkovastaviski.com, BSF, etc.
+- `scripts/import_event.py` now trusts a configured profile and skips
+  body sniffing when one matches. Body sniffing remains the fallback
+  for unconfigured hosts.
+- Re-imported the 10 broken runs (run ids 412-421): WJC 2019 (Zagreb,
+  699 skaters), GP France 2019, JGP Croatia/France/Italy/Latvia/
+  Poland/Russia/USA 2019, Europeans 2020 (Graz, 643 skaters / 122
+  final results). Each now has 3-4 categories and 80-215 PDF score
+  summaries.
+- Added `isu_parser/fetch_cache.py` with `cached_fetch(url)` reading/
+  writing `data/source_cache/<aa>/<sha256>.bin`. `import_event` and
+  `export_source_archive` both go through it. Repeat fetches go from
+  ~470ms (network) to <1ms (disk). Set `SKATING_FETCH_NOCACHE=1` to
+  bypass for a fresh download. Cache directory is gitignored.
+- Refreshed all `api.mv_*` materialized views. Post-fix counts:
+  segment_scores 31,706, element_scores 202,342, judge_marks
+  1,289,401, skaters 6,588, nations 92.
+- Dashboard verifies: Europeans 2020 detail now shows
+  Sinitsina/Katsalapov RUS 220.42 leading Ice Dance, matching the
+  actual 2020 podium.
