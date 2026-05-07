@@ -244,7 +244,10 @@
       <h1>Skating Data</h1>
       <div class="muted">Skaters, competitions, score details, and source evidence</div>
     </div>
-    <button class="secondary" id="refresh">Refresh</button>
+    <div class="controls">
+      <button class="secondary" id="back" hidden>← Back</button>
+      <button class="secondary" id="refresh">Refresh</button>
+    </div>
   </header>
   <main>
     <aside>
@@ -613,10 +616,69 @@
         results.innerHTML = "";
         document.querySelector("#list-controls").hidden = true;
         document.querySelector("#list-pager").hidden = true;
-        loadDashboard();
-      } else {
-        loadList();
+        return loadDashboard();
       }
+      return loadList();
+    }
+
+    // Hash routing: #dashboard, #skaters, #clubs, #events, #nationalities,
+    // #skater/<id>, #club/<encoded>, #event/<id>, #score/<id>, #nation/<code>.
+    // navigate(route) pushes browser history; popstate / page-load read the
+    // current hash and dispatch. The "← Back" header button just calls
+    // history.back() — the browser already knows how to walk the stack and
+    // gracefully leaves the site if there's nothing to go back to.
+    const LIST_ROUTES = new Set(["skaters", "clubs", "events", "nationalities"]);
+
+    function parseRoute(hash) {
+      const h = String(hash || "").replace(/^#/, "");
+      if (!h || h === "dashboard") return { type: "dashboard" };
+      const slash = h.indexOf("/");
+      if (slash === -1) return { type: h };
+      return { type: h.slice(0, slash), id: h.slice(slash + 1) };
+    }
+
+    function routeToHash(route) {
+      if (typeof route === "string") return route;
+      return route.type + (route.id ? "/" + route.id : "");
+    }
+
+    function updateBackButton(route) {
+      const r = typeof route === "string" ? parseRoute(route) : route;
+      const btn = document.querySelector("#back");
+      if (!btn) return;
+      btn.hidden = r.type === "dashboard";
+    }
+
+    async function dispatchRoute(route) {
+      const r = typeof route === "string" ? parseRoute(route) : route;
+      updateBackButton(r);
+      switch (r.type) {
+        case "dashboard":
+          setMode("dashboard");
+          return;
+        case "skaters":
+        case "clubs":
+        case "events":
+        case "nationalities":
+          setMode(r.type);
+          return;
+        case "skater":       return showSkater(r.id);
+        case "club":         return showClub(r.id);
+        case "event":        return showEvent(r.id);
+        case "score":        return showScore(r.id);
+        case "nation":       return showNationality(r.id);
+        default:
+          return dispatchRoute({ type: "dashboard" });
+      }
+    }
+
+    function navigate(route) {
+      const hash = routeToHash(route);
+      const target = "#" + hash;
+      if (window.location.hash !== target) {
+        history.pushState({ route: hash }, "", target);
+      }
+      return dispatchRoute(route);
     }
 
     function listItemHtml(item) {
@@ -1259,11 +1321,12 @@
         </div>`;
     }
 
-    document.querySelector("#dashboard-tab").addEventListener("click", () => setMode("dashboard"));
-    document.querySelector("#club-tab").addEventListener("click", () => setMode("clubs"));
-    document.querySelector("#skater-tab").addEventListener("click", () => setMode("skaters"));
-    document.querySelector("#event-tab").addEventListener("click", () => setMode("events"));
-    document.querySelector("#nationality-tab").addEventListener("click", () => setMode("nationalities"));
+    document.querySelector("#dashboard-tab").addEventListener("click", () => navigate("dashboard"));
+    document.querySelector("#club-tab").addEventListener("click", () => navigate("clubs"));
+    document.querySelector("#skater-tab").addEventListener("click", () => navigate("skaters"));
+    document.querySelector("#event-tab").addEventListener("click", () => navigate("events"));
+    document.querySelector("#nationality-tab").addEventListener("click", () => navigate("nationalities"));
+    document.querySelector("#back").addEventListener("click", () => history.back());
 
     document.querySelector("#list-sort").addEventListener("change", (event) => {
       const sort = state.listSort[state.mode] || { ...LIST_DEFAULT_SORT[state.mode] };
@@ -1290,7 +1353,12 @@
       renderList();
     });
     document.querySelector("#refresh").addEventListener("click", () => {
-      state.mode === "dashboard" ? loadDashboard() : loadList();
+      // Re-fire whatever view we're currently on (dashboard, list, or
+      // a detail page reached via a hash route).
+      const current = parseRoute(window.location.hash);
+      Promise.resolve(dispatchRoute(current)).catch((error) => {
+        detail.innerHTML = `<div class="empty">API error: ${error.message}</div>`;
+      });
     });
     document.querySelector("#search-form").addEventListener("submit", (event) => {
       event.preventDefault();
@@ -1299,10 +1367,10 @@
     results.addEventListener("click", (event) => {
       const button = event.target.closest("[data-id]");
       if (!button) return;
-      if (state.mode === "skaters") showSkater(button.dataset.id);
-      if (state.mode === "clubs") showClub(button.dataset.id);
-      if (state.mode === "events") showEvent(button.dataset.id);
-      if (state.mode === "nationalities") showNationality(button.dataset.id);
+      if (state.mode === "skaters") navigate("skater/" + button.dataset.id);
+      if (state.mode === "clubs") navigate("club/" + button.dataset.id);
+      if (state.mode === "events") navigate("event/" + button.dataset.id);
+      if (state.mode === "nationalities") navigate("nation/" + button.dataset.id);
     });
     detail.addEventListener("click", (event) => {
       const link = event.target.closest("[data-score]");
@@ -1312,21 +1380,19 @@
       const scope = event.target.closest("[data-scope]");
       if (link) {
         event.preventDefault();
-        showScore(link.dataset.score);
+        navigate("score/" + link.dataset.score);
       }
       if (club) {
         event.preventDefault();
-        showClub(club.dataset.club);
+        navigate("club/" + club.dataset.club);
       }
       if (skater) {
         event.preventDefault();
-        showSkater(skater.dataset.skater);
+        navigate("skater/" + skater.dataset.skater);
       }
       if (nation) {
         event.preventDefault();
-        setTabState("nationalities");
-        state.mode = "nationalities";
-        showNationality(nation.dataset.nation);
+        navigate("nation/" + nation.dataset.nation);
       }
       if (scope) {
         event.preventDefault();
@@ -1399,7 +1465,15 @@
         refreshClubSkaterRows();
       }
     });
-    loadDashboard().catch((error) => {
+    window.addEventListener("popstate", (event) => {
+      const stored = event.state && event.state.route;
+      const route = stored ? parseRoute(stored) : parseRoute(window.location.hash);
+      Promise.resolve(dispatchRoute(route)).catch((error) => {
+        detail.innerHTML = `<div class="empty">API error: ${error.message}</div>`;
+      });
+    });
+
+    Promise.resolve(dispatchRoute(parseRoute(window.location.hash))).catch((error) => {
       detail.innerHTML = `<div class="empty">API error: ${error.message}</div>`;
     });
   </script>
