@@ -21,6 +21,7 @@ from psycopg.types.json import Jsonb
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from isu_parser import fs_manager, old_isucalcfs
+from isu_parser.fetch_cache import cached_fetch
 from isu_parser.local_config import DEFAULT_LOCAL_CONFIG, database_dsn
 from isu_parser.pdf_scores import parse_judges_scores_pdf, validate_judges_scores
 from isu_parser.source_check import preflight_result_url
@@ -30,15 +31,14 @@ USER_AGENT = "isu-skating-data-importer/0.1"
 
 
 def fetch_bytes(url: str) -> bytes:
-    request = Request(url, headers={"User-Agent": USER_AGENT})
-    try:
-        with urlopen(request, timeout=60) as response:
-            return response.read()
-    except URLError as exc:
-        if "CERTIFICATE_VERIFY_FAILED" not in str(exc.reason):
-            raise
-        with urlopen(request, timeout=60, context=ssl._create_unverified_context()) as response:  # noqa: S323
-            return response.read()
+    """Fetch a URL through the local file cache.
+
+    Re-imports of the same event would otherwise re-pull every category /
+    segment / PDF over the network. The cache lives under
+    ``data/source_cache/`` (or ``$SKATING_FETCH_CACHE_DIR``); set
+    ``SKATING_FETCH_NOCACHE=1`` to bypass for a fresh download.
+    """
+    return cached_fetch(url, timeout=60)
 
 
 def decode_html(data: bytes) -> str:
@@ -777,13 +777,26 @@ def import_event(conn: psycopg.Connection, url: str) -> int:
     if source_check.content_kind == "pdf":
         raise ValueError(f"URL preflight passed but direct PDF root imports need a dedicated importer: {url}")
 
-    checked_lower = decode_html(source_check.body).lower()
-    if "isucalcfs" in checked_lower:
-        parser_mod = old_isucalcfs
-        parser_profile = "old_isucalcfs"
-    elif "fs manager" in checked_lower or "judgesdetailsperskater" in checked_lower:
-        parser_mod = fs_manager
-        parser_profile = "fs_manager"
+    # If a source profile is configured for this URL, trust its parser_profile.
+    # Body-sniffing is only a fallback for unconfigured hosts: it can route
+    # incorrectly when a host's pages mention both keywords (e.g. isuresults.com
+    # pages declare ISUCalcFS in <meta generator> but use FS Manager structure).
+    if profile and profile.get("parser_profile"):
+        configured = profile["parser_profile"]
+        if configured == "old_isucalcfs":
+            parser_mod = old_isucalcfs
+            parser_profile = "old_isucalcfs"
+        elif configured == "fs_manager":
+            parser_mod = fs_manager
+            parser_profile = "fs_manager"
+    else:
+        checked_lower = decode_html(source_check.body).lower()
+        if "isucalcfs" in checked_lower:
+            parser_mod = old_isucalcfs
+            parser_profile = "old_isucalcfs"
+        elif "fs manager" in checked_lower or "judgesdetailsperskater" in checked_lower:
+            parser_mod = fs_manager
+            parser_profile = "fs_manager"
 
     stats: dict[str, int] = {
         "categories": 0,

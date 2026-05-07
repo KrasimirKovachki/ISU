@@ -7,4 +7,5 @@ config/local.env
 .DS_Store
 *.egg-info/
 data/source_archive/
+data/source_cache/
 data/video_cache/

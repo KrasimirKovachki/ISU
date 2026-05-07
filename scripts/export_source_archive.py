@@ -47,15 +47,11 @@ def ensure_parent_dir(path: Path, archive_root: Path) -> None:
 
 
 def fetch_url_bytes(url: str, timeout: int = 60) -> bytes:
-    request = Request(url, headers={"User-Agent": USER_AGENT})
-    try:
-        with urlopen(request, timeout=timeout) as response:
-            return response.read()
-    except URLError as exc:
-        if "CERTIFICATE_VERIFY_FAILED" not in str(exc.reason):
-            raise
-        with urlopen(request, timeout=timeout, context=ssl._create_unverified_context()) as response:  # noqa: S323
-            return response.read()
+    """Pull through the local fetch cache so re-running the export
+    doesn't re-download every PDF over the network."""
+    from isu_parser.fetch_cache import cached_fetch  # local import keeps test imports cheap
+
+    return cached_fetch(url, timeout=timeout)
 
 
 def is_pdf_document(url: str, document_type: str | None) -> bool:
