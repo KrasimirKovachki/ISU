@@ -33,12 +33,30 @@ def legend(conn: Any = Depends(connection_dependency)) -> dict[str, Any]:
 
 
 @app.get("/api/dashboard")
-def dashboard(conn: Any = Depends(connection_dependency)) -> dict[str, Any]:
+def dashboard(
+    from_year: int | None = None,
+    to_year: int | None = None,
+    conn: Any = Depends(connection_dependency),
+) -> dict[str, Any]:
+    if from_year is None and to_year is None:
+        # All-time view: read straight from the precomputed MVs (sub-millisecond).
+        return {
+            "period": None,
+            "overview": repository.dashboard_overview(conn),
+            "competition_mix": repository.competition_mix(conn),
+            "clubs": repository.list_clubs(conn, limit=100),
+            "nationalities": repository.list_nationalities(conn, limit=100),
+        }
+    fy = from_year if from_year is not None else 1900
+    ty = to_year if to_year is not None else 2100
+    if fy > ty:
+        fy, ty = ty, fy
     return {
-        "overview": repository.dashboard_overview(conn),
-        "competition_mix": repository.competition_mix(conn),
-        "clubs": repository.list_clubs(conn, limit=100),
-        "nationalities": repository.list_nationalities(conn, limit=100),
+        "period": {"from_year": fy, "to_year": ty},
+        "overview": repository.dashboard_overview_period(conn, fy, ty),
+        "competition_mix": repository.competition_mix_period(conn, fy, ty),
+        "clubs": repository.list_clubs_period(conn, fy, ty, limit=100),
+        "nationalities": repository.list_nationalities_period(conn, fy, ty, limit=100),
     }
 
 

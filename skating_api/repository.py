@@ -153,6 +153,166 @@ ORDER BY events DESC, segment_scores DESC, competition_stream
     )
 
 
+# ---------- Year-range filtered dashboard slices --------------------------
+#
+# When the user picks a from/to year, we recompute the same shape as the
+# all-time dashboard MVs but constrained to events in that window. Slower
+# than the MVs (no precomputation) but still <300ms because the underlying
+# tables are well-indexed on date_key / event_start_date.
+
+def _date_bounds(from_year: int, to_year: int) -> tuple[str, str]:
+    return f"{from_year:04d}-01-01", f"{to_year:04d}-12-31"
+
+
+def dashboard_overview_period(conn: Any, from_year: int, to_year: int) -> dict[str, Any]:
+    start, end = _date_bounds(from_year, to_year)
+    return fetch_one(
+        conn,
+        """
+WITH e AS (
+  SELECT *
+  FROM mart.dim_event
+  WHERE event_start_date BETWEEN %(start)s AND %(end)s
+),
+s AS (
+  SELECT *
+  FROM api.mv_segment_score
+  WHERE date_key BETWEEN %(start)s AND %(end)s
+)
+SELECT
+  (SELECT count(*) FROM e) AS events,
+  (SELECT count(DISTINCT api.skater_identity_key(skater_name, nation_code, club_name))
+     FROM s WHERE skater_name IS NOT NULL) AS skaters,
+  (SELECT count(*) FROM core.clubs) AS registered_clubs,
+  (SELECT count(DISTINCT club_name) FROM s WHERE club_name IS NOT NULL) AS scoring_clubs,
+  (SELECT count(*) FROM s) AS segment_scores,
+  (SELECT count(*) FROM api.mv_element_score WHERE date_key BETWEEN %(start)s AND %(end)s) AS element_scores,
+  0::bigint AS development_skaters,
+  (SELECT min(event_start_date) FROM e) AS first_event_date,
+  (SELECT max(event_start_date) FROM e) AS latest_event_date,
+  (SELECT count(*) FROM e WHERE competition_stream IN ('ISU','ISUCS')) AS international_events,
+  (SELECT count(*) FROM e WHERE competition_stream IN ('FRP','BSF','DP') OR competition_level = 'federated') AS federation_events,
+  (SELECT count(*) FROM e WHERE competition_stream IN ('club','club_amateur','NonISU')) AS club_or_open_events
+""",
+        {"start": start, "end": end},
+    ) or {}
+
+
+def competition_mix_period(conn: Any, from_year: int, to_year: int) -> list[dict[str, Any]]:
+    start, end = _date_bounds(from_year, to_year)
+    return fetch_all(
+        conn,
+        """
+WITH events_in_range AS (
+  SELECT *
+  FROM mart.dim_event
+  WHERE event_start_date BETWEEN %(start)s AND %(end)s
+),
+scores_in_range AS (
+  SELECT * FROM api.mv_segment_score WHERE date_key BETWEEN %(start)s AND %(end)s
+)
+SELECT
+  CASE
+    WHEN e.competition_stream IN ('ISU','ISUCS')                                       THEN 'international'
+    WHEN e.competition_stream IN ('FRP','BSF','DP') OR e.competition_level = 'federated' THEN 'federation'
+    WHEN e.competition_stream IN ('club','club_amateur','NonISU')                       THEN 'club_or_open'
+    ELSE 'unknown'
+  END AS scope_hint,
+  COALESCE(e.competition_stream, 'unknown') AS competition_stream,
+  COALESCE(e.competition_level, 'unknown')  AS competition_level,
+  COALESCE(e.event_type, 'unknown')          AS event_type,
+  CASE WHEN e.competition_stream IN ('club','club_amateur','NonISU') THEN 'club' ELSE 'nation' END AS representation_primary,
+  count(DISTINCT e.event_key)                                          AS events,
+  count(DISTINCT s.skater_key) FILTER (WHERE s.skater_key IS NOT NULL) AS skaters_with_scores,
+  count(DISTINCT s.club_name)  FILTER (WHERE s.club_name IS NOT NULL)  AS clubs_with_appearances,
+  count(DISTINCT api.skater_identity_key(s.skater_name, s.nation_code, s.club_name))
+    FILTER (WHERE s.skater_name IS NOT NULL)                            AS skaters_with_appearances,
+  count(s.segment_score_key)                                            AS segment_scores,
+  min(e.event_start_date)                                               AS first_event_date,
+  max(e.event_start_date)                                               AS latest_event_date
+FROM events_in_range e
+LEFT JOIN scores_in_range s ON s.event_key = e.event_key
+GROUP BY 1, 2, 3, 4, 5
+ORDER BY events DESC, segment_scores DESC, competition_stream
+""",
+        {"start": start, "end": end},
+    )
+
+
+def list_clubs_period(conn: Any, from_year: int, to_year: int, limit: int | None = None) -> list[dict[str, Any]]:
+    start, end = _date_bounds(from_year, to_year)
+    return fetch_all(
+        conn,
+        """
+WITH s AS (
+  SELECT *
+  FROM api.mv_segment_score
+  WHERE date_key BETWEEN %(start)s AND %(end)s
+)
+SELECT
+  s.club_name,
+  max(cd.country_code)                  AS country_code,
+  count(DISTINCT s.skater_key)          AS skaters,
+  count(DISTINCT s.event_key)           AS events,
+  count(*)                              AS segment_scores,
+  0::bigint AS international_events,
+  0::bigint AS federation_events,
+  0::bigint AS club_or_open_events,
+  0::bigint AS national_competitors,
+  0::bigint AS recreational_only_skaters,
+  0::bigint AS mixed_competitors,
+  0::bigint AS development_skaters,
+  0::bigint AS development_only_skaters,
+  0::bigint AS converted_development_skaters,
+  max(s.tss) AS best_tss,
+  max(s.tes) AS best_tes,
+  max(s.pcs) AS best_pcs,
+  min(s.date_key) AS first_seen_date,
+  max(s.date_key) AS latest_seen_date
+FROM s
+LEFT JOIN api.mv_club_dashboard cd ON cd.club_name = s.club_name
+WHERE s.club_name IS NOT NULL
+GROUP BY s.club_name
+ORDER BY segment_scores DESC, skaters DESC, latest_seen_date DESC NULLS LAST, s.club_name
+LIMIT %(limit)s
+""",
+        {"start": start, "end": end, "limit": clamp_limit(limit)},
+    )
+
+
+def list_nationalities_period(conn: Any, from_year: int, to_year: int, limit: int | None = None) -> list[dict[str, Any]]:
+    start, end = _date_bounds(from_year, to_year)
+    return fetch_all(
+        conn,
+        """
+WITH s AS (
+  SELECT *
+  FROM api.mv_segment_score
+  WHERE date_key BETWEEN %(start)s AND %(end)s
+    AND nation_code IS NOT NULL
+)
+SELECT
+  s.nation_code,
+  count(DISTINCT api.skater_identity_key(s.skater_name, s.nation_code, s.club_name)) AS skaters,
+  count(DISTINCT s.event_key) AS events,
+  count(*)                    AS segment_scores,
+  0::bigint AS development_skaters,
+  0::bigint AS development_only_skaters,
+  0::bigint AS converted_development_skaters,
+  max(s.tss) AS best_tss,
+  max(s.tes) AS best_tes,
+  max(s.pcs) AS best_pcs,
+  min(s.date_key) AS first_seen_date,
+  max(s.date_key) AS latest_seen_date
+FROM s
+GROUP BY s.nation_code
+ORDER BY segment_scores DESC, skaters DESC, latest_seen_date DESC NULLS LAST, s.nation_code
+LIMIT %(limit)s
+""",
+        {"start": start, "end": end, "limit": clamp_limit(limit)},
+    )
+
+
 def list_nationalities(
     conn: Any,
     query: str | None = None,

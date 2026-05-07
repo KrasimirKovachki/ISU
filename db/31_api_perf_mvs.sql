@@ -98,6 +98,8 @@ CREATE INDEX idx_mv_segment_score_skater
   ON api.mv_segment_score(skater_key);
 CREATE INDEX idx_mv_segment_score_identity
   ON api.mv_segment_score(skater_name, nation_code, club_name);
+CREATE INDEX idx_mv_segment_score_date
+  ON api.mv_segment_score(date_key);
 
 
 DROP MATERIALIZED VIEW IF EXISTS api.mv_element_score CASCADE;
@@ -110,6 +112,8 @@ CREATE INDEX idx_mv_element_score_skater
   ON api.mv_element_score(skater_key);
 CREATE INDEX idx_mv_element_score_identity
   ON api.mv_element_score(skater_name, nation_code, club_name);
+CREATE INDEX idx_mv_element_score_date
+  ON api.mv_element_score(date_key);
 
 
 DROP MATERIALIZED VIEW IF EXISTS api.mv_element_judge_mark CASCADE;

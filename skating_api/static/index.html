@@ -348,7 +348,9 @@
       currentNation: null,
       nationSkaterSort: { key: "best_tss", direction: "desc" },
       nationSkaterPage: 1,
-      nationSkaterPageSize: 50
+      nationSkaterPageSize: 50,
+      dashboardPeriod: { from: null, to: null },
+      dashboardYearBounds: { min: 2013, max: 2026 }
     };
 
     const NATION_SKATER_COLUMNS = [
@@ -649,11 +651,28 @@
       btn.hidden = r.type === "dashboard";
     }
 
+    function parsePeriodId(id) {
+      // "2020-2024" -> {from: 2020, to: 2024}; "2025"/"2025-" -> {from:2025,to:null}; etc.
+      if (!id) return { from: null, to: null };
+      const parts = String(id).split("-");
+      const from = parts[0] && /^\d{4}$/.test(parts[0]) ? Number(parts[0]) : null;
+      const to = parts[1] && /^\d{4}$/.test(parts[1]) ? Number(parts[1]) : (parts.length === 1 ? from : null);
+      return { from, to };
+    }
+
+    function periodHashId(period) {
+      const { from, to } = period || {};
+      if (!from && !to) return "";
+      if (from && to && from === to) return String(from);
+      return `${from || ""}-${to || ""}`;
+    }
+
     async function dispatchRoute(route) {
       const r = typeof route === "string" ? parseRoute(route) : route;
       updateBackButton(r);
       switch (r.type) {
         case "dashboard":
+          state.dashboardPeriod = parsePeriodId(r.id);
           setMode("dashboard");
           return;
         case "skaters":
@@ -916,17 +935,62 @@
       return ["competition_mix", "clubs", "nationalities"].map(dashboardPanel).join("");
     }
 
+    function dashboardPeriodQuery() {
+      const p = state.dashboardPeriod;
+      if (!p || (!p.from && !p.to)) return "";
+      const params = [];
+      if (p.from) params.push(`from_year=${p.from}`);
+      if (p.to) params.push(`to_year=${p.to}`);
+      return "?" + params.join("&");
+    }
+
+    function dashboardPeriodLabel() {
+      const p = state.dashboardPeriod;
+      if (!p || (!p.from && !p.to)) return "All years";
+      if (p.from && p.to && p.from === p.to) return `Year ${p.from}`;
+      return `${p.from || "—"} to ${p.to || "—"}`;
+    }
+
+    function yearOptionsHtml(min, max, selected) {
+      const options = [`<option value=""${selected ? "" : " selected"}>All</option>`];
+      for (let y = max; y >= min; y--) {
+        options.push(`<option value="${y}"${String(selected) === String(y) ? " selected" : ""}>${y}</option>`);
+      }
+      return options.join("");
+    }
+
     async function loadDashboard() {
       detail.innerHTML = '<div class="empty">Loading dashboard...</div>';
-      const data = await getJson("/api/dashboard");
+      const data = await getJson("/api/dashboard" + dashboardPeriodQuery());
       state.dashboardData = data;
       state.dashboardPage = { competition_mix: 1, clubs: 1, nationalities: 1 };
       const o = data.overview;
+      // Discover the available year range from the all-time first/latest dates
+      // exposed in the overview. Fallback to a sensible default if missing.
+      if (o.first_event_date) {
+        state.dashboardYearBounds.min = Number(String(o.first_event_date).slice(0, 4));
+      }
+      if (o.latest_event_date) {
+        state.dashboardYearBounds.max = Number(String(o.latest_event_date).slice(0, 4));
+      }
+      const { min: yMin, max: yMax } = state.dashboardYearBounds;
+      const p = state.dashboardPeriod || {};
+      const periodLabel = dashboardPeriodLabel();
+      const isFiltered = !!(p.from || p.to);
       detail.innerHTML = `
         <div class="stack">
-          <div>
-            <h2>Dashboard</h2>
-            <div class="muted">${fmt(o.first_event_date)} to ${fmt(o.latest_event_date)}</div>
+          <div class="toolbar">
+            <div>
+              <h2>Dashboard</h2>
+              <div class="muted">${periodLabel} · ${fmt(o.first_event_date)} to ${fmt(o.latest_event_date)}</div>
+            </div>
+            <div class="controls">
+              <label for="dashboard-from-year">From</label>
+              <select id="dashboard-from-year">${yearOptionsHtml(yMin, yMax, p.from || "")}</select>
+              <label for="dashboard-to-year">to</label>
+              <select id="dashboard-to-year">${yearOptionsHtml(yMin, yMax, p.to || "")}</select>
+              ${isFiltered ? '<button class="secondary" id="dashboard-clear-period">Clear</button>' : ''}
+            </div>
           </div>
           <div class="grid">
             <div class="metric"><div class="label">Events</div><div class="value">${fmt(o.events)}</div></div>
@@ -1463,6 +1527,22 @@
         state.clubSkaterPageSize = Number(event.target.value);
         state.clubSkaterPage = 1;
         refreshClubSkaterRows();
+      }
+      if (event.target.id === "dashboard-from-year" || event.target.id === "dashboard-to-year") {
+        const fromVal = document.querySelector("#dashboard-from-year").value;
+        const toVal = document.querySelector("#dashboard-to-year").value;
+        const period = {
+          from: fromVal ? Number(fromVal) : null,
+          to: toVal ? Number(toVal) : null
+        };
+        const hashId = periodHashId(period);
+        navigate(hashId ? "dashboard/" + hashId : "dashboard");
+      }
+    });
+    detail.addEventListener("click", (event) => {
+      if (event.target.id === "dashboard-clear-period") {
+        event.preventDefault();
+        navigate("dashboard");
       }
     });
     window.addEventListener("popstate", (event) => {
