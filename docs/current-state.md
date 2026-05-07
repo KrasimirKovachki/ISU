@@ -928,3 +928,47 @@ Discovery:
 - Active Nationalities table on the dashboard is now clickable into the
   nationality detail view.
 - Full test suite passes locally: 53 tests.
+
+2026-05-07 ISU archive sweep — isuresults.com:
+
+- Added `scripts/discover_isu_results_archive.py`. Probes the
+  `https://www.isuresults.com/results/season{YY}{YY}/{eventcode}{YYYY}/`
+  URL convention against a curated list of ISU event codes (Worlds,
+  Junior Worlds, European Champs, Four Continents, Grand Prix Final,
+  Junior GP Final, World Team Trophy, FISU Universiade, senior GP
+  venues, Challenger Series venues, JGP venues across 30+ countries).
+- For each season we probe both `<code><start_year>` and
+  `<code><end_year>` to cover both autumn (e.g. JGP Poland in Sept) and
+  late-winter/spring (e.g. Worlds in March) timing patterns.
+- Probed 1,232 candidate URLs across seasons 2018/19 → 2025/26. 70
+  passed both HEAD and the existing `detect_parser` source-check
+  (all FS Manager). Registered into `ingest.source_url_registry`.
+- Bulk import via `scripts/import_ready_registry.py --family ""`:
+  69 events imported successfully, 1 skipped
+  (`season2425/wtt2025` — World Team Trophy uses the FSKXTEAM team
+  format which the current parser does not handle; tagged
+  `analyzed/warning` for a future team-format profile).
+- Per-season completed runs:
+  `2018/19=1, 2019/20=10, 2020/21=1, 2021/22=11, 2022/23=10,
+   2023/24=11, 2024/25=13, 2025/26=12`.
+- Refreshed all `api.mv_*` materialized views (skater_search,
+  dashboard_overview, competition_mix, club_skater_status,
+  club_dashboard, segment_score, element_score, element_judge_mark,
+  component_score, competition_result, nationality_dashboard) +
+  `ANALYZE`. Total refresh time: ~3 min.
+- Data growth:
+  - segment scores: 21,179 → 30,069 (+42%)
+  - element scores: 114,533 → 188,828 (+65%)
+  - element judge marks: 506,276 → 1,167,775 (+131%)
+  - skaters: 5,410 → 6,367 (+18%)
+  - nations represented: 87 → 91
+- Top nations now reflect international elite:
+  USA best TSS 238.24 (Ilia Malinin), FRA 206.90, ITA 194.72,
+  EST 173.93. BUL still leads in volume (1020 skaters / 9087 segment
+  scores) because of dense national/club data.
+- Validation: `db/10_validate_skater_name_quality.sql` reports 0
+  rows; `db/24_validate_mart_and_discovery.sql` reports 0 likely
+  club suffix names and 0 non-ISO nation codes (2 pre-existing
+  iso_code_as_club_no_nation rows unchanged).
+- Dashboard latency unchanged at ~30ms.
+- Full test suite passes locally: 53 tests.
