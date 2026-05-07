@@ -277,6 +277,13 @@
           <option value="250">250</option>
         </select>
       </div>
+      <div class="controls" id="list-period" hidden>
+        <label for="list-from-year">From</label>
+        <select id="list-from-year"></select>
+        <label for="list-to-year">to</label>
+        <select id="list-to-year"></select>
+        <button class="secondary" id="list-clear-period" hidden>Clear</button>
+      </div>
       <div class="list" id="results"></div>
       <div class="pager" id="list-pager" hidden>
         <span class="muted" id="list-count"></span>
@@ -350,7 +357,8 @@
       nationSkaterPage: 1,
       nationSkaterPageSize: 50,
       dashboardPeriod: { from: null, to: null },
-      dashboardYearBounds: { min: 2013, max: 2026 }
+      dashboardYearBounds: { min: 2013, max: 2026 },
+      eventsPeriod: { from: null, to: null }
     };
 
     const NATION_SKATER_COLUMNS = [
@@ -675,9 +683,12 @@
           state.dashboardPeriod = parsePeriodId(r.id);
           setMode("dashboard");
           return;
+        case "events":
+          state.eventsPeriod = parsePeriodId(r.id);
+          setMode("events");
+          return;
         case "skaters":
         case "clubs":
-        case "events":
         case "nationalities":
           setMode(r.type);
           return;
@@ -747,9 +758,11 @@
     function renderListControls() {
       const controls = document.querySelector("#list-controls");
       const pager = document.querySelector("#list-pager");
+      const period = document.querySelector("#list-period");
       if (!LIST_SORT_OPTIONS[state.mode]) {
         controls.hidden = true;
         pager.hidden = true;
+        period.hidden = true;
         return;
       }
       controls.hidden = false;
@@ -760,6 +773,18 @@
         .join("");
       document.querySelector("#list-direction").value = sort.direction;
       document.querySelector("#list-page-size").value = String(state.listPageSize);
+
+      // Year selector is only meaningful for the Events list right now.
+      if (state.mode === "events") {
+        period.hidden = false;
+        const { min: yMin, max: yMax } = state.dashboardYearBounds;
+        const ep = state.eventsPeriod || { from: null, to: null };
+        document.querySelector("#list-from-year").innerHTML = yearOptionsHtml(yMin, yMax, ep.from || "");
+        document.querySelector("#list-to-year").innerHTML = yearOptionsHtml(yMin, yMax, ep.to || "");
+        document.querySelector("#list-clear-period").hidden = !(ep.from || ep.to);
+      } else {
+        period.hidden = true;
+      }
     }
 
     function renderList() {
@@ -779,12 +804,23 @@
       document.querySelector("#list-next").disabled = state.listPage >= page.pages;
     }
 
+    function listExtraQuery() {
+      if (state.mode === "events") {
+        const ep = state.eventsPeriod || {};
+        const parts = [];
+        if (ep.from) parts.push(`from_year=${ep.from}`);
+        if (ep.to) parts.push(`to_year=${ep.to}`);
+        return parts.length ? "&" + parts.join("&") : "";
+      }
+      return "";
+    }
+
     async function loadList() {
       renderListControls();
       results.innerHTML = '<div class="muted">Loading...</div>';
       document.querySelector("#list-pager").hidden = true;
       const q = encodeURIComponent(search.value.trim());
-      const data = await getJson(`/api/${state.mode}?limit=${LIST_FETCH_LIMIT}${q ? `&q=${q}` : ""}`);
+      const data = await getJson(`/api/${state.mode}?limit=${LIST_FETCH_LIMIT}${q ? `&q=${q}` : ""}${listExtraQuery()}`);
       state.items = data.items || [];
       state.listPage = 1;
       renderList();
@@ -1538,12 +1574,26 @@
         const hashId = periodHashId(period);
         navigate(hashId ? "dashboard/" + hashId : "dashboard");
       }
+      if (event.target.id === "list-from-year" || event.target.id === "list-to-year") {
+        const fromVal = document.querySelector("#list-from-year").value;
+        const toVal = document.querySelector("#list-to-year").value;
+        const period = {
+          from: fromVal ? Number(fromVal) : null,
+          to: toVal ? Number(toVal) : null
+        };
+        const hashId = periodHashId(period);
+        navigate(hashId ? `${state.mode}/${hashId}` : state.mode);
+      }
     });
     detail.addEventListener("click", (event) => {
       if (event.target.id === "dashboard-clear-period") {
         event.preventDefault();
         navigate("dashboard");
       }
+    });
+    document.querySelector("#list-clear-period").addEventListener("click", (event) => {
+      event.preventDefault();
+      navigate(state.mode);
     });
     window.addEventListener("popstate", (event) => {
       const stored = event.state && event.state.route;

@@ -143,9 +143,11 @@ def skater_elements(
 def list_events(
     q: str | None = None,
     limit: int | None = None,
+    from_year: int | None = None,
+    to_year: int | None = None,
     conn: Any = Depends(connection_dependency),
 ) -> dict[str, Any]:
-    return {"items": repository.list_events(conn, q, limit)}
+    return {"items": repository.list_events(conn, q, limit, from_year, to_year)}
 
 
 @app.get("/api/events/{event_key}")

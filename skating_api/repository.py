@@ -631,16 +631,27 @@ LIMIT %(limit)s
     )
 
 
-def list_events(conn: Any, query: str | None, limit: int | None = None) -> list[dict[str, Any]]:
-    where = ""
+def list_events(
+    conn: Any,
+    query: str | None,
+    limit: int | None = None,
+    from_year: int | None = None,
+    to_year: int | None = None,
+) -> list[dict[str, Any]]:
+    clauses: list[str] = []
     params: dict[str, Any] = {"limit": clamp_limit(limit)}
     if query:
-        where = """
-WHERE event_name ILIKE %(pattern)s
-   OR location ILIKE %(pattern)s
-   OR root_url ILIKE %(pattern)s
-"""
+        clauses.append(
+            "(event_name ILIKE %(pattern)s OR location ILIKE %(pattern)s OR root_url ILIKE %(pattern)s)"
+        )
         params["pattern"] = f"%{query.strip()}%"
+    if from_year is not None:
+        clauses.append("event_start_date >= %(start_date)s")
+        params["start_date"] = f"{int(from_year):04d}-01-01"
+    if to_year is not None:
+        clauses.append("event_start_date <= %(end_date)s")
+        params["end_date"] = f"{int(to_year):04d}-12-31"
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
 
     return fetch_all(
         conn,
