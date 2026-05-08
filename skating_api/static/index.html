@@ -282,6 +282,7 @@
         <select id="list-from-year"></select>
         <label for="list-to-year">to</label>
         <select id="list-to-year"></select>
+        <button id="list-apply-period">Go</button>
         <button class="secondary" id="list-clear-period" hidden>Clear</button>
       </div>
       <div class="list" id="results"></div>
@@ -1025,6 +1026,7 @@
               <select id="dashboard-from-year">${yearOptionsHtml(yMin, yMax, p.from || "")}</select>
               <label for="dashboard-to-year">to</label>
               <select id="dashboard-to-year">${yearOptionsHtml(yMin, yMax, p.to || "")}</select>
+              <button id="dashboard-apply-period">Go</button>
               ${isFiltered ? '<button class="secondary" id="dashboard-clear-period">Clear</button>' : ''}
             </div>
           </div>
@@ -1564,32 +1566,37 @@
         state.clubSkaterPage = 1;
         refreshClubSkaterRows();
       }
-      if (event.target.id === "dashboard-from-year" || event.target.id === "dashboard-to-year") {
+    });
+    // Year-range filters do NOT auto-fire on dropdown change. Users may
+    // want to set From and To before applying; one navigation per intent
+    // beats one navigation per dropdown.
+    detail.addEventListener("click", (event) => {
+      if (event.target.id === "dashboard-apply-period") {
+        event.preventDefault();
         const fromVal = document.querySelector("#dashboard-from-year").value;
         const toVal = document.querySelector("#dashboard-to-year").value;
         const period = {
           from: fromVal ? Number(fromVal) : null,
-          to: toVal ? Number(toVal) : null
+          to: toVal ? Number(toVal) : null,
         };
         const hashId = periodHashId(period);
         navigate(hashId ? "dashboard/" + hashId : "dashboard");
       }
-      if (event.target.id === "list-from-year" || event.target.id === "list-to-year") {
-        const fromVal = document.querySelector("#list-from-year").value;
-        const toVal = document.querySelector("#list-to-year").value;
-        const period = {
-          from: fromVal ? Number(fromVal) : null,
-          to: toVal ? Number(toVal) : null
-        };
-        const hashId = periodHashId(period);
-        navigate(hashId ? `${state.mode}/${hashId}` : state.mode);
-      }
-    });
-    detail.addEventListener("click", (event) => {
       if (event.target.id === "dashboard-clear-period") {
         event.preventDefault();
         navigate("dashboard");
       }
+    });
+    document.querySelector("#list-apply-period").addEventListener("click", (event) => {
+      event.preventDefault();
+      const fromVal = document.querySelector("#list-from-year").value;
+      const toVal = document.querySelector("#list-to-year").value;
+      const period = {
+        from: fromVal ? Number(fromVal) : null,
+        to: toVal ? Number(toVal) : null,
+      };
+      const hashId = periodHashId(period);
+      navigate(hashId ? `${state.mode}/${hashId}` : state.mode);
     });
     document.querySelector("#list-clear-period").addEventListener("click", (event) => {
       event.preventDefault();
