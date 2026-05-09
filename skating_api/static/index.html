@@ -338,6 +338,7 @@
       mode: "dashboard",
       items: [],
       currentClub: null,
+      clubsScope: null,
       clubSkaterSort: { key: "skater_name", direction: "asc" },
       clubSkaterPage: 1,
       clubSkaterPageSize: 50,
@@ -682,6 +683,7 @@
       switch (r.type) {
         case "dashboard":
           state.dashboardPeriod = parsePeriodId(r.id);
+          state.clubsScope = null;
           setMode("dashboard");
           return;
         case "events":
@@ -689,8 +691,15 @@
           setMode("events");
           return;
         case "skaters":
+          state.clubsScope = null;
+          setMode(r.type);
+          return;
         case "clubs":
+          state.clubsScope = r.id || null;
+          setMode(r.type);
+          return;
         case "nationalities":
+          state.clubsScope = null;
           setMode(r.type);
           return;
         case "skater":       return showSkater(r.id);
@@ -812,6 +821,9 @@
         if (ep.from) parts.push(`from_year=${ep.from}`);
         if (ep.to) parts.push(`to_year=${ep.to}`);
         return parts.length ? "&" + parts.join("&") : "";
+      }
+      if (state.mode === "clubs" && state.clubsScope) {
+        return `&scope=${encodeURIComponent(state.clubsScope)}`;
       }
       return "";
     }
@@ -1070,12 +1082,14 @@
           </div>
           <div class="panel">
             <h3>Scores</h3>
-            ${table(["Date", "Competition", "Category", "Segment", "TSS", "TES", "PCS", ""], skater.scores.map((s) => `
+            ${table(["Date", "Competition", "Category", "Segment", "Source", "Els", "TSS", "TES", "PCS", ""], skater.scores.map((s) => `
               <tr>
                 <td>${fmt(s.event_start_date)}</td>
                 <td>${fmt(s.event_name)}</td>
                 <td>${fmt(s.category_name)}</td>
                 <td>${fmt(s.segment_name)}</td>
+                <td>${scoreSourceBadge(s.score_source)}</td>
+                <td>${fmt(s.element_count)}</td>
                 <td>${points(s.tss)}</td>
                 <td>${points(s.tes)}</td>
                 <td>${points(s.pcs)}</td>
@@ -1394,13 +1408,14 @@
           </div>`
         : "";
       const noDetailNote = (!hasElements && !hasComponents)
-        ? '<div class="empty">No PDF score detail available — only HTML placement was published for this segment.</div>'
+        ? `<div class="empty">No parsed PDF elements/components are available for this segment. The score summary is still indexed and the source evidence remains linked below.</div>`
         : "";
       detail.innerHTML = `
         <div class="stack">
           <div>
             <h2>${fmt(score.skater_name)} · ${fmt(score.segment_name)}</h2>
-            <div class="muted">${fmt(score.event_name)} · ${fmt(score.category_name)} · ${fmt(score.event_start_date)} ${scoreSourceBadge(score.score_source)}</div>
+            <div class="muted">${fmt(score.event_name)} · ${fmt(score.category_name)} · ${fmt(score.event_start_date)}</div>
+            <div style="margin-top:6px">${scoreSourceBadge(score.score_source)} <span class="badge">${fmt(score.elements ? score.elements.length : 0)} elements</span></div>
           </div>
           <div class="grid">
             <div class="metric"><div class="label">TSS</div><div class="value">${points(score.tss)}</div></div>
@@ -1498,12 +1513,7 @@
       }
       if (scope) {
         event.preventDefault();
-        state.mode = "clubs";
-        setTabState("clubs");
-        getJson(`/api/clubs?scope=${scope.dataset.scope}&limit=40`).then((data) => {
-          state.items = data.items;
-          renderClubList(data.items);
-        });
+        navigate({ type: "clubs", id: scope.dataset.scope });
       }
       const pageStep = event.target.closest("[data-page-step]");
       if (pageStep && state.currentClub) {

@@ -178,6 +178,17 @@ s AS (
   SELECT *
   FROM api.mv_segment_score
   WHERE date_key BETWEEN %(start)s AND %(end)s
+),
+dev AS (
+  SELECT DISTINCT
+    api.skater_identity_key(
+      sac.skater_name,
+      sac.nation_code,
+      COALESCE(sac.canonical_club_name, sac.club_name)
+    ) AS identity_key
+  FROM analytics.v_skater_appearances_with_club sac
+  WHERE sac.event_start_date BETWEEN %(start)s AND %(end)s
+    AND sac.category_name ILIKE 'Mlad Figurist%%'
 )
 SELECT
   (SELECT count(*) FROM e) AS events,
@@ -187,7 +198,7 @@ SELECT
   (SELECT count(DISTINCT club_name) FROM s WHERE club_name IS NOT NULL) AS scoring_clubs,
   (SELECT count(*) FROM s) AS segment_scores,
   (SELECT count(*) FROM api.mv_element_score WHERE date_key BETWEEN %(start)s AND %(end)s) AS element_scores,
-  0::bigint AS development_skaters,
+  (SELECT count(*) FROM dev) AS development_skaters,
   (SELECT min(event_start_date) FROM e) AS first_event_date,
   (SELECT max(event_start_date) FROM e) AS latest_event_date,
   (SELECT count(*) FROM e WHERE competition_stream IN ('ISU','ISUCS')) AS international_events,
@@ -248,6 +259,37 @@ WITH s AS (
   SELECT *
   FROM api.mv_segment_score
   WHERE date_key BETWEEN %(start)s AND %(end)s
+),
+club_appearances AS (
+  SELECT DISTINCT
+    COALESCE(sac.canonical_club_name, sac.club_name) AS club_name,
+    api.skater_identity_key(
+      sac.skater_name,
+      sac.nation_code,
+      COALESCE(sac.canonical_club_name, sac.club_name)
+    ) AS identity_key,
+    sac.category_name ILIKE 'Mlad Figurist%%' AS is_development
+  FROM analytics.v_skater_appearances_with_club sac
+  WHERE sac.club_name IS NOT NULL
+    AND sac.event_start_date BETWEEN %(start)s AND %(end)s
+),
+club_status AS (
+  SELECT
+    club_name,
+    identity_key,
+    bool_or(is_development) AS has_development_event,
+    bool_or(NOT is_development) AS has_standard_event
+  FROM club_appearances
+  GROUP BY club_name, identity_key
+),
+club_development_counts AS (
+  SELECT
+    club_name,
+    count(*) FILTER (WHERE has_development_event) AS development_skaters,
+    count(*) FILTER (WHERE has_development_event AND NOT has_standard_event) AS development_only_skaters,
+    count(*) FILTER (WHERE has_development_event AND has_standard_event) AS converted_development_skaters
+  FROM club_status
+  GROUP BY club_name
 )
 SELECT
   s.club_name,
@@ -261,9 +303,9 @@ SELECT
   0::bigint AS national_competitors,
   0::bigint AS recreational_only_skaters,
   0::bigint AS mixed_competitors,
-  0::bigint AS development_skaters,
-  0::bigint AS development_only_skaters,
-  0::bigint AS converted_development_skaters,
+  COALESCE(max(cdc.development_skaters), 0) AS development_skaters,
+  COALESCE(max(cdc.development_only_skaters), 0) AS development_only_skaters,
+  COALESCE(max(cdc.converted_development_skaters), 0) AS converted_development_skaters,
   max(s.tss) AS best_tss,
   max(s.tes) AS best_tes,
   max(s.pcs) AS best_pcs,
@@ -271,6 +313,7 @@ SELECT
   max(s.date_key) AS latest_seen_date
 FROM s
 LEFT JOIN api.mv_club_dashboard cd ON cd.club_name = s.club_name
+LEFT JOIN club_development_counts cdc ON cdc.club_name = s.club_name
 WHERE s.club_name IS NOT NULL
 GROUP BY s.club_name
 ORDER BY segment_scores DESC, skaters DESC, latest_seen_date DESC NULLS LAST, s.club_name
@@ -290,21 +333,55 @@ WITH s AS (
   FROM api.mv_segment_score
   WHERE date_key BETWEEN %(start)s AND %(end)s
     AND nation_code IS NOT NULL
+),
+nationality_appearances AS (
+  SELECT DISTINCT
+    sac.nation_code,
+    sac.event_id,
+    sac.event_start_date,
+    api.skater_identity_key(
+      sac.skater_name,
+      sac.nation_code,
+      COALESCE(sac.canonical_club_name, sac.club_name)
+    ) AS identity_key,
+    sac.category_name ILIKE 'Mlad Figurist%%' AS is_development
+  FROM analytics.v_skater_appearances_with_club sac
+  WHERE sac.nation_code IS NOT NULL
+    AND sac.event_start_date BETWEEN %(start)s AND %(end)s
+),
+nationality_identity_flags AS (
+  SELECT
+    nation_code,
+    identity_key,
+    bool_or(is_development) AS has_development_event,
+    bool_or(NOT is_development) AS has_standard_event
+  FROM nationality_appearances
+  GROUP BY nation_code, identity_key
+),
+nationality_development_counts AS (
+  SELECT
+    nation_code,
+    count(*) FILTER (WHERE has_development_event) AS development_skaters,
+    count(*) FILTER (WHERE has_development_event AND NOT has_standard_event) AS development_only_skaters,
+    count(*) FILTER (WHERE has_development_event AND has_standard_event) AS converted_development_skaters
+  FROM nationality_identity_flags
+  GROUP BY nation_code
 )
 SELECT
   s.nation_code,
   count(DISTINCT api.skater_identity_key(s.skater_name, s.nation_code, s.club_name)) AS skaters,
   count(DISTINCT s.event_key) AS events,
   count(*)                    AS segment_scores,
-  0::bigint AS development_skaters,
-  0::bigint AS development_only_skaters,
-  0::bigint AS converted_development_skaters,
+  COALESCE(max(ndc.development_skaters), 0) AS development_skaters,
+  COALESCE(max(ndc.development_only_skaters), 0) AS development_only_skaters,
+  COALESCE(max(ndc.converted_development_skaters), 0) AS converted_development_skaters,
   max(s.tss) AS best_tss,
   max(s.tes) AS best_tes,
   max(s.pcs) AS best_pcs,
   min(s.date_key) AS first_seen_date,
   max(s.date_key) AS latest_seen_date
 FROM s
+LEFT JOIN nationality_development_counts ndc ON ndc.nation_code = s.nation_code
 GROUP BY s.nation_code
 ORDER BY segment_scores DESC, skaters DESC, latest_seen_date DESC NULLS LAST, s.nation_code
 LIMIT %(limit)s
@@ -576,6 +653,12 @@ SELECT
   de.event_start_date,
   dc.category_name,
   dseg.segment_name,
+  fss.score_source,
+  COALESCE((
+    SELECT count(*)
+    FROM api.mv_element_score es
+    WHERE es.segment_score_key = fss.segment_score_key
+  ), 0) AS element_count,
   fss.place,
   fss.tss,
   fss.tes,

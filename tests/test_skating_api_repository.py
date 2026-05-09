@@ -97,6 +97,33 @@ def test_dashboard_overview_reads_api_materialized_view():
     assert "api.mv_dashboard_overview" in conn.cursors[0].sql
 
 
+def test_dashboard_overview_period_counts_development_skaters():
+    conn = FakeConnection([[{"events": 12, "development_skaters": 3}]])
+
+    overview = repository.dashboard_overview_period(conn, 2024, 2026)
+
+    assert overview == {"events": 12, "development_skaters": 3}
+    assert "Mlad Figurist" in conn.cursors[0].sql
+    assert "0::bigint AS development_skaters" not in conn.cursors[0].sql
+
+
+def test_list_nationalities_period_counts_development_skaters():
+    conn = FakeConnection([[{"nation_code": "BUL", "development_skaters": 4}]])
+
+    rows = repository.list_nationalities_period(conn, 2024, 2026)
+
+    assert rows == [
+        {
+            "nation_code": "BUL",
+            "development_skaters": 4,
+            "nation_flag": "🇧🇬",
+            "nation_display": "🇧🇬 BUL",
+        }
+    ]
+    assert "Mlad Figurist" in conn.cursors[0].sql
+    assert "0::bigint AS development_skaters" not in conn.cursors[0].sql
+
+
 def test_score_detail_attaches_elements_components_and_evidence():
     conn = FakeConnection(
         [
@@ -131,6 +158,60 @@ def test_score_detail_attaches_elements_components_and_evidence():
     assert score["evidence"] == [{"source_document_key": 7, "source_url": "https://example.test"}]
     assert "v_skater_source_evidence" in conn.cursors[6].sql
     assert conn.cursors[6].params["segment_name"] == "Free Skating"
+
+
+def test_skater_scores_include_source_and_element_count():
+    conn = FakeConnection(
+        [
+            [
+                {
+                    "segment_score_key": 4561,
+                    "event_key": 1,
+                    "event_name": "Denkova-Staviski Cup 2017",
+                    "event_start_date": date(2017, 10, 31),
+                    "category_name": "Senior Ladies",
+                    "segment_name": "Short Program",
+                    "score_source": "pdf_score_summary",
+                    "element_count": 0,
+                    "place": 1,
+                    "tss": Decimal("77.210"),
+                    "tes": Decimal("41.000"),
+                    "pcs": Decimal("36.210"),
+                    "deduction": Decimal("0.000"),
+                    "base_value_total": Decimal("38.000"),
+                    "element_score_total": Decimal("41.000"),
+                    "judge_count": 5,
+                    "root_url": "https://example.test",
+                }
+            ]
+        ]
+    )
+
+    rows = repository.skater_scores(conn, 1469, 50)
+
+    assert rows == [
+        {
+            "segment_score_key": 4561,
+            "event_key": 1,
+            "event_name": "Denkova-Staviski Cup 2017",
+            "event_start_date": "2017-10-31",
+            "category_name": "Senior Ladies",
+            "segment_name": "Short Program",
+            "score_source": "pdf_score_summary",
+            "element_count": 0,
+            "place": 1,
+            "tss": 77.21,
+            "tes": 41.0,
+            "pcs": 36.21,
+            "deduction": 0.0,
+            "base_value_total": 38.0,
+            "element_score_total": 41.0,
+            "judge_count": 5,
+            "root_url": "https://example.test",
+        }
+    ]
+    assert "score_source" in conn.cursors[0].sql
+    assert "element_count" in conn.cursors[0].sql
 
 
 def test_score_detail_passes_negative_keys_unchanged():
