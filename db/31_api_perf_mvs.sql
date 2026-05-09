@@ -145,3 +145,32 @@ SELECT * FROM mart.fact_competition_result;
 
 CREATE INDEX idx_mv_competition_result_event
   ON api.mv_competition_result(event_key);
+
+
+-- The dim_event / dim_category / dim_segment views are deep view stacks
+-- (analytics.v_events → ingest.events ⋈ ingest.import_runs etc., with
+-- DISTINCT ON / sort steps). They have only a few hundred rows each but the
+-- planner re-executes them per JOIN, so /api/skaters/{key}/scores spent ~1s
+-- joining 50 rows × dim_*. Snapshotting them fixes that without changing
+-- semantics — refresh after every import sweep.
+
+DROP MATERIALIZED VIEW IF EXISTS api.mv_dim_event CASCADE;
+CREATE MATERIALIZED VIEW api.mv_dim_event AS
+SELECT * FROM mart.dim_event;
+
+CREATE UNIQUE INDEX idx_mv_dim_event_pk ON api.mv_dim_event(event_key);
+CREATE INDEX idx_mv_dim_event_start ON api.mv_dim_event(event_start_date DESC NULLS LAST);
+
+
+DROP MATERIALIZED VIEW IF EXISTS api.mv_dim_category CASCADE;
+CREATE MATERIALIZED VIEW api.mv_dim_category AS
+SELECT * FROM mart.dim_category;
+
+CREATE UNIQUE INDEX idx_mv_dim_category_pk ON api.mv_dim_category(category_key);
+
+
+DROP MATERIALIZED VIEW IF EXISTS api.mv_dim_segment CASCADE;
+CREATE MATERIALIZED VIEW api.mv_dim_segment AS
+SELECT * FROM mart.dim_segment;
+
+CREATE UNIQUE INDEX idx_mv_dim_segment_pk ON api.mv_dim_segment(segment_key);

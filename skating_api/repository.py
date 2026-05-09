@@ -171,7 +171,7 @@ def dashboard_overview_period(conn: Any, from_year: int, to_year: int) -> dict[s
         """
 WITH e AS (
   SELECT *
-  FROM mart.dim_event
+  FROM api.mv_dim_event
   WHERE event_start_date BETWEEN %(start)s AND %(end)s
 ),
 s AS (
@@ -216,7 +216,7 @@ def competition_mix_period(conn: Any, from_year: int, to_year: int) -> list[dict
         """
 WITH events_in_range AS (
   SELECT *
-  FROM mart.dim_event
+  FROM api.mv_dim_event
   WHERE event_start_date BETWEEN %(start)s AND %(end)s
 ),
 scores_in_range AS (
@@ -671,9 +671,9 @@ SELECT
 FROM api.mv_segment_score fss
 JOIN api.mv_skater_search mss
   ON mss.identity_key = api.skater_identity_key(fss.skater_name, fss.nation_code, fss.club_name)
-LEFT JOIN mart.dim_event de ON de.event_key = fss.event_key
-LEFT JOIN mart.dim_category dc ON dc.category_key = fss.category_key
-LEFT JOIN mart.dim_segment dseg ON dseg.segment_key = fss.segment_key
+LEFT JOIN api.mv_dim_event de ON de.event_key = fss.event_key
+LEFT JOIN api.mv_dim_category dc ON dc.category_key = fss.category_key
+LEFT JOIN api.mv_dim_segment dseg ON dseg.segment_key = fss.segment_key
 WHERE mss.skater_key = %(skater_key)s
 ORDER BY de.event_start_date DESC NULLS LAST, fss.segment_score_key DESC
 LIMIT %(limit)s
@@ -752,7 +752,7 @@ SELECT
   parser_profile,
   root_url,
   event_protocol_url
-FROM mart.dim_event
+FROM api.mv_dim_event
 {where}
 ORDER BY event_start_date DESC NULLS LAST, event_name
 LIMIT %(limit)s
@@ -778,7 +778,7 @@ SELECT
   parser_profile,
   root_url,
   event_protocol_url
-FROM mart.dim_event
+FROM api.mv_dim_event
 WHERE event_key = %(event_key)s
 """,
         {"event_key": event_key},
@@ -801,7 +801,7 @@ SELECT
   fcr.points,
   fcr.segment_places
 FROM api.mv_competition_result fcr
-LEFT JOIN mart.dim_category dc ON dc.category_key = fcr.category_key
+LEFT JOIN api.mv_dim_category dc ON dc.category_key = fcr.category_key
 WHERE fcr.event_key = %(event_key)s
 ORDER BY dc.category_name, fcr.final_place NULLS LAST, fcr.points DESC NULLS LAST
 LIMIT %(limit)s
@@ -837,9 +837,9 @@ SELECT
   fss.judge_count,
   de.root_url
 FROM api.mv_segment_score fss
-LEFT JOIN mart.dim_event de ON de.event_key = fss.event_key
-LEFT JOIN mart.dim_category dc ON dc.category_key = fss.category_key
-LEFT JOIN mart.dim_segment dseg ON dseg.segment_key = fss.segment_key
+LEFT JOIN api.mv_dim_event de ON de.event_key = fss.event_key
+LEFT JOIN api.mv_dim_category dc ON dc.category_key = fss.category_key
+LEFT JOIN api.mv_dim_segment dseg ON dseg.segment_key = fss.segment_key
 WHERE fss.segment_score_key = %(segment_score_key)s
 """,
         {"segment_score_key": segment_score_key},
@@ -953,34 +953,44 @@ ORDER BY ppc.id, pcjs.judge_number
     for component in score["components"]:
         component["judge_marks"] = marks_by_component.get(component["component_score_key"], [])
 
+    # Evidence lookup. mart.v_skater_source_evidence is a deep view stack
+    # (~15s for a single-segment lookup), so we resolve documents directly:
+    # PDF row -> the parsed PDF source_document. Plus the HTML segment /
+    # category / event-index pages from the same import_run_id, scoped by
+    # segment_id where the source_documents table records it.
+    is_pdf_row = score.get("score_source") == "pdf_score_summary" and score.get("segment_score_key", 0) > 0
+    pss_id = score["segment_score_key"] if is_pdf_row else None
     score["evidence"] = fetch_all(
         conn,
         """
-SELECT DISTINCT
-  vse.source_document_key,
-  vse.source_url,
-  vse.document_type,
-  vse.archive_path,
-  vse.archive_status,
-  vse.content_hash
-FROM mart.v_skater_source_evidence vse
-WHERE vse.skater_name = %(skater_name)s
-  AND vse.nation_code IS NOT DISTINCT FROM %(nation_code)s
-  AND vse.club_name IS NOT DISTINCT FROM %(club_name)s
-  AND vse.event_name IS NOT DISTINCT FROM %(event_name)s
-  AND vse.event_start_date::text IS NOT DISTINCT FROM %(event_start_date)s
-  AND vse.category_name IS NOT DISTINCT FROM %(category_name)s
-  AND vse.segment_name IS NOT DISTINCT FROM %(segment_name)s
-LIMIT 25
+WITH pdf_doc AS (
+  SELECT sd.id AS source_document_key, sd.url AS source_url, sd.document_type,
+         saf.archive_path, saf.archive_status, saf.content_hash
+  FROM ingest.pdf_score_summaries pss
+  JOIN ingest.source_documents sd ON sd.id = pss.source_document_id
+  LEFT JOIN ingest.source_archive_files saf ON saf.source_document_id = sd.id
+  WHERE pss.id = %(pss_id)s
+),
+event_html AS (
+  SELECT sd.id AS source_document_key, sd.url AS source_url, sd.document_type,
+         saf.archive_path, saf.archive_status, saf.content_hash
+  FROM ingest.source_documents sd
+  LEFT JOIN ingest.source_archive_files saf ON saf.source_document_id = sd.id
+  WHERE sd.import_run_id = (
+    SELECT import_run_id FROM ingest.events WHERE id = (
+      SELECT event_id FROM ingest.source_skater_appearances WHERE id = (
+        SELECT skater_appearance_id FROM ingest.pdf_score_summaries WHERE id = %(pss_id)s
+      )
+    )
+  )
+  AND sd.document_type = 'html'
+  ORDER BY sd.id
+  LIMIT 5
+)
+SELECT * FROM pdf_doc
+UNION ALL
+SELECT * FROM event_html
 """,
-        {
-            "skater_name": score["skater_name"],
-            "nation_code": score["nation_code"],
-            "club_name": score["club_name"],
-            "event_name": score["event_name"],
-            "event_start_date": score["event_start_date"],
-            "category_name": score["category_name"],
-            "segment_name": score["segment_name"],
-        },
+        {"pss_id": pss_id or -1},
     )
     return score

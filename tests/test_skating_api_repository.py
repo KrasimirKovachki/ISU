@@ -130,6 +130,7 @@ def test_score_detail_attaches_elements_components_and_evidence():
             [
                 {
                     "segment_score_key": 10,
+                    "score_source": "pdf_score_summary",
                     "segment_key": 55,
                     "skater_name": "Eva Example",
                     "nation_code": "BUL",
@@ -156,8 +157,11 @@ def test_score_detail_attaches_elements_components_and_evidence():
     assert score["elements"] == [{"element_score_key": 99, "base_value": 3.3, "judge_marks": [{"element_score_key": 99, "judge_number": 1, "score": -1}]}]
     assert score["components"] == [{"component_score_key": 5, "score": 7.25, "judge_marks": [{"component_score_key": 5, "judge_number": 1, "score": 7.5}]}]
     assert score["evidence"] == [{"source_document_key": 7, "source_url": "https://example.test"}]
-    assert "v_skater_source_evidence" in conn.cursors[6].sql
-    assert conn.cursors[6].params["segment_name"] == "Free Skating"
+    # Evidence query uses direct PDF + import-run lookup (cheap), not the
+    # deep-stack mart.v_skater_source_evidence (it took ~15s per call).
+    assert "ingest.pdf_score_summaries" in conn.cursors[6].sql
+    assert "ingest.source_documents" in conn.cursors[6].sql
+    assert conn.cursors[6].params["pss_id"] == 10
 
 
 def test_skater_scores_include_source_and_element_count():
