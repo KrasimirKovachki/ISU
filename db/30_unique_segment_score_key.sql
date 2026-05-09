@@ -47,3 +47,4 @@ LEFT JOIN mart.dim_skater ds
 REFRESH MATERIALIZED VIEW api.mv_dashboard_overview;
 REFRESH MATERIALIZED VIEW api.mv_competition_mix;
 REFRESH MATERIALIZED VIEW api.mv_club_dashboard;
+REFRESH MATERIALIZED VIEW api.mv_nationality_dashboard;

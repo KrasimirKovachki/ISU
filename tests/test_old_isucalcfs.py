@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from isu_parser.old_isucalcfs import (
     parse_category_result,
@@ -11,6 +12,7 @@ from isu_parser.old_isucalcfs import (
 from isu_parser.pdf_scores import (
     _parse_pdfplumber_detail_table,
     _parse_pdfplumber_skater_table,
+    parse_judges_scores_pdf,
     parse_judges_scores_text,
     validate_judges_scores,
 )
@@ -195,6 +197,10 @@ Info BaseValueGOEJ1J2J3J4J5J6J7J8J9 Ref.Scores ofPanel1SW1Sq1Se1 3.500.531 1 1 -
 RankName NationStartingNumberTotalSegmentScoreTotalElementScoreTotal Program ComponentScore (factored)Total Deductions
 2Rachel KUHN / Anthony MAKARUSA 1 14.2914.53 14.04 0.00#Executed Elements
 """
+
+FS_MANAGER_DANIELA_FS_PDF = Path(
+    "data/source_archive/files/cup.clubdenkovastaviski.com/2017/ISU/DSCup2017_SeniorLadies_FS_Scores.pdf"
+)
 
 
 PDFPLUMBER_SKATER_TABLE = [
@@ -400,6 +406,20 @@ class OldISUCalcFSTest(unittest.TestCase):
         self.assertEqual(parsed["skaters"][1]["nation"], "TUR")
         self.assertEqual(parsed["skaters"][2]["name"], "Fedir KULISH")
         self.assertEqual(parsed["skaters"][2]["total_deductions"], 1.0)
+        self.assertEqual(validate_judges_scores(parsed), [])
+
+    def test_parse_fs_manager_judges_scores_pdf_details(self) -> None:
+        parsed = parse_judges_scores_pdf(FS_MANAGER_DANIELA_FS_PDF)
+
+        self.assertEqual(parsed["event_name"], "Denkova-Staviski Cup 2017")
+        self.assertEqual(parsed["category"], "SENIOR LADIES")
+        self.assertEqual(parsed["segment"], "FREE SKATING")
+        daniela = next(skater for skater in parsed["skaters"] if skater["name"] == "Daniela STOEVA")
+        self.assertGreater(len(daniela["elements"]), 0)
+        self.assertGreater(len(daniela["program_components"]), 0)
+        self.assertEqual(daniela["elements"][0]["element_code"], "3Lo<<")
+        self.assertEqual(daniela["program_components"][0]["component"], "Skating Skills")
+        self.assertTrue(any(skater["elements"] for skater in parsed["skaters"]))
         self.assertEqual(validate_judges_scores(parsed), [])
 
     def test_validate_judges_scores_accepts_signed_deductions(self) -> None:
