@@ -136,7 +136,12 @@ SELECT
   ssa.appearance_type,
   ssa.source_row_order,
   ssa.raw_name,
-  ssa.normalized_name AS skater_name,
+  -- Alias resolution: if the source rendering matches a row in
+  -- core.skater_aliases (optionally scoped by nation), use the canonical
+  -- spelling. Else keep the source-normalized name. This collapses
+  -- transliteration variants (e.g. ALEKSANDRA FEYGIN -> ALEXANDRA FEIGIN)
+  -- onto a single identity_key downstream.
+  COALESCE(sa.canonical_name, ssa.normalized_name) AS skater_name,
   COALESCE(analytics.normalized_nation_code(ssa.nation_code), sni.inferred_nation_code) AS nation_code,
   analytics.normalized_nation_code(ssa.nation_code) IS NULL
     AND sni.inferred_nation_code IS NOT NULL AS nation_code_inferred,
@@ -150,10 +155,21 @@ SELECT
   ) AS display_affiliation,
   ssa.bio_url,
   ssa.source_skater_id,
-  ssa.raw
+  ssa.raw,
+  ssa.normalized_name AS source_skater_name,
+  sa.canonical_name IS NOT NULL AS skater_name_aliased
 FROM ingest.source_skater_appearances ssa
 JOIN analytics.v_events ve ON ve.event_id = ssa.event_id
 LEFT JOIN analytics.v_skater_nation_inference sni ON sni.skater_name = ssa.normalized_name
+LEFT JOIN core.skater_aliases sa
+  ON sa.alias_normalized = ssa.normalized_name
+ AND (
+   sa.nation_code IS NULL
+   OR sa.nation_code = COALESCE(
+        analytics.normalized_nation_code(ssa.nation_code),
+        sni.inferred_nation_code
+      )
+ )
 LEFT JOIN ingest.categories c ON c.id = ssa.category_id
 LEFT JOIN ingest.segments s ON s.id = ssa.segment_id
 WHERE ssa.normalized_name <> '';

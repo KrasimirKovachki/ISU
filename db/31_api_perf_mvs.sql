@@ -100,6 +100,11 @@ CREATE INDEX idx_mv_segment_score_identity
   ON api.mv_segment_score(skater_name, nation_code, club_name);
 CREATE INDEX idx_mv_segment_score_date
   ON api.mv_segment_score(date_key);
+-- Expression index so JOINs that compute api.skater_identity_key on the fly
+-- (e.g. /api/skaters/{key}/scores) get an index seek instead of a sequential
+-- scan with a function call per row.
+CREATE INDEX idx_mv_segment_score_identity_key
+  ON api.mv_segment_score(api.skater_identity_key(skater_name, nation_code, club_name));
 
 
 DROP MATERIALIZED VIEW IF EXISTS api.mv_element_score CASCADE;
@@ -114,6 +119,8 @@ CREATE INDEX idx_mv_element_score_identity
   ON api.mv_element_score(skater_name, nation_code, club_name);
 CREATE INDEX idx_mv_element_score_date
   ON api.mv_element_score(date_key);
+CREATE INDEX idx_mv_element_score_identity_key
+  ON api.mv_element_score(api.skater_identity_key(skater_name, nation_code, club_name));
 
 
 DROP MATERIALIZED VIEW IF EXISTS api.mv_element_judge_mark CASCADE;
