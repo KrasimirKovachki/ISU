@@ -162,3 +162,16 @@ Run the local dashboard:
 
 Open `http://127.0.0.1:8000`. The first screen shows the dashboard; the side
 rail supports club, skater, and event search.
+
+### Containerized Stack
+
+`docker-compose.yml` now includes both the PostgreSQL container and the web app
+container. Use this when you want the full stack in one place, including the VM
+deployment target:
+
+```bash
+docker compose up -d --build
+```
+
+By default the app listens on port `8000` and the database listens on
+`55432` on the host.

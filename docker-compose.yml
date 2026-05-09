@@ -11,7 +11,7 @@ services:
       SKATING_APP_USER: ${SKATING_APP_USER:-skating_app}
       SKATING_APP_PASSWORD: ${SKATING_APP_PASSWORD:-change_me_strong_password}
     ports:
-      - "${SKATING_POSTGRES_PORT:-55432}:5432"
+      - "127.0.0.1:${SKATING_POSTGRES_PORT:-55432}:5432"
     volumes:
       - skating_postgres_data:/var/lib/postgresql/data
       - ./db:/workspace/db:ro
@@ -21,6 +21,24 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: skating-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SKATING_DB_HOST: postgres
+      SKATING_DB_PORT: 5432
+      SKATING_DB_NAME: ${SKATING_APP_DB:-skating_data}
+      SKATING_DB_USER: ${SKATING_APP_USER:-skating_app}
+      SKATING_DB_PASSWORD: ${SKATING_APP_PASSWORD:-change_me_strong_password}
+    ports:
+      - "${SKATING_APP_PORT:-8000}:8000"
 
 volumes:
   skating_postgres_data:
