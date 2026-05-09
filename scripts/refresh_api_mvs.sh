@@ -29,6 +29,7 @@ REFRESH MATERIALIZED VIEW api.mv_nationality_dashboard;
 REFRESH MATERIALIZED VIEW api.mv_dim_event;
 REFRESH MATERIALIZED VIEW api.mv_dim_category;
 REFRESH MATERIALIZED VIEW api.mv_dim_segment;
+REFRESH MATERIALIZED VIEW api.mv_skater_appearances_with_club;
 ANALYZE api.mv_segment_score;
 ANALYZE api.mv_element_score;
 ANALYZE api.mv_skater_search;

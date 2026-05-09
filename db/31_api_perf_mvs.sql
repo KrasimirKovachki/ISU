@@ -174,3 +174,18 @@ CREATE MATERIALIZED VIEW api.mv_dim_segment AS
 SELECT * FROM mart.dim_segment;
 
 CREATE UNIQUE INDEX idx_mv_dim_segment_pk ON api.mv_dim_segment(segment_key);
+
+
+-- analytics.v_skater_appearances_with_club is referenced by the year-filtered
+-- dashboard queries (development_skaters CTEs). The underlying view chain
+-- joins canonical clubs + alias resolution + event metadata so a single
+-- year-filtered scan was 16-22s on production. Snapshotting it makes those
+-- queries sub-second. Refresh after import.
+DROP MATERIALIZED VIEW IF EXISTS api.mv_skater_appearances_with_club CASCADE;
+CREATE MATERIALIZED VIEW api.mv_skater_appearances_with_club AS
+SELECT * FROM analytics.v_skater_appearances_with_club;
+
+CREATE INDEX idx_mv_appearances_event_date ON api.mv_skater_appearances_with_club(event_start_date);
+CREATE INDEX idx_mv_appearances_event ON api.mv_skater_appearances_with_club(event_id);
+CREATE INDEX idx_mv_appearances_dev ON api.mv_skater_appearances_with_club(category_name)
+  WHERE category_name ILIKE 'Mlad Figurist%';

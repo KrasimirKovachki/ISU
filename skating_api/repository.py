@@ -186,7 +186,7 @@ dev AS (
       sac.nation_code,
       COALESCE(sac.canonical_club_name, sac.club_name)
     ) AS identity_key
-  FROM analytics.v_skater_appearances_with_club sac
+  FROM api.mv_skater_appearances_with_club sac
   WHERE sac.event_start_date BETWEEN %(start)s AND %(end)s
     AND sac.category_name ILIKE 'Mlad Figurist%%'
 )
@@ -269,7 +269,7 @@ club_appearances AS (
       COALESCE(sac.canonical_club_name, sac.club_name)
     ) AS identity_key,
     sac.category_name ILIKE 'Mlad Figurist%%' AS is_development
-  FROM analytics.v_skater_appearances_with_club sac
+  FROM api.mv_skater_appearances_with_club sac
   WHERE sac.club_name IS NOT NULL
     AND sac.event_start_date BETWEEN %(start)s AND %(end)s
 ),
@@ -345,7 +345,7 @@ nationality_appearances AS (
       COALESCE(sac.canonical_club_name, sac.club_name)
     ) AS identity_key,
     sac.category_name ILIKE 'Mlad Figurist%%' AS is_development
-  FROM analytics.v_skater_appearances_with_club sac
+  FROM api.mv_skater_appearances_with_club sac
   WHERE sac.nation_code IS NOT NULL
     AND sac.event_start_date BETWEEN %(start)s AND %(end)s
 ),
