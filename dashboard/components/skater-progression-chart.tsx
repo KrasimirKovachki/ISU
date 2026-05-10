@@ -2,6 +2,7 @@
 /** Line chart of TSS / TES / PCS over time for a single skater. */
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { ChartFrame } from "@/components/chart-frame";
 import type { SkaterScoreRow } from "@/lib/types";
 
 export function SkaterProgressionChart({ scores }: { scores: SkaterScoreRow[] }) {
@@ -22,7 +23,7 @@ export function SkaterProgressionChart({ scores }: { scores: SkaterScoreRow[] })
   }
 
   return (
-    <div className="h-72 w-full">
+    <ChartFrame>
       <ResponsiveContainer>
         <LineChart data={data} margin={{ left: 4, right: 16, top: 8, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -47,6 +48,6 @@ export function SkaterProgressionChart({ scores }: { scores: SkaterScoreRow[] })
           <Line type="monotone" dataKey="pcs" stroke="var(--chart-3)" strokeWidth={2} dot={{ r: 2 }} name="PCS" />
         </LineChart>
       </ResponsiveContainer>
-    </div>
+    </ChartFrame>
   );
 }

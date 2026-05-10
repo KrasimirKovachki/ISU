@@ -2,6 +2,7 @@
 /** Recharts horizontal bar — top N nations by segment_scores. */
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { ChartFrame } from "@/components/chart-frame";
 import type { NationalityRow } from "@/lib/types";
 
 export function NationalitiesBarChart({ rows, take = 12 }: { rows: NationalityRow[]; take?: number }) {
@@ -11,7 +12,7 @@ export function NationalitiesBarChart({ rows, take = 12 }: { rows: NationalityRo
     .map((n) => ({ name: n.nation_code, scores: n.segment_scores, skaters: n.skaters }))
     .reverse();
   return (
-    <div className="h-72 w-full">
+    <ChartFrame>
       <ResponsiveContainer>
         <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
@@ -33,6 +34,6 @@ export function NationalitiesBarChart({ rows, take = 12 }: { rows: NationalityRo
           <Bar dataKey="scores" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </ChartFrame>
   );
 }

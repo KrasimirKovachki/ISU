@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -53,6 +54,7 @@ export function Topbar() {
         </div>
         <Button type="submit" size="sm">Go</Button>
       </form>
+      <ThemeToggle />
       <a
         href="/api/health"
         target="_blank"

@@ -2,6 +2,7 @@
 /** Radar chart of average vs best per program component. */
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
+import { ChartFrame } from "@/components/chart-frame";
 import type { SkaterComponentSummary } from "@/lib/types";
 
 export function ComponentRadar({ rows }: { rows: SkaterComponentSummary[] }) {
@@ -14,7 +15,7 @@ export function ComponentRadar({ rows }: { rows: SkaterComponentSummary[] }) {
     best: Number(r.best_score),
   }));
   return (
-    <div className="h-72 w-full">
+    <ChartFrame>
       <ResponsiveContainer>
         <RadarChart data={data}>
           <PolarGrid stroke="var(--border)" />
@@ -35,6 +36,6 @@ export function ComponentRadar({ rows }: { rows: SkaterComponentSummary[] }) {
           />
         </RadarChart>
       </ResponsiveContainer>
-    </div>
+    </ChartFrame>
   );
 }

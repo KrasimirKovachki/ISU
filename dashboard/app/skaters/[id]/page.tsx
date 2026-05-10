@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { ComponentRadar } from "@/components/component-radar";
+import { ComparisonRadar } from "@/components/comparison-radar";
 import { KpiCard } from "@/components/kpi-card";
 import { PageHeader } from "@/components/page-header";
 import { SkaterElementStats } from "@/components/skater-element-stats";
@@ -57,9 +57,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-base">Component profile</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Component profile (avg)</CardTitle></CardHeader>
           <CardContent>
-            <ComponentRadar rows={skater.component_summary ?? []} />
+            <ComparisonRadar
+              primaryName={skater.skater_name}
+              primaryRows={skater.component_summary ?? []}
+              primarySkaterKey={skater.skater_key}
+            />
           </CardContent>
         </Card>
       </div>

@@ -1,12 +1,14 @@
 "use client";
 /**
- * Reusable client-side sortable + paginated table. The server fetches the
- * full dataset (capped) and hands it in as a prop; we sort/page locally.
+ * Reusable client-side sortable + paginated table with URL-persisted state.
  *
- * Pass column definitions with optional `accessor` (for sort key derivation)
- * and `cell` (custom render). Active sort header gets ▲ / ▼.
+ * Optional `urlPrefix` makes sort/page share the page (multiple tables on
+ * one page get distinct prefixes — e.g. urlPrefix="club"). Without a prefix
+ * we use bare keys (sort, dir, page, size) so refreshing or sharing a
+ * sorted/paged list works as expected.
  */
-import { useMemo, useState, type ReactNode } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useMemo, useCallback, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,13 +21,9 @@ export type Column<T> = {
   key: string;
   header: ReactNode;
   className?: string;
-  /** Pull the sortable value out of the row. Defaults to row[key]. */
   accessor?: (row: T) => unknown;
-  /** Custom cell render. Defaults to formatted accessor value. */
   cell?: (row: T) => ReactNode;
-  /** When false the column is not sortable (default true). */
   sortable?: boolean;
-  /** Default sort direction the first time the user clicks (default desc for numbers, asc for text). */
   defaultDirection?: "asc" | "desc";
 };
 
@@ -44,6 +42,7 @@ export function DataTable<T extends Record<string, unknown>>({
   pageSizeOptions = [25, 50, 100, 250],
   initialPageSize = 50,
   emptyLabel = "No matches.",
+  urlPrefix,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -51,11 +50,31 @@ export function DataTable<T extends Record<string, unknown>>({
   pageSizeOptions?: number[];
   initialPageSize?: number;
   emptyLabel?: string;
+  /** Optional disambiguator when more than one DataTable lives on a page. */
+  urlPrefix?: string;
 }) {
-  const [sortKey, setSortKey] = useState(defaultSort?.key ?? "");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">(defaultSort?.direction ?? "desc");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(initialPageSize);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const k = (name: string) => (urlPrefix ? `${urlPrefix}_${name}` : name);
+
+  const sortKey = searchParams.get(k("sort")) ?? defaultSort?.key ?? "";
+  const sortDir = (searchParams.get(k("dir")) as "asc" | "desc" | null) ?? defaultSort?.direction ?? "desc";
+  const page = Math.max(1, Number(searchParams.get(k("page")) ?? "1") || 1);
+  const pageSize = Math.max(1, Number(searchParams.get(k("size")) ?? initialPageSize) || initialPageSize);
+
+  const update = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [name, value] of Object.entries(updates)) {
+        if (value === null || value === "") params.delete(name);
+        else params.set(name, value);
+      }
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [router, pathname, searchParams],
+  );
 
   const sortedRows = useMemo(() => {
     if (!sortKey) return rows;
@@ -76,12 +95,10 @@ export function DataTable<T extends Record<string, unknown>>({
   function toggleSort(col: Column<T>) {
     if (col.sortable === false) return;
     if (sortKey === col.key) {
-      setSortDir(sortDir === "desc" ? "asc" : "desc");
+      update({ [k("sort")]: col.key, [k("dir")]: sortDir === "desc" ? "asc" : "desc", [k("page")]: "1" });
     } else {
-      setSortKey(col.key);
-      setSortDir(col.defaultDirection ?? "desc");
+      update({ [k("sort")]: col.key, [k("dir")]: col.defaultDirection ?? "desc", [k("page")]: "1" });
     }
-    setPage(1);
   }
 
   return (
@@ -142,14 +159,17 @@ export function DataTable<T extends Record<string, unknown>>({
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Rows</span>
-          <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(v) => update({ [k("size")]: v === String(initialPageSize) ? null : v, [k("page")]: "1" })}
+          >
             <SelectTrigger className="w-20 h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               {pageSizeOptions.map((s) => (<SelectItem key={s} value={String(s)}>{s}</SelectItem>))}
             </SelectContent>
           </Select>
-          <Button size="sm" variant="outline" onClick={() => setPage(safePage - 1)} disabled={safePage <= 1}>Prev</Button>
-          <Button size="sm" variant="outline" onClick={() => setPage(safePage + 1)} disabled={safePage >= pageCount}>Next</Button>
+          <Button size="sm" variant="outline" onClick={() => update({ [k("page")]: String(safePage - 1) })} disabled={safePage <= 1}>Prev</Button>
+          <Button size="sm" variant="outline" onClick={() => update({ [k("page")]: String(safePage + 1) })} disabled={safePage >= pageCount}>Next</Button>
         </div>
       </div>
     </div>

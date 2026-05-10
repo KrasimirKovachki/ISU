@@ -2,6 +2,7 @@
 /** Donut chart of events by scope (international / federation / club_or_open / unknown). */
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
+import { ChartFrame } from "@/components/chart-frame";
 import type { CompetitionMixRow } from "@/lib/types";
 
 const COLORS: Record<string, string> = {
@@ -19,7 +20,7 @@ export function CompetitionMixDonut({ rows }: { rows: CompetitionMixRow[] }) {
   }
   const data = [...grouped.entries()].map(([name, value]) => ({ name, value }));
   return (
-    <div className="h-72 w-full">
+    <ChartFrame>
       <ResponsiveContainer>
         <PieChart>
           <Pie
@@ -47,6 +48,6 @@ export function CompetitionMixDonut({ rows }: { rows: CompetitionMixRow[] }) {
           />
         </PieChart>
       </ResponsiveContainer>
-    </div>
+    </ChartFrame>
   );
 }

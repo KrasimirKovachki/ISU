@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { useMemo, useState } from "react";
 
+import { ChartFrame } from "@/components/chart-frame";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -94,7 +95,7 @@ export function SkaterElementStats({ elements }: { elements: SkaterElementRow[] 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-72 w-full">
+          <ChartFrame>
             <ResponsiveContainer>
               <BarChart data={topByCount} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
@@ -115,7 +116,7 @@ export function SkaterElementStats({ elements }: { elements: SkaterElementRow[] 
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </ChartFrame>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span>Bar colour = average GOE for that element.</span>
             <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm" style={{ background: "var(--chart-2)" }} /> &gt; +0.5</span>
@@ -143,7 +144,7 @@ export function SkaterElementStats({ elements }: { elements: SkaterElementRow[] 
           </div>
         </CardHeader>
         <CardContent>
-          <div className="h-72 w-full">
+          <ChartFrame>
             <ResponsiveContainer>
               <ScatterChart margin={{ left: 4, right: 16, top: 8, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -159,7 +160,7 @@ export function SkaterElementStats({ elements }: { elements: SkaterElementRow[] 
                 <Scatter data={scatterData} fill="var(--chart-1)" />
               </ScatterChart>
             </ResponsiveContainer>
-          </div>
+          </ChartFrame>
           <p className="mt-2 text-xs text-muted-foreground">
             Each dot is one executed element. GOE range -5 to +5 (ISU scale). Use the dropdown to focus on a specific element type.
           </p>
