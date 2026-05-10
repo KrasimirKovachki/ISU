@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { KpiCard } from "@/components/kpi-card";
 import { PageHeader } from "@/components/page-header";
+import { SkaterElementStats } from "@/components/skater-element-stats";
 import { SkaterProgressionChart } from "@/components/skater-progression-chart";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +54,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <SkaterProgressionChart scores={skater.scores} />
         </CardContent>
       </Card>
+
+      <SkaterElementStats elements={skater.elements} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Scores</CardTitle></CardHeader>

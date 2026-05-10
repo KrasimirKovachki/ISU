@@ -124,7 +124,12 @@ score_base AS (
   GROUP BY 1
 )
 SELECT
-  row_number() OVER (ORDER BY ib.skater_name, ib.nation_code, ib.club_name) AS skater_key,
+  -- Stable key derived deterministically from identity_key. Same identity =>
+  -- same skater_key forever, even after MV refresh (vs. the prior row_number
+  -- approach where adding/removing any skater shifted everyone after them
+  -- and broke shared/bookmarked URLs). 9-digit positive int; collision space
+  -- ~10^9 vs current ~7k skaters means collision probability is negligible.
+  (mod(abs(hashtextextended(ib.identity_key, 0)::bigint), 1000000000) + 1)::int AS skater_key,
   ib.identity_key,
   ib.skater_name,
   ib.nation_code,

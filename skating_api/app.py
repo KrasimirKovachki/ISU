@@ -116,8 +116,10 @@ def get_skater(skater_key: int, conn: Any = Depends(connection_dependency)) -> d
     skater = repository.get_skater(conn, skater_key)
     if skater is None:
         raise HTTPException(status_code=404, detail="Skater not found")
-    skater["scores"] = repository.skater_scores(conn, skater_key, 50)
-    skater["elements"] = repository.skater_elements(conn, skater_key, 50)
+    # 200 is enough for elite skaters across ~10 seasons. Element-stats charts
+    # become more interesting with fuller history.
+    skater["scores"] = repository.skater_scores(conn, skater_key, 200)
+    skater["elements"] = repository.skater_elements(conn, skater_key, 500)
     return skater
 
 
