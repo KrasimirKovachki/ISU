@@ -20,7 +20,9 @@ import type {
   EventDetail,
   ScoreDetail,
   NationalityRow,
+  NationalityDetail,
   ClubRow,
+  ClubDetail,
 } from "./types";
 
 const SERVER_BASE = process.env.SKATING_API_URL || "http://127.0.0.1:8000";
@@ -88,8 +90,16 @@ export function listClubs(q?: string) {
   return apiFetch<{ items: ClubRow[] }>(`/api/clubs?${qs}`);
 }
 
+export function getClub(clubName: string) {
+  return apiFetch<ClubDetail>(`/api/clubs/${encodeURIComponent(clubName)}`, { revalidate: 60 });
+}
+
 export function listNationalities(q?: string) {
   const qs = new URLSearchParams({ limit: "200" });
   if (q) qs.set("q", q);
   return apiFetch<{ items: NationalityRow[] }>(`/api/nationalities?${qs}`);
+}
+
+export function getNationality(nationCode: string) {
+  return apiFetch<NationalityDetail>(`/api/nationalities/${encodeURIComponent(nationCode)}`, { revalidate: 60 });
 }

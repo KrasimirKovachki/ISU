@@ -150,6 +150,19 @@ export type SkaterDetail = SkaterSearchRow & {
   best_score_total: number | null;
 };
 
+export type ClubDetail = ClubRow & {
+  skater_rows: (SkaterSearchRow & {
+    has_national_event: boolean;
+    has_recreational_event: boolean;
+    has_development_event: boolean;
+    competitor_status: "national_competitor" | "recreational" | "mixed" | "development" | string;
+  })[];
+};
+
+export type NationalityDetail = NationalityRow & {
+  skaters_list: SkaterSearchRow[];
+};
+
 export type EventRow = {
   event_key: number;
   event_name: string | null;
