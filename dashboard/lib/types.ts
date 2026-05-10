@@ -144,9 +144,18 @@ export type SkaterElementRow = {
   panel_score: number | null;
 };
 
+export type SkaterComponentSummary = {
+  component_name: string;
+  samples: number;
+  avg_score: number;
+  best_score: number;
+  worst_score: number;
+};
+
 export type SkaterDetail = SkaterSearchRow & {
   scores: SkaterScoreRow[];
   elements: SkaterElementRow[];
+  component_summary?: SkaterComponentSummary[];
   best_score_total: number | null;
 };
 

@@ -12,23 +12,36 @@ import { KpiCard } from "@/components/kpi-card";
 import { NationalitiesBarChart } from "@/components/nationalities-bar-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { YearRangeFilter } from "@/components/year-range-filter";
 import { getDashboard } from "@/lib/api";
 
 export const revalidate = 30;
 
-export default async function Page() {
-  const data = await getDashboard();
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ from_year?: string; to_year?: string }>;
+}) {
+  const sp = await searchParams;
+  const from = sp.from_year ? Number(sp.from_year) : undefined;
+  const to = sp.to_year ? Number(sp.to_year) : undefined;
+  const data = await getDashboard({ from, to });
   const { overview, competition_mix, clubs, nationalities } = data;
+
+  const periodLabel = data.period
+    ? `${data.period.from_year}–${data.period.to_year}`
+    : "all-time view";
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            {overview.first_event_date} → {overview.latest_event_date} · all-time view
+            {overview.first_event_date} → {overview.latest_event_date} · {periodLabel}
           </p>
         </div>
+        <YearRangeFilter minYear={2013} maxYear={2026} />
       </div>
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">

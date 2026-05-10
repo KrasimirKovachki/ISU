@@ -120,6 +120,7 @@ def get_skater(skater_key: int, conn: Any = Depends(connection_dependency)) -> d
     # become more interesting with fuller history.
     skater["scores"] = repository.skater_scores(conn, skater_key, 200)
     skater["elements"] = repository.skater_elements(conn, skater_key, 500)
+    skater["component_summary"] = repository.skater_component_summary(conn, skater_key)
     return skater
 
 

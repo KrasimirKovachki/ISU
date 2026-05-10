@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ComponentRadar } from "@/components/component-radar";
 import { KpiCard } from "@/components/kpi-card";
 import { PageHeader } from "@/components/page-header";
 import { SkaterElementStats } from "@/components/skater-element-stats";
@@ -48,12 +49,20 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <KpiCard label="Competitions" value={skater.competitions} hint={`${skater.scored_competitions} scored`} />
       </section>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">TSS / TES / PCS over time</CardTitle></CardHeader>
-        <CardContent>
-          <SkaterProgressionChart scores={skater.scores} />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-2">
+          <CardHeader><CardTitle className="text-base">TSS / TES / PCS over time</CardTitle></CardHeader>
+          <CardContent>
+            <SkaterProgressionChart scores={skater.scores} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle className="text-base">Component profile</CardTitle></CardHeader>
+          <CardContent>
+            <ComponentRadar rows={skater.component_summary ?? []} />
+          </CardContent>
+        </Card>
+      </div>
 
       <SkaterElementStats elements={skater.elements} />
 

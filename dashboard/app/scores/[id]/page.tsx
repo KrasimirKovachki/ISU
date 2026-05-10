@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getScore } from "@/lib/api";
+import { describeElement, elementLegendEntries } from "@/lib/element-codes";
 import { nationDisplay, points } from "@/lib/format";
 
 export const revalidate = 60;
@@ -101,7 +102,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               Elements <span className="text-xs font-normal text-muted-foreground">· {score.elements.length}</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -124,7 +126,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                   return (
                     <TableRow key={e.element_score_key}>
                       <TableCell className="tabular-nums text-muted-foreground">{e.element_no}</TableCell>
-                      <TableCell className="font-medium" title={e.raw_element ?? ""}>{e.element_code}</TableCell>
+                      <TableCell className="font-medium" title={[describeElement(e.element_code), e.raw_element].filter(Boolean).join(" — ")}>{e.element_code}</TableCell>
                       <TableCell>
                         {e.markers.length > 0 ? (
                           <div className="flex gap-1">
@@ -158,6 +160,21 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 })}
               </TableBody>
             </Table>
+            </div>
+            {(() => {
+              const legend = elementLegendEntries(score.elements);
+              if (legend.length === 0) return null;
+              return (
+                <div className="px-4 pt-3 pb-4 text-xs flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground border-t">
+                  {legend.map(({ code, description }) => (
+                    <span key={code}>
+                      <span className="font-mono font-medium text-foreground">{code}</span>
+                      <span> · {description}</span>
+                    </span>
+                  ))}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       ) : null}

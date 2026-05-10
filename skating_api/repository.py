@@ -426,6 +426,39 @@ LIMIT %(limit)s
     )
 
 
+def skater_component_summary(conn: Any, skater_key: int) -> list[dict[str, Any]]:
+    """Average / best per program component for a skater. Used for the
+    radar chart on the skater profile.
+
+    api.mv_component_score has no skater identity columns of its own —
+    join through mv_segment_score (which carries skater_name + nation +
+    club) and back to mv_skater_search via the identity_key expression.
+    """
+    return fetch_all(
+        conn,
+        """
+WITH segs AS (
+  SELECT segment_score_key
+  FROM api.mv_segment_score fss
+  JOIN api.mv_skater_search mss
+    ON mss.identity_key = api.skater_identity_key(fss.skater_name, fss.nation_code, fss.club_name)
+  WHERE mss.skater_key = %(skater_key)s
+)
+SELECT
+  cs.component_name,
+  count(*)      AS samples,
+  avg(cs.score) AS avg_score,
+  max(cs.score) AS best_score,
+  min(cs.score) AS worst_score
+FROM api.mv_component_score cs
+JOIN segs USING (segment_score_key)
+GROUP BY cs.component_name
+ORDER BY samples DESC, cs.component_name
+""",
+        {"skater_key": skater_key},
+    )
+
+
 def list_marker_legend(conn: Any) -> list[dict[str, Any]]:
     return fetch_all(
         conn,
