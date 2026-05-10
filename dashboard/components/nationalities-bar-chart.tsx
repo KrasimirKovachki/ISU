@@ -13,7 +13,7 @@ export function NationalitiesBarChart({ rows, take = 12 }: { rows: NationalityRo
     .reverse();
   return (
     <ChartFrame>
-      <ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 600, height: 288 }}>
         <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
           <XAxis type="number" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />

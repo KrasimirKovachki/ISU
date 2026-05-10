@@ -21,7 +21,7 @@ export function CompetitionMixDonut({ rows }: { rows: CompetitionMixRow[] }) {
   const data = [...grouped.entries()].map(([name, value]) => ({ name, value }));
   return (
     <ChartFrame>
-      <ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 600, height: 288 }}>
         <PieChart>
           <Pie
             data={data}

@@ -16,7 +16,7 @@ export function ComponentRadar({ rows }: { rows: SkaterComponentSummary[] }) {
   }));
   return (
     <ChartFrame>
-      <ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 400, height: 288 }}>
         <RadarChart data={data}>
           <PolarGrid stroke="var(--border)" />
           <PolarAngleAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />

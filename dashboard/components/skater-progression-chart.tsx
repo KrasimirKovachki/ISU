@@ -24,7 +24,7 @@ export function SkaterProgressionChart({ scores }: { scores: SkaterScoreRow[] })
 
   return (
     <ChartFrame>
-      <ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 600, height: 288 }}>
         <LineChart data={data} margin={{ left: 4, right: 16, top: 8, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
           <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} minTickGap={24} />

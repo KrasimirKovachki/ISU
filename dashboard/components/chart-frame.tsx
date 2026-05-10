@@ -1,12 +1,19 @@
 "use client";
 /**
- * Recharts ResponsiveContainer needs a real DOM parent to measure. During
- * server-render the parent is just an HTML string, so ResponsiveContainer
- * reports `width(-1) height(-1)` and renders nothing. ChartFrame holds the
- * fixed-height slot during SSR + first render, then mounts the chart on
- * the client tick after hydration.
+ * Fixed-height slot for Recharts charts.
  *
- * Charts: just wrap your <ResponsiveContainer> in <ChartFrame>.
+ * Recharts v3 renders the SVG only client-side (after hydration); during
+ * SSR the wrapper is empty. ChartFrame:
+ *  1. Reserves the layout space so the page doesn't reflow when the chart
+ *     hydrates.
+ *  2. Shows a subtle "Loading chart…" placeholder until the first client
+ *     paint, so an empty wrapper isn't mistaken for a missing chart.
+ *  3. Makes sure the parent has explicit width/height for ResponsiveContainer
+ *     to measure correctly.
+ *
+ * Charts must additionally pass `initialDimension={{ width, height }}` to
+ * their ResponsiveContainer so Recharts has fallback dimensions before its
+ * ResizeObserver fires.
  */
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -19,14 +26,18 @@ export function ChartFrame({
 }: {
   children: ReactNode;
   className?: string;
-  /** Tailwind height utility for the slot. Default h-72 (~288px). */
   height?: string;
 }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   return (
-    <div className={cn("w-full", height, className)}>
-      {mounted ? children : null}
+    <div className={cn("w-full relative", height, className)}>
+      {children}
+      {!hydrated ? (
+        <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground bg-muted/20 rounded-md pointer-events-none">
+          Loading chart…
+        </div>
+      ) : null}
     </div>
   );
 }

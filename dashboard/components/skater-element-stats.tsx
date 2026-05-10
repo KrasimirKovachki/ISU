@@ -96,7 +96,7 @@ export function SkaterElementStats({ elements }: { elements: SkaterElementRow[] 
         </CardHeader>
         <CardContent>
           <ChartFrame>
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 600, height: 288 }}>
               <BarChart data={topByCount} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                 <XAxis type="number" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
@@ -145,7 +145,7 @@ export function SkaterElementStats({ elements }: { elements: SkaterElementRow[] 
         </CardHeader>
         <CardContent>
           <ChartFrame>
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 600, height: 288 }}>
               <ScatterChart margin={{ left: 4, right: 16, top: 8, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="x" type="category" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} minTickGap={32} />
