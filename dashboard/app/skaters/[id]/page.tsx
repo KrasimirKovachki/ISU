@@ -1,4 +1,5 @@
 /** Skater profile — KPI tiles, TSS progression chart, recent scores. */
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, CalendarRange, Sparkles, Trophy } from "lucide-react";
@@ -6,6 +7,7 @@ import { ArrowRight, CalendarRange, Sparkles, Trophy } from "lucide-react";
 import { ComparisonRadar } from "@/components/comparison-radar";
 import { KpiCard } from "@/components/kpi-card";
 import { PageHeader } from "@/components/page-header";
+import { SkatingBladeIcon } from "@/components/skating-icons";
 import { SkaterElementStats } from "@/components/skater-element-stats";
 import { SkaterProgressionChart } from "@/components/skater-progression-chart";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +15,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getSkater } from "@/lib/api";
 import { formatDate, number, nationDisplay, points } from "@/lib/format";
+import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 60;
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const key = Number(id);
+  if (!Number.isFinite(key)) return buildMetadata({ title: "Skater Profile", path: `/skaters/${id}` });
+  try {
+    const skater = await getSkater(key);
+    return buildMetadata({
+      title: `${skater.skater_name}`,
+      description: `Public skater profile for ${skater.skater_name}${skater.club_name ? ` of ${skater.club_name}` : ""}, with competition history and score progression.`,
+      path: `/skaters/${key}`,
+    });
+  } catch {
+    return buildMetadata({ title: "Skater Profile", path: `/skaters/${id}` });
+  }
+}
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -32,6 +51,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     <div className="space-y-6">
       <PageHeader
         eyebrow="Skater Profile"
+        icon={<SkatingBladeIcon className="h-5 w-5" />}
         title={skater.skater_name}
         subtitle={
           <>

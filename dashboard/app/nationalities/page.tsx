@@ -7,8 +7,14 @@ import { NationalitiesTable } from "@/components/tables/nationalities-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listNationalities } from "@/lib/api";
 import { formatDate, nationDisplay, number, points } from "@/lib/format";
+import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 30;
+export const metadata = buildMetadata({
+  title: "Countries",
+  description: "Browse country-level figure-skating coverage, skaters, event counts, and top visible scores.",
+  path: "/nationalities",
+});
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const sp = await searchParams;

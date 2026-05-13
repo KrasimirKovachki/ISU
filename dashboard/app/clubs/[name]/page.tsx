@@ -1,14 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Building2, Globe2, Users } from "lucide-react";
 
 import { KpiCard } from "@/components/kpi-card";
 import { PageHeader } from "@/components/page-header";
+import { IceRinkIcon } from "@/components/skating-icons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getClub } from "@/lib/api";
 import { formatDate, number, nationDisplay, points } from "@/lib/format";
+import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 60;
 
@@ -18,6 +21,21 @@ const STATUS_LABEL: Record<string, string> = {
   mixed: "Mixed",
   development: "Mlad Figurist",
 };
+
+export async function generateMetadata({ params }: { params: Promise<{ name: string }> }): Promise<Metadata> {
+  const { name } = await params;
+  const decoded = decodeURIComponent(name);
+  try {
+    const club = await getClub(decoded);
+    return buildMetadata({
+      title: `${club.club_name}`,
+      description: `Public club page for ${club.club_name}, with skaters, competition activity, and best visible scores.`,
+      path: `/clubs/${encodeURIComponent(club.club_name)}`,
+    });
+  } catch {
+    return buildMetadata({ title: "Club Profile", path: `/clubs/${encodeURIComponent(decoded)}` });
+  }
+}
 
 export default async function Page({ params }: { params: Promise<{ name: string }> }) {
   const { name } = await params;
@@ -33,6 +51,7 @@ export default async function Page({ params }: { params: Promise<{ name: string 
     <div className="space-y-6">
       <PageHeader
         eyebrow="Club Profile"
+        icon={<IceRinkIcon className="h-5 w-5" />}
         title={club.club_name}
         subtitle={
           <>

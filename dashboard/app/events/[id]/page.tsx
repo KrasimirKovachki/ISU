@@ -1,14 +1,33 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Globe2, MapPin, Trophy } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { ScoreSheetIcon } from "@/components/skating-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getEvent } from "@/lib/api";
 import { formatDate, number, nationDisplay, points } from "@/lib/format";
+import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 60;
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const key = Number(id);
+  if (!Number.isFinite(key)) return buildMetadata({ title: "Competition Page", path: `/events/${id}` });
+  try {
+    const event = await getEvent(key);
+    return buildMetadata({
+      title: `${event.event_name ?? "Competition"}`,
+      description: `Public competition page for ${event.event_name ?? "this event"} with categorized results and source-backed result links.`,
+      path: `/events/${key}`,
+    });
+  } catch {
+    return buildMetadata({ title: "Competition Page", path: `/events/${id}` });
+  }
+}
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -35,6 +54,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     <div className="space-y-6">
       <PageHeader
         eyebrow="Competition Page"
+        icon={<ScoreSheetIcon className="h-5 w-5" />}
         title={event.event_name ?? "(unnamed event)"}
         subtitle={
           <>

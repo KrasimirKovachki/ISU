@@ -8,8 +8,14 @@ import { YearRangeFilter } from "@/components/year-range-filter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listEvents } from "@/lib/api";
 import { formatDate, number } from "@/lib/format";
+import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 30;
+export const metadata = buildMetadata({
+  title: "Events",
+  description: "Browse public competition pages with dates, locations, event types, and official result sources.",
+  path: "/events",
+});
 
 export default async function Page({
   searchParams,

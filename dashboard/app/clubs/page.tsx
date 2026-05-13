@@ -7,8 +7,14 @@ import { ClubsTable } from "@/components/tables/clubs-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listClubs } from "@/lib/api";
 import { formatDate, nationDisplay, number, points } from "@/lib/format";
+import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 30;
+export const metadata = buildMetadata({
+  title: "Clubs",
+  description: "Browse public club pages with skaters, activity, best scores, and competition presence.",
+  path: "/clubs",
+});
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const sp = await searchParams;

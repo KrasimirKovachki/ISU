@@ -7,8 +7,14 @@ import { SkatersTable } from "@/components/tables/skaters-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { searchSkaters } from "@/lib/api";
 import { formatDate, nationDisplay, number, points } from "@/lib/format";
+import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 30;
+export const metadata = buildMetadata({
+  title: "Skaters",
+  description: "Browse public figure-skating skater profiles, recent appearances, clubs, and best scores.",
+  path: "/skaters",
+});
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const sp = await searchParams;

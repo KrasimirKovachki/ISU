@@ -1,15 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Gavel, ShieldCheck, Trophy } from "lucide-react";
 
 import { KpiCard } from "@/components/kpi-card";
 import { PageHeader } from "@/components/page-header";
+import { ScoreSheetIcon } from "@/components/skating-icons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getScore } from "@/lib/api";
 import { describeElement, elementLegendEntries } from "@/lib/element-codes";
 import { formatDate, nationDisplay, points } from "@/lib/format";
+import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 60;
 
@@ -30,6 +33,22 @@ function judgeAvgTrim(marks: { score: number }[]): { avg: number; high: number |
   return { avg: trimmedSum / (values.length - 2), high: sorted[sorted.length - 1], low: sorted[0] };
 }
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const key = Number(id);
+  if (!Number.isFinite(key)) return buildMetadata({ title: "Score Detail", path: `/scores/${id}` });
+  try {
+    const score = await getScore(key);
+    return buildMetadata({
+      title: `${score.skater_name} · ${score.segment_name ?? "Score"}`,
+      description: `Source-backed score detail for ${score.skater_name} in ${score.segment_name ?? "a segment"}, including judges, elements, components, and linked evidence.`,
+      path: `/scores/${key}`,
+    });
+  } catch {
+    return buildMetadata({ title: "Score Detail", path: `/scores/${id}` });
+  }
+}
+
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const key = Number(id);
@@ -46,6 +65,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     <div className="space-y-6">
       <PageHeader
         eyebrow="Score Detail"
+        icon={<ScoreSheetIcon className="h-5 w-5" />}
         title={`${score.skater_name} · ${score.segment_name ?? ""}`}
         subtitle={
           <>

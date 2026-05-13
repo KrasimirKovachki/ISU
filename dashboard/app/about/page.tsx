@@ -4,8 +4,14 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDashboard } from "@/lib/api";
 import { formatDate, number } from "@/lib/format";
+import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 60;
+export const metadata = buildMetadata({
+  title: "About",
+  description: "What the Skating Data site covers, how the public information product is positioned, and how source-backed competition data is used.",
+  path: "/about",
+});
 
 export default async function Page() {
   const data = await getDashboard();

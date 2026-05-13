@@ -8,8 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDashboard, listEvents } from "@/lib/api";
 import { formatDate, number, points } from "@/lib/format";
+import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 30;
+export const metadata = buildMetadata({
+  title: "Home",
+  description: "Public homepage for figure-skating skaters, clubs, competitions, countries, and analytics built from official result sources.",
+  path: "/",
+});
 
 const EXPLORE_LINKS = [
   {
