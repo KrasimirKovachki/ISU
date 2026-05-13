@@ -63,6 +63,16 @@ export default async function Page({ params }: { params: Promise<{ name: string 
           `${number(club.events)} events`,
           `${number(club.segment_scores)} scored segments`,
         ]}
+        right={
+          club.country_code ? (
+            <Link
+              href={`/nationalities/${encodeURIComponent(club.country_code)}`}
+              className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Country page <ArrowRight className="h-4 w-4" />
+            </Link>
+          ) : null
+        }
       />
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">

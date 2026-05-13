@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Gavel, ShieldCheck, Trophy } from "lucide-react";
+import { ArrowRight, Gavel, ShieldCheck, Trophy } from "lucide-react";
 
 import { KpiCard } from "@/components/kpi-card";
 import { PageHeader } from "@/components/page-header";
@@ -84,9 +84,25 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           `${score.components.length} components`,
         ]}
         right={
-          <Badge variant={score.score_source === "pdf_score_summary" ? "secondary" : "outline"}>
-            {score.score_source === "pdf_score_summary" ? "PDF score summary" : "HTML fallback"}
-          </Badge>
+          <>
+            {score.skater_key ? (
+              <Link
+                href={`/skaters/${score.skater_key}`}
+                className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Skater page <ArrowRight className="h-4 w-4" />
+              </Link>
+            ) : null}
+            <Link
+              href={`/events/${score.event_key}`}
+              className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Event page <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Badge variant={score.score_source === "pdf_score_summary" ? "secondary" : "outline"}>
+              {score.score_source === "pdf_score_summary" ? "PDF score summary" : "HTML fallback"}
+            </Badge>
+          </>
         }
       />
 

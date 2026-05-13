@@ -68,16 +68,24 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           event.competition_stream ?? "stream pending",
         ]}
         right={
-          event.root_url ? (
-            <a
-              href={event.root_url}
-              target="_blank"
-              rel="noreferrer"
+          <>
+            <Link
+              href="/events"
               className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             >
-              Original source <ArrowRight className="h-4 w-4" />
-            </a>
-          ) : null
+              Event archive <ArrowRight className="h-4 w-4" />
+            </Link>
+            {event.root_url ? (
+              <a
+                href={event.root_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Original source <ArrowRight className="h-4 w-4" />
+              </a>
+            ) : null}
+          </>
         }
       />
 
