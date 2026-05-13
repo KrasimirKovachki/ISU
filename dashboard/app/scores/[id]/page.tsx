@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Gavel, ShieldCheck, Trophy } from "lucide-react";
 
 import { KpiCard } from "@/components/kpi-card";
 import { PageHeader } from "@/components/page-header";
@@ -8,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getScore } from "@/lib/api";
 import { describeElement, elementLegendEntries } from "@/lib/element-codes";
-import { nationDisplay, points } from "@/lib/format";
+import { formatDate, nationDisplay, points } from "@/lib/format";
 
 export const revalidate = 60;
 
@@ -44,6 +45,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Score Detail"
         title={`${score.skater_name} · ${score.segment_name ?? ""}`}
         subtitle={
           <>
@@ -51,10 +53,16 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               {score.event_name ?? "—"}
             </Link>
             {" · "}{score.category_name ?? "—"}
-            {" · "}{score.event_start_date ?? "—"}
+            {" · "}{formatDate(score.event_start_date)}
             {" · "}{nationDisplay(score.nation_code)}
           </>
         }
+        meta={[
+          score.club_name ?? "club pending",
+          `${score.judges.length} judges`,
+          `${score.elements.length} elements`,
+          `${score.components.length} components`,
+        ]}
         right={
           <Badge variant={score.score_source === "pdf_score_summary" ? "secondary" : "outline"}>
             {score.score_source === "pdf_score_summary" ? "PDF score summary" : "HTML fallback"}
@@ -67,6 +75,41 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <KpiCard label="TES" value={points(score.tes)} />
         <KpiCard label="PCS" value={points(score.pcs)} />
         <KpiCard label="Deduction" value={points(score.deduction)} />
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
+        <Card className="bg-slate-950 text-slate-50">
+          <CardHeader>
+            <CardTitle className="text-base text-white">Why this page matters</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
+            <p>This is the closest thing to a source-backed evidence sheet in the public site: one score, one segment, one skater, with parsed judging detail where available.</p>
+            <p>It should feel trustworthy and readable even for visitors who are not living inside skating scoring terminology every day.</p>
+          </CardContent>
+        </Card>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Skater</p>
+              <p className="mt-2 text-base font-semibold">{score.skater_name}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{nationDisplay(score.nation_code)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Event</p>
+              <p className="mt-2 text-base font-semibold">{score.event_name ?? "—"}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{formatDate(score.event_start_date)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Segment</p>
+              <p className="mt-2 text-base font-semibold">{score.segment_name ?? "—"}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{score.category_name ?? "—"}</p>
+            </CardContent>
+          </Card>
+        </div>
       </section>
 
       <Card>
@@ -101,6 +144,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             <CardTitle className="text-base">
               Elements <span className="text-xs font-normal text-muted-foreground">· {score.elements.length}</span>
             </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Parsed technical content with markers, bonus, panel score, and per-judge GOE where available.
+            </p>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -183,6 +229,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Components</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Program component scoring by factor, final panel score, and individual judge marks.
+            </p>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             <Table>
@@ -234,7 +283,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       ) : null}
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Evidence</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Evidence</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Linked source documents that support this imported score view.
+          </p>
+        </CardHeader>
         <CardContent>
           {score.evidence.length === 0 ? (
             <div className="text-sm text-muted-foreground">No source documents linked.</div>
@@ -250,6 +304,26 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               ))}
             </ul>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">How to read this page</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-3 text-sm leading-6 text-slate-600">
+          <div>
+            <p className="font-medium text-slate-900"><Trophy className="mr-2 inline h-4 w-4 text-amber-600" />Totals first</p>
+            <p className="mt-2">The KPI strip gives the quickest reading of the segment outcome: total, technical, components, and deductions.</p>
+          </div>
+          <div>
+            <p className="font-medium text-slate-900"><Gavel className="mr-2 inline h-4 w-4 text-sky-700" />Judge detail</p>
+            <p className="mt-2">Judge tables and trimmed marks help explain how panel scoring produced the visible totals.</p>
+          </div>
+          <div>
+            <p className="font-medium text-slate-900"><ShieldCheck className="mr-2 inline h-4 w-4 text-emerald-700" />Source traceability</p>
+            <p className="mt-2">Evidence links keep the public page anchored to original published competition documents.</p>
+          </div>
         </CardContent>
       </Card>
     </div>

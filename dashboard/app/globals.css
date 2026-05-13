@@ -123,3 +123,45 @@
     @apply bg-background text-foreground antialiased;
   }
 }
+
+@layer components {
+  .ice-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ice-sheen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(140deg, rgb(255 255 255 / 0.78), rgb(255 255 255 / 0) 42%),
+      radial-gradient(circle at top right, rgb(125 211 252 / 0.12), transparent 38%);
+  }
+
+  .ice-grid {
+    position: relative;
+  }
+
+  .ice-grid::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.18) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.18) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.7), transparent 86%);
+  }
+
+  .ice-emblem {
+    background:
+      radial-gradient(circle at top left, rgb(255 255 255 / 0.92), rgb(186 230 253 / 0.7) 55%, rgb(125 211 252 / 0.28));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.75),
+      0 10px 24px rgb(14 116 144 / 0.08);
+  }
+}

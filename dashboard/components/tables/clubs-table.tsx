@@ -2,7 +2,7 @@
 import Link from "next/link";
 
 import { DataTable, type Column } from "@/components/data-table";
-import { nationDisplay, points } from "@/lib/format";
+import { formatDate, nationDisplay, points } from "@/lib/format";
 import type { ClubRow } from "@/lib/types";
 
 type Row = ClubRow & Record<string, unknown>;
@@ -19,7 +19,7 @@ const columns: Column<Row>[] = [
   { key: "best_tss", header: "Best TSS", className: "text-right tabular-nums",
     cell: (r) => points(r.best_tss) },
   { key: "latest_seen_date", header: "Latest", className: "text-muted-foreground",
-    cell: (r) => r.latest_seen_date ?? "—" },
+    cell: (r) => formatDate(r.latest_seen_date) },
 ];
 
 export function ClubsTable({ rows }: { rows: ClubRow[] }) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpen, Building2, Calendar, Globe2, Home, LineChart, Users } from "lucide-react";
 
+import { SkatingBladeIcon } from "@/components/skating-icons";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -21,7 +22,9 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex w-60 shrink-0 flex-col border-r bg-sidebar">
       <div className="flex items-center gap-2 px-5 py-4 border-b">
-        <div className="h-8 w-8 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center font-semibold">S</div>
+        <div className="ice-emblem h-9 w-9 rounded-xl text-sky-800 flex items-center justify-center">
+          <SkatingBladeIcon className="h-5 w-5" />
+        </div>
         <div>
           <span className="block font-semibold tracking-tight">Skating Data</span>
           <span className="block text-[11px] text-muted-foreground">Public information site</span>

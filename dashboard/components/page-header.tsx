@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 export function PageHeader({
   eyebrow,
+  icon,
   title,
   subtitle,
   meta,
@@ -13,6 +14,7 @@ export function PageHeader({
   className,
 }: {
   eyebrow?: ReactNode;
+  icon?: ReactNode;
   title: ReactNode;
   subtitle?: ReactNode;
   meta?: ReactNode[];
@@ -24,7 +26,12 @@ export function PageHeader({
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div className="min-w-0 max-w-3xl">
           {eyebrow ? (
-            <div className="mb-3">
+            <div className="mb-3 flex items-center gap-3">
+              {icon ? (
+                <div className="ice-emblem h-11 w-11 rounded-2xl text-sky-800 flex items-center justify-center">
+                  {icon}
+                </div>
+              ) : null}
               <Badge variant="secondary" className="rounded-full bg-sky-700/10 px-3 py-1 text-sky-800">
                 {eyebrow}
               </Badge>

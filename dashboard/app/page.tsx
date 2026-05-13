@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, Building2, CalendarRange, Globe2, Layers3, LineChart, Search, Sparkles, Users } from "lucide-react";
+import { ArrowRight, Building2, CalendarRange, Globe2, Layers3, LineChart, Search, Sparkles } from "lucide-react";
 
 import { CompetitionMixDonut } from "@/components/competition-mix-donut";
 import { NationalitiesBarChart } from "@/components/nationalities-bar-chart";
+import { IceRinkIcon, MedalRibbonIcon, ScoreSheetIcon, SkateSparkIcon, SkatingBladeIcon } from "@/components/skating-icons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDashboard, listEvents } from "@/lib/api";
@@ -15,25 +16,25 @@ const EXPLORE_LINKS = [
     href: "/skaters",
     title: "Skater Profiles",
     body: "Search public profiles with score progression, element history, nationality, and club links.",
-    Icon: Users,
+    Icon: SkatingBladeIcon,
   },
   {
     href: "/clubs",
     title: "Club Pages",
     body: "Browse active clubs, their skaters, event presence, and best performances.",
-    Icon: Building2,
+    Icon: IceRinkIcon,
   },
   {
     href: "/events",
     title: "Competition Pages",
     body: "Follow events, participants, results, and source documents from official protocols.",
-    Icon: CalendarRange,
+    Icon: ScoreSheetIcon,
   },
   {
     href: "/insights",
     title: "Analytics",
     body: "See the structured dashboard views as one layer inside a broader information site.",
-    Icon: LineChart,
+    Icon: MedalRibbonIcon,
   },
 ];
 
@@ -55,12 +56,18 @@ export default async function Page() {
 
   return (
     <div className="space-y-10">
-      <section className="overflow-hidden rounded-[2rem] border bg-gradient-to-br from-sky-100 via-white to-blue-50">
+      <section className="ice-grid overflow-hidden rounded-[2rem] border bg-gradient-to-br from-sky-100 via-white to-blue-50">
         <div className="grid gap-8 px-6 py-10 md:px-10 md:py-12 lg:grid-cols-[1.25fr_0.85fr]">
           <div>
-            <Badge variant="secondary" className="rounded-full bg-sky-700/10 px-3 py-1 text-sky-800">
-              Public Figure-Skating Data
-            </Badge>
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge variant="secondary" className="rounded-full bg-sky-700/10 px-3 py-1 text-sky-800">
+                Public Figure-Skating Data
+              </Badge>
+              <span className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-3 py-1 text-xs text-slate-600">
+                <SkateSparkIcon className="h-3.5 w-3.5 text-sky-700" />
+                inspired by public sports-data products, adapted for your stack
+              </span>
+            </div>
             <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl text-balance">
               Turn the dashboards into a real information website.
             </h1>
@@ -68,6 +75,11 @@ export default async function Page() {
               Browse skaters, clubs, competitions, countries, and analytics built from official result sources. This
               front page is meant to explain the dataset, not just expose internal widgets.
             </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-600">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1"><SkatingBladeIcon className="h-3.5 w-3.5 text-sky-700" /> public profiles</span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1"><ScoreSheetIcon className="h-3.5 w-3.5 text-sky-700" /> source-backed score pages</span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1"><IceRinkIcon className="h-3.5 w-3.5 text-sky-700" /> club and event browse</span>
+            </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/skaters"
@@ -99,9 +111,12 @@ export default async function Page() {
           </div>
 
           <div className="grid gap-4">
-            <Card className="border-white/70 bg-white/80 shadow-sm">
+            <Card className="ice-sheen border-white/70 bg-white/80 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-sm font-medium text-slate-600">What the site should communicate</CardTitle>
+                <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
+                  <SkatingBladeIcon className="h-4 w-4 text-sky-700" />
+                  What the site should communicate
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm leading-6 text-slate-600">
                 <p>Who is covered, how much data exists, and where a visitor should go next.</p>
@@ -110,7 +125,10 @@ export default async function Page() {
             </Card>
             <Card className="border-sky-200 bg-sky-950 text-sky-50 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-sm font-medium text-sky-100">Current public anchors</CardTitle>
+                <CardTitle className="text-sm font-medium text-sky-100 flex items-center gap-2">
+                  <MedalRibbonIcon className="h-4 w-4 text-sky-300" />
+                  Current public anchors
+                </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-3 text-sm">
                 <div className="flex items-start gap-3">
@@ -136,7 +154,7 @@ export default async function Page() {
           <Link
             key={href}
             href={href}
-            className="group rounded-3xl border bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-md"
+            className="group ice-sheen rounded-3xl border bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 text-sky-800">
               <Icon className="h-5 w-5" />
@@ -153,7 +171,7 @@ export default async function Page() {
       <section className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Latest competition coverage</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><ScoreSheetIcon className="h-4 w-4 text-sky-700" />Latest competition coverage</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3">
             {latestEvents.map((event) => (
@@ -176,7 +194,7 @@ export default async function Page() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Why the dashboard is not enough</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><SkateSparkIcon className="h-4 w-4 text-sky-700" />Why the dashboard is not enough</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm leading-6 text-slate-600">
             <p>A raw dashboard is useful for exploration, but a public site needs entry points, explanations, and page-level context.</p>
@@ -191,7 +209,7 @@ export default async function Page() {
       <section className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Coverage by country</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><Globe2 className="h-4 w-4 text-sky-700" />Coverage by country</CardTitle>
           </CardHeader>
           <CardContent>
             <NationalitiesBarChart rows={nationalities} take={10} />
@@ -199,7 +217,7 @@ export default async function Page() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Competition mix</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><MedalRibbonIcon className="h-4 w-4 text-sky-700" />Competition mix</CardTitle>
           </CardHeader>
           <CardContent>
             <CompetitionMixDonut rows={competition_mix} />
@@ -210,7 +228,7 @@ export default async function Page() {
       <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
         <Card className="bg-slate-950 text-slate-50">
           <CardHeader>
-            <CardTitle className="text-base text-white">Data confidence</CardTitle>
+            <CardTitle className="text-base text-white flex items-center gap-2"><ScoreSheetIcon className="h-4 w-4 text-sky-300" />Data confidence</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
             <p>The public site should stay explicit about source-backed coverage and about what is still incomplete.</p>
@@ -220,7 +238,7 @@ export default async function Page() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Featured club signal</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><IceRinkIcon className="h-4 w-4 text-sky-700" />Featured club signal</CardTitle>
             {topClub ? (
               <Link href={`/clubs/${encodeURIComponent(topClub.club_name)}`} className="text-sm font-medium text-sky-800 hover:text-sky-950">
                 Open club
