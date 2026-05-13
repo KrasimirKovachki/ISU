@@ -3,24 +3,26 @@
  * isn't the only way to fire (some browsers don't reliably submit
  * single-input forms via Enter inside complex layouts). */
 import { Search } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function Topbar() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  // Seed the input with the current ?q= so refreshing on a search keeps the term visible.
-  const [q, setQ] = useState(searchParams.get("q") ?? "");
+  const q = searchParams.get("q") ?? "";
 
-  // If the URL ?q changes (e.g. user used the back button), sync the input.
-  useEffect(() => {
-    setQ(searchParams.get("q") ?? "");
-  }, [searchParams]);
+  return <TopbarInner key={`${pathname}?${searchParams.toString()}`} initialQuery={q} />;
+}
+
+function TopbarInner({ initialQuery }: { initialQuery: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [q, setQ] = useState(initialQuery);
 
   function submit(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
@@ -42,6 +44,11 @@ export function Topbar() {
 
   return (
     <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background/80 backdrop-blur px-4 md:px-6 py-3">
+      <div className="hidden lg:flex items-center gap-4 text-sm text-muted-foreground">
+        <Link href="/" className="hover:text-foreground">Home</Link>
+        <Link href="/insights" className="hover:text-foreground">Insights</Link>
+        <Link href="/about" className="hover:text-foreground">About</Link>
+      </div>
       <form onSubmit={submit} className="flex-1 max-w-xl flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

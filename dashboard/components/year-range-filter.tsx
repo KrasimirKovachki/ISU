@@ -7,7 +7,7 @@
  * From and To are changed.
  */
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,20 +15,39 @@ import {
 } from "@/components/ui/select";
 
 export function YearRangeFilter({ minYear, maxYear }: { minYear: number; maxYear: number }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const initialFrom = searchParams.get("from_year") ?? "";
+  const initialTo = searchParams.get("to_year") ?? "";
+
+  return (
+    <YearRangeFilterInner
+      key={`${pathname}?${searchParams.toString()}`}
+      minYear={minYear}
+      maxYear={maxYear}
+      initialFrom={initialFrom}
+      initialTo={initialTo}
+    />
+  );
+}
+
+function YearRangeFilterInner({
+  minYear,
+  maxYear,
+  initialFrom,
+  initialTo,
+}: {
+  minYear: number;
+  maxYear: number;
+  initialFrom: string;
+  initialTo: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const initialFrom = searchParams.get("from_year") ?? "";
-  const initialTo = searchParams.get("to_year") ?? "";
   const [from, setFrom] = useState(initialFrom);
   const [to, setTo] = useState(initialTo);
-
-  // If the URL changes externally (e.g. browser back), sync the inputs.
-  useEffect(() => {
-    setFrom(searchParams.get("from_year") ?? "");
-    setTo(searchParams.get("to_year") ?? "");
-  }, [searchParams]);
 
   const isFiltered = Boolean(from || to);
 

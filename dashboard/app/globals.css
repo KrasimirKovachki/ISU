@@ -5,6 +5,8 @@
 /* shadcn/ui neutral palette + design tokens (Tailwind v4 inline @theme).
    Tweak --primary / --chart-* etc. to rebrand the whole app from one place. */
 :root {
+  --font-geist-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-geist-mono: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

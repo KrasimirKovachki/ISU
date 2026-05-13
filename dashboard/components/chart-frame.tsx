@@ -15,9 +15,13 @@
  * their ResponsiveContainer so Recharts has fallback dimensions before its
  * ResizeObserver fires.
  */
-import { useEffect, useState, type ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+
+function subscribe() {
+  return () => {};
+}
 
 export function ChartFrame({
   children,
@@ -28,8 +32,7 @@ export function ChartFrame({
   className?: string;
   height?: string;
 }) {
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  const hydrated = useSyncExternalStore(subscribe, () => true, () => false);
   return (
     <div className={cn("w-full relative", height, className)}>
       {children}

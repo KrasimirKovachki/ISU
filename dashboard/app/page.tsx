@@ -1,76 +1,205 @@
-/**
- * Dashboard home — server component. Fetches `/api/dashboard` once on the
- * server, renders KPI cards, two charts, and the top-clubs table. No
- * client-side JS for the initial render; charts hydrate when the page is
- * interactive.
- */
-import { Award, Building2, CalendarRange, Globe2, Layers, Sparkles, Trophy, Users } from "lucide-react";
 import Link from "next/link";
+import { ArrowRight, Building2, CalendarRange, Globe2, Layers3, LineChart, Search, Sparkles, Users } from "lucide-react";
 
 import { CompetitionMixDonut } from "@/components/competition-mix-donut";
-import { KpiCard } from "@/components/kpi-card";
 import { NationalitiesBarChart } from "@/components/nationalities-bar-chart";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { YearRangeFilter } from "@/components/year-range-filter";
-import { getDashboard } from "@/lib/api";
+import { getDashboard, listEvents } from "@/lib/api";
+import { formatDate, number, points } from "@/lib/format";
 
 export const revalidate = 30;
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<{ from_year?: string; to_year?: string }>;
-}) {
-  const sp = await searchParams;
-  const from = sp.from_year ? Number(sp.from_year) : undefined;
-  const to = sp.to_year ? Number(sp.to_year) : undefined;
-  const data = await getDashboard({ from, to });
-  const { overview, competition_mix, clubs, nationalities } = data;
+const EXPLORE_LINKS = [
+  {
+    href: "/skaters",
+    title: "Skater Profiles",
+    body: "Search public profiles with score progression, element history, nationality, and club links.",
+    Icon: Users,
+  },
+  {
+    href: "/clubs",
+    title: "Club Pages",
+    body: "Browse active clubs, their skaters, event presence, and best performances.",
+    Icon: Building2,
+  },
+  {
+    href: "/events",
+    title: "Competition Pages",
+    body: "Follow events, participants, results, and source documents from official protocols.",
+    Icon: CalendarRange,
+  },
+  {
+    href: "/insights",
+    title: "Analytics",
+    body: "See the structured dashboard views as one layer inside a broader information site.",
+    Icon: LineChart,
+  },
+];
 
-  const periodLabel = data.period
-    ? `${data.period.from_year}–${data.period.to_year}`
-    : "all-time view";
+export default async function Page() {
+  const [dashboard, eventsResponse] = await Promise.all([
+    getDashboard(),
+    listEvents({ limit: 6 }),
+  ]);
+
+  const { overview, clubs, nationalities, competition_mix } = dashboard;
+  const latestEvents = eventsResponse.items
+    .filter((event) => event.event_start_date)
+    .sort((a, b) => (a.event_start_date! < b.event_start_date! ? 1 : -1))
+    .slice(0, 4);
+
+  const coverageNote = `${formatDate(overview.first_event_date)} to ${formatDate(overview.latest_event_date)}`;
+  const topNation = nationalities[0];
+  const topClub = clubs[0];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            {overview.first_event_date} → {overview.latest_event_date} · {periodLabel}
-          </p>
+    <div className="space-y-10">
+      <section className="overflow-hidden rounded-[2rem] border bg-gradient-to-br from-sky-100 via-white to-blue-50">
+        <div className="grid gap-8 px-6 py-10 md:px-10 md:py-12 lg:grid-cols-[1.25fr_0.85fr]">
+          <div>
+            <Badge variant="secondary" className="rounded-full bg-sky-700/10 px-3 py-1 text-sky-800">
+              Public Figure-Skating Data
+            </Badge>
+            <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl text-balance">
+              Turn the dashboards into a real information website.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">
+              Browse skaters, clubs, competitions, countries, and analytics built from official result sources. This
+              front page is meant to explain the dataset, not just expose internal widgets.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/skaters"
+                className="inline-flex items-center gap-2 rounded-full bg-sky-800 px-5 py-3 text-sm font-medium text-white transition hover:bg-sky-900"
+              >
+                Explore skaters <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/insights"
+                className="inline-flex items-center gap-2 rounded-full border bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Open analytics layer <LineChart className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border bg-white/75 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Coverage</p>
+                <p className="mt-2 text-sm font-medium text-slate-900">{coverageNote}</p>
+              </div>
+              <div className="rounded-2xl border bg-white/75 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Events Indexed</p>
+                <p className="mt-2 text-sm font-medium text-slate-900">{number(overview.events)}</p>
+              </div>
+              <div className="rounded-2xl border bg-white/75 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Scored Skaters</p>
+                <p className="mt-2 text-sm font-medium text-slate-900">{number(overview.skaters)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            <Card className="border-white/70 bg-white/80 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-slate-600">What the site should communicate</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm leading-6 text-slate-600">
+                <p>Who is covered, how much data exists, and where a visitor should go next.</p>
+                <p>Profiles and competition pages should feel like public reference pages, with analytics as supporting evidence.</p>
+              </CardContent>
+            </Card>
+            <Card className="border-sky-200 bg-sky-950 text-sky-50 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-sky-100">Current public anchors</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <Globe2 className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" />
+                  <p>{number(nationalities.length)} visible countries in the dashboard slice, led by {topNation?.nation_code ?? "—"}.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" />
+                  <p>{number(overview.scoring_clubs)} scoring clubs with profile-style pages to build on.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Layers3 className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" />
+                  <p>{number(overview.element_scores)} parsed elements available for deeper skater and club storytelling.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-        <YearRangeFilter minYear={2013} maxYear={2026} />
-      </div>
-
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard label="Events"          value={overview.events}          icon={CalendarRange} />
-        <KpiCard label="Skaters"         value={overview.skaters}         icon={Users} />
-        <KpiCard label="Clubs"           value={overview.scoring_clubs}   icon={Building2} hint={`${overview.registered_clubs} registered`} />
-        <KpiCard label="Segment scores"  value={overview.segment_scores}  icon={Layers} hint={`${overview.element_scores.toLocaleString()} elements`} />
       </section>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard label="International"   value={overview.international_events} icon={Globe2} />
-        <KpiCard label="Federation"      value={overview.federation_events}    icon={Trophy} />
-        <KpiCard label="Club / Open"     value={overview.club_or_open_events}  icon={Award} />
-        <KpiCard label="Mlad Figurist"   value={overview.development_skaters}  icon={Sparkles} hint="Development-only skaters indexed" />
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {EXPLORE_LINKS.map(({ href, title, body, Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className="group rounded-3xl border bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 text-sky-800">
+              <Icon className="h-5 w-5" />
+            </div>
+            <h2 className="mt-4 text-lg font-semibold tracking-tight">{title}</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
+            <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-sky-800">
+              Open <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+        ))}
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <section className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Top nations by segment scores</CardTitle>
+            <CardTitle className="text-base">Latest competition coverage</CardTitle>
           </CardHeader>
-          <CardContent>
-            <NationalitiesBarChart rows={nationalities} take={12} />
+          <CardContent className="grid gap-3">
+            {latestEvents.map((event) => (
+              <Link
+                key={event.event_key}
+                href={`/events/${event.event_key}`}
+                className="flex items-start justify-between gap-4 rounded-2xl border p-4 transition hover:bg-slate-50"
+              >
+                <div>
+                  <p className="font-medium text-slate-900">{event.event_name ?? "Unnamed event"}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {event.location ?? "Location pending"} · {formatDate(event.event_start_date)}
+                  </p>
+                </div>
+                <span className="shrink-0 text-sm font-medium text-sky-800">View</span>
+              </Link>
+            ))}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Event mix by scope</CardTitle>
+            <CardTitle className="text-base">Why the dashboard is not enough</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm leading-6 text-slate-600">
+            <p>A raw dashboard is useful for exploration, but a public site needs entry points, explanations, and page-level context.</p>
+            <p>That means homepage narrative, entity pages, source transparency, and stable links that people can share and discover.</p>
+            <Link href="/about" className="inline-flex items-center gap-2 font-medium text-sky-800 hover:text-sky-950">
+              Read project positioning <ArrowRight className="h-4 w-4" />
+            </Link>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Coverage by country</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <NationalitiesBarChart rows={nationalities} take={10} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Competition mix</CardTitle>
           </CardHeader>
           <CardContent>
             <CompetitionMixDonut rows={competition_mix} />
@@ -78,45 +207,71 @@ export default async function Page({
         </Card>
       </section>
 
-      <section>
-        <Card>
+      <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+        <Card className="bg-slate-950 text-slate-50">
           <CardHeader>
-            <CardTitle className="text-base">Active clubs</CardTitle>
+            <CardTitle className="text-base text-white">Data confidence</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Club</TableHead>
-                  <TableHead>Country</TableHead>
-                  <TableHead className="text-right">Skaters</TableHead>
-                  <TableHead className="text-right">Events</TableHead>
-                  <TableHead className="text-right">Scores</TableHead>
-                  <TableHead className="text-right">Best TSS</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clubs.slice(0, 12).map((club) => (
-                  <TableRow key={club.club_name}>
-                    <TableCell className="font-medium">
-                      <Link
-                        href={`/clubs/${encodeURIComponent(club.club_name)}`}
-                        className="hover:underline"
-                      >
-                        {club.club_name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{club.country_display ?? club.country_code ?? "—"}</TableCell>
-                    <TableCell className="text-right tabular-nums">{club.skaters.toLocaleString()}</TableCell>
-                    <TableCell className="text-right tabular-nums">{club.events.toLocaleString()}</TableCell>
-                    <TableCell className="text-right tabular-nums">{club.segment_scores.toLocaleString()}</TableCell>
-                    <TableCell className="text-right tabular-nums">{club.best_tss?.toFixed(2) ?? "—"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
+            <p>The public site should stay explicit about source-backed coverage and about what is still incomplete.</p>
+            <p>Official result links, parser coverage, and last-seen dates should become part of the experience rather than hidden implementation details.</p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Featured club signal</CardTitle>
+            {topClub ? (
+              <Link href={`/clubs/${encodeURIComponent(topClub.club_name)}`} className="text-sm font-medium text-sky-800 hover:text-sky-950">
+                Open club
+              </Link>
+            ) : null}
+          </CardHeader>
+          <CardContent>
+            {topClub ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Club</p>
+                  <p className="mt-1 text-base font-semibold">{topClub.club_name}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Skaters</p>
+                  <p className="mt-1 text-base font-semibold">{number(topClub.skaters)}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Events</p>
+                  <p className="mt-1 text-base font-semibold">{number(topClub.events)}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Best TSS</p>
+                  <p className="mt-1 text-base font-semibold">{points(topClub.best_tss)}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Club summary will appear here once club rows are available.</p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="rounded-3xl border bg-slate-50 p-6 md:p-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Next Layer</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight">Build profile pages and competition pages as the main public surface.</h2>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/events" className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100">
+              Browse events <CalendarRange className="h-4 w-4" />
+            </Link>
+            <Link href="/skaters" className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100">
+              Search skaters <Search className="h-4 w-4" />
+            </Link>
+            <Link href="/about" className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100">
+              Project brief <Sparkles className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
       </section>
     </div>
   );

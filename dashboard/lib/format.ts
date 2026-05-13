@@ -4,9 +4,21 @@ export function points(value: number | null | undefined): string {
   return value.toFixed(2);
 }
 
+export function number(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "—";
+  return value.toLocaleString();
+}
+
 export function fmt<T>(value: T | null | undefined): T | "—" {
   if (value === null || value === undefined || (typeof value === "string" && value === "")) return "—";
   return value;
+}
+
+export function formatDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en", { year: "numeric", month: "short", day: "numeric" }).format(date);
 }
 
 /** ISO3 → emoji flag (best-effort; falls back to bare code). */

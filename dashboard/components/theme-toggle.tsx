@@ -2,17 +2,20 @@
 /** Tri-state theme toggle: light / dark / system. Cycles on click. */
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
 
+function subscribe() {
+  return () => {};
+}
+
 export function ThemeToggle() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribe, () => true, () => false);
   const { theme, setTheme } = useTheme();
 
   // next-themes is client-only; render a placeholder until mounted to avoid
   // hydration mismatch between server (system theme unknown) and client.
-  useEffect(() => setMounted(true), []);
   if (!mounted) return <Button variant="ghost" size="icon" disabled className="h-8 w-8" />;
 
   const next = theme === "light" ? "dark" : theme === "dark" ? "system" : "light";
