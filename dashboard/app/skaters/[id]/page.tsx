@@ -1,6 +1,7 @@
 /** Skater profile — KPI tiles, TSS progression chart, recent scores. */
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight, CalendarRange, Sparkles, Trophy } from "lucide-react";
 
 import { ComparisonRadar } from "@/components/comparison-radar";
 import { KpiCard } from "@/components/kpi-card";
@@ -11,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getSkater } from "@/lib/api";
-import { nationDisplay, points } from "@/lib/format";
+import { formatDate, number, nationDisplay, points } from "@/lib/format";
 
 export const revalidate = 60;
 
@@ -30,6 +31,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Skater Profile"
         title={skater.skater_name}
         subtitle={
           <>
@@ -37,8 +39,23 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {skater.club_name ? (
               <> · <Link href={`/clubs/${encodeURIComponent(skater.club_name)}`} className="hover:underline">{skater.club_name}</Link></>
             ) : null}
-            <> · seen {skater.first_seen_date ?? "?"} → {skater.latest_seen_date ?? "?"}</>
+            <> · seen {formatDate(skater.first_seen_date)} → {formatDate(skater.latest_seen_date)}</>
           </>
+        }
+        meta={[
+          `${number(skater.competitions)} competitions`,
+          `${number(skater.scored_competitions)} scored`,
+          `Best total ${points(skater.best_score_total)}`,
+        ]}
+        right={
+          skater.club_name ? (
+            <Link
+              href={`/clubs/${encodeURIComponent(skater.club_name)}`}
+              className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Club page <ArrowRight className="h-4 w-4" />
+            </Link>
+          ) : null
         }
       />
 
@@ -47,6 +64,43 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <KpiCard label="Best TES" value={points(skater.best_tes)} />
         <KpiCard label="Best PCS" value={points(skater.best_pcs)} />
         <KpiCard label="Competitions" value={skater.competitions} hint={`${skater.scored_competitions} scored`} />
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+        <Card className="bg-slate-950 text-slate-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base text-white"><Sparkles className="h-4 w-4 text-sky-300" /> Public profile summary</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
+            <p>
+              This page should read as a public reference profile: who the skater is, where they compete, how often they appear,
+              and how their scores have evolved across the indexed result set.
+            </p>
+            <p>
+              The analytics layer stays here, but the page needs enough framing that a first-time visitor can understand the story
+              without reading every table.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">At a glance</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Latest seen</p>
+              <p className="mt-1 text-base font-semibold"><CalendarRange className="mr-2 inline h-4 w-4 text-sky-700" />{formatDate(skater.latest_seen_date)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Nation</p>
+              <p className="mt-1 text-base font-semibold">{nationDisplay(skater.nation_code)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Top total</p>
+              <p className="mt-1 text-base font-semibold"><Trophy className="mr-2 inline h-4 w-4 text-amber-600" />{points(skater.best_score_total)}</p>
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -71,7 +125,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <SkaterElementStats elements={skater.elements} />
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Scores</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Competition results</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Every scored segment linked back to the event page, with direct access to detailed score breakdowns.
+          </p>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -91,7 +150,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             <TableBody>
               {skater.scores.map((s) => (
                 <TableRow key={s.segment_score_key}>
-                  <TableCell className="text-muted-foreground">{s.event_start_date ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(s.event_start_date)}</TableCell>
                   <TableCell>
                     <Link href={`/events/${s.event_key}`} className="hover:underline">{s.event_name ?? "—"}</Link>
                   </TableCell>

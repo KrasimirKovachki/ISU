@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight, Building2, Globe2, Users } from "lucide-react";
 
 import { KpiCard } from "@/components/kpi-card";
 import { PageHeader } from "@/components/page-header";
@@ -7,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getClub } from "@/lib/api";
-import { nationDisplay, points } from "@/lib/format";
+import { formatDate, number, nationDisplay, points } from "@/lib/format";
 
 export const revalidate = 60;
 
@@ -31,12 +32,18 @@ export default async function Page({ params }: { params: Promise<{ name: string 
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Club Profile"
         title={club.club_name}
         subtitle={
           <>
-            {nationDisplay(club.country_code)} · {club.first_seen_date ?? "?"} → {club.latest_seen_date ?? "?"}
+            {nationDisplay(club.country_code)} · {formatDate(club.first_seen_date)} → {formatDate(club.latest_seen_date)}
           </>
         }
+        meta={[
+          `${number(club.skaters)} skaters`,
+          `${number(club.events)} events`,
+          `${number(club.segment_scores)} scored segments`,
+        ]}
       />
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -53,8 +60,44 @@ export default async function Page({ params }: { params: Promise<{ name: string 
         <KpiCard label="Mlad Figurist" value={club.development_skaters} hint={`${club.converted_development_skaters} converted`} />
       </section>
 
+      <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
+        <Card className="bg-slate-950 text-slate-50">
+          <CardHeader>
+            <CardTitle className="text-base text-white">Club snapshot</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
+            <p>Club pages should become shareable public summaries: who competes for the club, how active it is, and what level of events it appears in.</p>
+            <p>They are a natural bridge between public skater profiles and competition pages, especially when families or coaches follow a single club.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Club facts</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Country</p>
+              <p className="mt-1 text-base font-semibold"><Globe2 className="mr-2 inline h-4 w-4 text-sky-700" />{nationDisplay(club.country_code)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Activity</p>
+              <p className="mt-1 text-base font-semibold"><Building2 className="mr-2 inline h-4 w-4 text-sky-700" />{number(club.events)} competitions</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Roster</p>
+              <p className="mt-1 text-base font-semibold"><Users className="mr-2 inline h-4 w-4 text-sky-700" />{number(club.skater_rows?.length ?? 0)} profiled skaters</p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
       <Card>
-        <CardHeader><CardTitle className="text-base">Skaters in this club ({club.skater_rows?.length ?? 0})</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Skaters in this club ({club.skater_rows?.length ?? 0})</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Each row links into a public skater page and keeps a visible competitor-status label for context.
+          </p>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -77,13 +120,22 @@ export default async function Page({ params }: { params: Promise<{ name: string 
                   <TableCell><Badge variant="outline">{STATUS_LABEL[s.competitor_status] ?? s.competitor_status}</Badge></TableCell>
                   <TableCell className="text-right tabular-nums">{s.competitions}</TableCell>
                   <TableCell className="text-right tabular-nums">{points(s.best_tss)}</TableCell>
-                  <TableCell className="text-muted-foreground">{s.latest_seen_date ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(s.latest_seen_date)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <div className="flex justify-end">
+        <Link
+          href="/clubs"
+          className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          Back to clubs <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
     </div>
   );
 }
