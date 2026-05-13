@@ -9,7 +9,7 @@ import { ScoreSheetIcon } from "@/components/skating-icons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getScore } from "@/lib/api";
+import { getEvent, getScore, getSkater } from "@/lib/api";
 import { describeElement, elementLegendEntries } from "@/lib/element-codes";
 import { formatDate, nationDisplay, points } from "@/lib/format";
 import { buildMetadata } from "@/lib/site";
@@ -60,6 +60,21 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   } catch {
     notFound();
   }
+
+  const [skater, event] = await Promise.all([
+    score.skater_key ? getSkater(score.skater_key).catch(() => null) : Promise.resolve(null),
+    getEvent(score.event_key).catch(() => null),
+  ]);
+
+  const moreFromSkater = (skater?.scores ?? [])
+    .filter((row) => row.segment_score_key !== score.segment_score_key)
+    .sort((a, b) => (b.event_start_date ?? "").localeCompare(a.event_start_date ?? ""))
+    .slice(0, 3);
+
+  const moreFromEvent = (event?.results ?? [])
+    .filter((row) => row.skater_name !== score.skater_name)
+    .sort((a, b) => (a.final_place ?? 999) - (b.final_place ?? 999))
+    .slice(0, 4);
 
   return (
     <div className="space-y-6">
@@ -317,6 +332,73 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           No parsed PDF elements/components for this segment. Score summary + evidence below.
         </CardContent></Card>
       ) : null}
+
+      <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Continue from this score</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              A score page should guide visitors toward the skater timeline and the wider competition, not trap them on one protocol row.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {moreFromSkater.length > 0 ? (
+              moreFromSkater.map((row) => (
+                <div key={row.segment_score_key} className="rounded-2xl border p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <Link href={`/scores/${row.segment_score_key}`} className="font-medium text-slate-900 hover:underline">
+                        {row.segment_name ?? "Segment detail"}
+                      </Link>
+                      <p className="text-sm text-slate-500">
+                        {row.event_name ?? "Event page"} · {formatDate(row.event_start_date)}
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium text-slate-700">{points(row.tss)}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">No additional scored segments are visible for this skater.</p>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">More from this competition</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Event-linked exploration helps the evidence page stay connected to the public results archive.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {moreFromEvent.length > 0 ? (
+              moreFromEvent.map((row) => (
+                <div key={row.competition_result_key} className="rounded-2xl border p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-slate-900">
+                        {row.skater_key ? (
+                          <Link href={`/skaters/${row.skater_key}`} className="hover:underline">
+                            {row.skater_name}
+                          </Link>
+                        ) : (
+                          row.skater_name
+                        )}
+                      </p>
+                      <p className="text-sm text-slate-500">
+                        {row.category_name ?? "Category pending"} · place {row.final_place ?? "—"}
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium text-slate-700">{points(row.points)}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">No related competition entries are available from the event detail.</p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
 
       <Card>
         <CardHeader>

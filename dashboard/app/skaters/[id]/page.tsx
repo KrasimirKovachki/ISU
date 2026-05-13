@@ -13,7 +13,7 @@ import { SkaterProgressionChart } from "@/components/skater-progression-chart";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getSkater } from "@/lib/api";
+import { getClub, getNationality, getSkater } from "@/lib/api";
 import { formatDate, number, nationDisplay, points } from "@/lib/format";
 import { buildMetadata } from "@/lib/site";
 
@@ -46,6 +46,25 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   } catch {
     notFound();
   }
+
+  const [club, nation] = await Promise.all([
+    skater.club_name ? getClub(skater.club_name).catch(() => null) : Promise.resolve(null),
+    skater.nation_code ? getNationality(skater.nation_code).catch(() => null) : Promise.resolve(null),
+  ]);
+
+  const relatedClubSkaters = (club?.skater_rows ?? [])
+    .filter((row) => row.skater_key !== skater.skater_key)
+    .sort((a, b) => (b.best_tss ?? 0) - (a.best_tss ?? 0))
+    .slice(0, 3);
+
+  const relatedNationSkaters = (nation?.skaters_list ?? [])
+    .filter((row) => row.skater_key !== skater.skater_key)
+    .sort((a, b) => (b.best_tss ?? 0) - (a.best_tss ?? 0))
+    .slice(0, 3);
+
+  const latestScores = [...skater.scores]
+    .sort((a, b) => (b.event_start_date ?? "").localeCompare(a.event_start_date ?? ""))
+    .slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -153,6 +172,83 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       </div>
 
       <SkaterElementStats elements={skater.elements} />
+
+      <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Continue from this profile</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Public profile pages should turn one skater lookup into broader exploration of club and country context.
+            </p>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border bg-slate-50/70 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Same club</p>
+              <div className="mt-3 space-y-3">
+                {relatedClubSkaters.length > 0 ? (
+                  relatedClubSkaters.map((row) => (
+                    <div key={row.skater_key} className="flex items-start justify-between gap-3">
+                      <div>
+                        <Link href={`/skaters/${row.skater_key}`} className="font-medium text-slate-900 hover:underline">
+                          {row.skater_name}
+                        </Link>
+                        <p className="text-sm text-slate-500">{number(row.competitions)} comps</p>
+                      </div>
+                      <span className="text-sm font-medium text-slate-700">{points(row.best_tss)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">No other visible club profiles yet.</p>
+                )}
+              </div>
+            </div>
+            <div className="rounded-2xl border bg-sky-50/70 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Same country</p>
+              <div className="mt-3 space-y-3">
+                {relatedNationSkaters.length > 0 ? (
+                  relatedNationSkaters.map((row) => (
+                    <div key={row.skater_key} className="flex items-start justify-between gap-3">
+                      <div>
+                        <Link href={`/skaters/${row.skater_key}`} className="font-medium text-slate-900 hover:underline">
+                          {row.skater_name}
+                        </Link>
+                        <p className="text-sm text-slate-500">{row.club_name ?? "Independent profile"}</p>
+                      </div>
+                      <span className="text-sm font-medium text-slate-700">{points(row.best_tss)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">No other visible country profiles yet.</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Recent scored segments</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {latestScores.map((score) => (
+              <div key={score.segment_score_key} className="rounded-2xl border p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-slate-900">{score.segment_name ?? "Segment detail"}</p>
+                    <p className="text-sm text-slate-500">
+                      <Link href={`/events/${score.event_key}`} className="hover:underline">
+                        {score.event_name ?? "Event page"}
+                      </Link>
+                      {" · "}
+                      {formatDate(score.event_start_date)}
+                    </p>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">{points(score.tss)}</span>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </section>
 
       <Card>
         <CardHeader>

@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { ScoreSheetIcon } from "@/components/skating-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getEvent } from "@/lib/api";
+import { getEvent, listEvents } from "@/lib/api";
 import { formatDate, number, nationDisplay, points } from "@/lib/format";
 import { buildMetadata } from "@/lib/site";
 
@@ -49,6 +49,23 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     grouped.get(k)!.push(r);
   }
   const categories = [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const eventYear = event.event_start_date ? new Date(event.event_start_date).getUTCFullYear() : undefined;
+  const nearbyEvents = eventYear
+    ? await listEvents({ from_year: eventYear, to_year: eventYear, limit: 250 }).catch(() => ({ items: [] }))
+    : { items: [] };
+  const relatedEvents = nearbyEvents.items
+    .filter((row) => row.event_key !== event.event_key)
+    .sort((a, b) => {
+      const aLocation = a.location && event.location && a.location === event.location ? 1 : 0;
+      const bLocation = b.location && event.location && b.location === event.location ? 1 : 0;
+      if (aLocation !== bLocation) return bLocation - aLocation;
+      return (b.event_start_date ?? "").localeCompare(a.event_start_date ?? "");
+    })
+    .slice(0, 4);
+  const podiumRows = [...event.results]
+    .filter((row) => row.final_place !== null)
+    .sort((a, b) => (a.final_place ?? 999) - (b.final_place ?? 999))
+    .slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -168,6 +185,68 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </CardContent>
         </Card>
       ))}
+
+      <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Featured placements</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              A public competition page should help visitors identify the most relevant names quickly before they dive into full category tables.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {podiumRows.length > 0 ? (
+              podiumRows.map((row) => (
+                <div key={row.competition_result_key} className="flex items-start justify-between gap-3 rounded-2xl border p-4">
+                  <div>
+                    <p className="font-medium text-slate-900">
+                      #{row.final_place}{" "}
+                      {row.skater_key ? (
+                        <Link href={`/skaters/${row.skater_key}`} className="hover:underline">
+                          {row.skater_name}
+                        </Link>
+                      ) : (
+                        row.skater_name
+                      )}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      {row.category_name ?? "Category pending"}
+                      {row.club_name ? ` · ${row.club_name}` : ""}
+                    </p>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">{points(row.points)}</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">Placements are not available for a featured summary on this event.</p>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">More to explore</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Visitors should be able to keep browsing the event archive by place and season, not stop on a single results page.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {relatedEvents.length > 0 ? (
+              relatedEvents.map((row) => (
+                <div key={row.event_key} className="rounded-2xl border p-4">
+                  <Link href={`/events/${row.event_key}`} className="font-medium text-slate-900 hover:underline">
+                    {row.event_name ?? "Competition page"}
+                  </Link>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {formatDate(row.event_start_date)} · {row.location ?? "Location pending"}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">No nearby archive events were found for this season.</p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
 
       <Card>
         <CardHeader>

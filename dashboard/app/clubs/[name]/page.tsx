@@ -9,7 +9,7 @@ import { IceRinkIcon } from "@/components/skating-icons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getClub } from "@/lib/api";
+import { getNationality, getClub, listClubs } from "@/lib/api";
 import { formatDate, number, nationDisplay, points } from "@/lib/format";
 import { buildMetadata } from "@/lib/site";
 
@@ -46,6 +46,20 @@ export default async function Page({ params }: { params: Promise<{ name: string 
   } catch {
     notFound();
   }
+
+  const [nation, allClubs] = await Promise.all([
+    club.country_code ? getNationality(club.country_code).catch(() => null) : Promise.resolve(null),
+    listClubs().catch(() => ({ items: [] })),
+  ]);
+
+  const featuredSkaters = [...(club.skater_rows ?? [])]
+    .sort((a, b) => (b.best_tss ?? 0) - (a.best_tss ?? 0))
+    .slice(0, 3);
+
+  const peerClubs = allClubs.items
+    .filter((row) => row.club_name !== club.club_name && row.country_code === club.country_code)
+    .sort((a, b) => (b.best_tss ?? 0) - (a.best_tss ?? 0))
+    .slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -156,6 +170,77 @@ export default async function Page({ params }: { params: Promise<{ name: string 
           </Table>
         </CardContent>
       </Card>
+
+      <section className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Who to look at next</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              A public club page should surface the strongest visible profiles instead of expecting visitors to scan the full table first.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {featuredSkaters.map((row) => (
+              <div key={row.skater_key} className="rounded-2xl border p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <Link href={`/skaters/${row.skater_key}`} className="font-medium text-slate-900 hover:underline">
+                      {row.skater_name}
+                    </Link>
+                    <p className="text-sm text-slate-500">
+                      {STATUS_LABEL[row.competitor_status] ?? row.competitor_status} · {number(row.competitions)} comps
+                    </p>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">{points(row.best_tss)}</span>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Country network</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Club pages work better when they connect outward to the broader national field.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {nation ? (
+              <div className="rounded-2xl border bg-sky-50/70 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Country coverage</p>
+                <p className="mt-2 text-base font-semibold text-slate-900">{nationDisplay(nation.nation_code)}</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {number(nation.skaters)} skaters · {number(nation.events)} events · top total {points(nation.best_tss)}
+                </p>
+                <Link
+                  href={`/nationalities/${encodeURIComponent(nation.nation_code)}`}
+                  className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-sky-800 hover:underline"
+                >
+                  Open country page <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            ) : null}
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Peer clubs</p>
+              {peerClubs.length > 0 ? (
+                peerClubs.map((row) => (
+                  <div key={row.club_name} className="flex items-start justify-between gap-3 rounded-2xl border p-4">
+                    <div>
+                      <Link href={`/clubs/${encodeURIComponent(row.club_name)}`} className="font-medium text-slate-900 hover:underline">
+                        {row.club_name}
+                      </Link>
+                      <p className="text-sm text-slate-500">{number(row.skaters)} skaters · {number(row.events)} events</p>
+                    </div>
+                    <span className="text-sm font-medium text-slate-700">{points(row.best_tss)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">No other same-country clubs are visible in the current index.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </section>
 
       <div className="flex justify-end">
         <Link
