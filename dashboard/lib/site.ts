@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 
 export const SITE_NAME = "Skating Data";
+export const SITE_SHORT_NAME = "Skating";
 export const SITE_DESCRIPTION = "Public figure-skating profiles, competitions, clubs, countries, and source-backed score analytics.";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
+export const SITE_THEME_COLOR = "#e0f2fe";
 
 export function absoluteUrl(path = "/") {
   return new URL(path, SITE_URL);
