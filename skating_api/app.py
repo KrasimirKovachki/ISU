@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -8,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from skating_api import repository
-from skating_api.db import close_pool, connection_dependency
+from skating_api.db import close_pool, connection_dependency, pool
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -66,7 +69,10 @@ def legend(conn: Any = Depends(connection_dependency)) -> dict[str, Any]:
 
 # Edited 2026-10-12 by Claude (AI assistant): Insights answers are kept in memory until the data changes.
 # scripts/refresh_api_mvs.sh ends with ANALYZE api.mv_identity_lookup, so its last-analyze time is the data version.
+# A background thread prepares every year range the website offers after each start and each data change
+# (about 105 ranges, a few seconds each on the small server), so visitors never wait for a cold query.
 _dashboard_cache: dict[tuple[int | None, int | None], tuple[Any, dict[str, Any]]] = {}
+_cache_lock = threading.Lock()
 
 
 def _data_version(conn: Any) -> Any:
@@ -77,22 +83,63 @@ def _data_version(conn: Any) -> Any:
     return row[0] if row else None
 
 
+def _cache_key(from_year: int | None, to_year: int | None) -> tuple[int | None, int | None]:
+    if from_year is None and to_year is None:
+        return (None, None)
+    fy = from_year if from_year is not None else 1900
+    ty = to_year if to_year is not None else 2100
+    return (min(fy, ty), max(fy, ty))
+
+
+def _cached_dashboard(conn: Any, from_year: int | None, to_year: int | None, version: Any) -> dict[str, Any]:
+    key = _cache_key(from_year, to_year)
+    with _cache_lock:
+        cached = _dashboard_cache.get(key)
+    if cached and version is not None and cached[0] == version:
+        return cached[1]
+    result = _dashboard(conn, *key) if key != (None, None) else _dashboard(conn, None, None)
+    with _cache_lock:
+        if len(_dashboard_cache) > 400:
+            _dashboard_cache.clear()
+        _dashboard_cache[key] = (version, result)
+    return result
+
+
 @api.get("/dashboard")
 def dashboard(
     from_year: int | None = None,
     to_year: int | None = None,
     conn: Any = Depends(connection_dependency),
 ) -> dict[str, Any]:
-    key = (from_year, to_year)
-    version = _data_version(conn)
-    cached = _dashboard_cache.get(key)
-    if cached and version is not None and cached[0] == version:
-        return cached[1]
-    result = _dashboard(conn, from_year, to_year)
-    if len(_dashboard_cache) > 200:
-        _dashboard_cache.clear()
-    _dashboard_cache[key] = (version, result)
-    return result
+    return _cached_dashboard(conn, from_year, to_year, _data_version(conn))
+
+
+def _prewarm_loop() -> None:
+    time.sleep(int(os.environ.get("SKATING_PREWARM_DELAY", "20")))
+    warmed_version: Any = None
+    while True:
+        try:
+            with pool().connection() as conn:
+                version = _data_version(conn)
+                if version is not None and version != warmed_version:
+                    years = conn.execute(
+                        "SELECT extract(year FROM min(event_start_date))::int, extract(year FROM max(event_start_date))::int "
+                        "FROM api.mv_dim_event"
+                    ).fetchone()
+                    ranges: list[tuple[int | None, int | None]] = [(None, None)]
+                    if years and years[0] and years[1]:
+                        ranges += [(fy, ty) for fy in range(years[1], years[0] - 1, -1) for ty in range(years[1], fy - 1, -1)]
+                    for fy, ty in ranges:
+                        _cached_dashboard(conn, fy, ty, version)
+                        conn.commit()
+                    warmed_version = version
+        except Exception:  # noqa: BLE001 - warming is best effort; requests still compute on demand
+            pass
+        time.sleep(300)
+
+
+if os.environ.get("SKATING_PREWARM", "1") == "1":
+    threading.Thread(target=_prewarm_loop, name="insights-prewarm", daemon=True).start()
 
 
 def _dashboard(conn: Any, from_year: int | None, to_year: int | None) -> dict[str, Any]:
