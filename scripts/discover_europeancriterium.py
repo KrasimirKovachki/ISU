@@ -3,7 +3,8 @@
 # ASP.NET index; each finished competition's "Entries/Results - ISU" and "Entries/Results" (CC = Criterium,
 # recreational) buttons are postbacks that redirect to ordinary FS Manager result sites (hosted there or on
 # dev.mbit.si, clubdenkovastaviski.com, frponline.ro, ...). This script follows those buttons, resolves the
-# final index.htm, checks it with the FS Manager parser and registers it in ingest.source_url_registry.
+# final index.htm, checks it with the FS Manager or (older sites) ISUCalcFS parser and registers it in
+# ingest.source_url_registry.
 from __future__ import annotations
 
 import argparse
@@ -26,7 +27,7 @@ from psycopg.types.json import Jsonb
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from isu_parser import fs_manager
+from isu_parser import fs_manager, old_isucalcfs
 from isu_parser.local_config import database_dsn
 from isu_parser.source_check import decode_html, preflight_result_url
 
@@ -119,18 +120,29 @@ def index_url_for(url: str) -> str:
 
 
 def validate_result_index(url: str) -> tuple[dict[str, Any], str, str]:
+    """Check one result index; older sites use ISUCalcFS (same family, other layout), newer FS Manager."""
     source_check = preflight_result_url(url)
     final_url = source_check.parse_url
+    if not source_check.ok and source_check.body:
+        # some europeancriterium.eu pages forward with content="1;https://…" (no "url="), which preflight misses
+        match = re.search(r"http-equiv=[\"']?refresh[\"']?\s+content=[\"']\d+;\s*(https?://[^\"']+)",
+                          decode_html(source_check.body), re.I)
+        if match and not url.startswith(match.group(1)):
+            return validate_result_index(index_url_for(match.group(1).strip()))
     if not source_check.ok:
-        return source_check.summary(), "failed", final_url
+        return {**source_check.summary(), "parser_profile": "fs_manager"}, "failed", final_url
+    html = decode_html(source_check.body)
+    old = "isucalcfs" in html.lower()
+    parser, profile = (old_isucalcfs, "old_isucalcfs") if old else (fs_manager, "fs_manager")
     try:
-        parsed = fs_manager.parse_index(decode_html(source_check.body), final_url)
+        parsed = parser.parse_index(html, final_url)
     except Exception as exc:  # noqa: BLE001 - discovery diagnostics should keep parser errors.
-        return {**source_check.summary(), "parse_error": str(exc)}, "failed", final_url
+        return {**source_check.summary(), "parser_profile": profile, "parse_error": str(exc)}, "failed", final_url
     categories = parsed.get("categories", [])
     summary = {
         **source_check.summary(),
-        "platform": "FS Manager",
+        "parser_profile": profile,
+        "platform": "ISUCalcFS" if old else "FS Manager",
         "event": parsed.get("event", {}),
         "categories": len(categories),
         "segments": sum(len(c.get("segments", [])) for c in categories),
@@ -139,7 +151,43 @@ def validate_result_index(url: str) -> tuple[dict[str, Any], str, str]:
     if not categories:
         summary["reason"] = "no categories parsed from result index"
         return summary, "failed", final_url
+    summary["_parsed"] = parsed
     return summary, "passed", final_url
+
+
+def detect_representation(parsed: dict[str, Any]) -> dict[str, Any]:
+    """Look at the first category's entry list: is there a Club column next to Nation?
+    Same shape as config/source_profiles.json "representation" (international events: nation first)."""
+    for category in parsed.get("categories", [])[:3]:
+        link = (category.get("entries") or category.get("result") or {}).get("url")
+        if not link:
+            continue
+        try:
+            with _opener().open(Request(link, headers={"User-Agent": USER_AGENT}), timeout=60) as response:
+                soup = BeautifulSoup(decode_html(response.read()), "html.parser")
+        except Exception:  # noqa: BLE001 - fall back to the next category
+            continue
+        headers = " | ".join(cell.get_text(" ", strip=True).lower() for cell in soup.find_all(["th", "td"])[:60])
+        has_club = bool(re.search(r"\bclub\b", headers))
+        has_nation = bool(re.search(r"\bnation\b|\bnat\.?\b|\bcountry\b", headers))
+        return {"primary": "nation", "store_nation": has_nation or not has_club, "store_club": has_club}
+    return {"primary": "nation", "store_nation": True, "store_club": False}
+
+
+def profile_id_for(site: "EcResultSite", event_name: str | None) -> str:
+    base = re.sub(r"[^a-z0-9]+", "_", (event_name or site.competition).lower()).strip("_")[:48]
+    return f"ec_{base}_{'isu' if site.part == 'ISU' else 'cc'}"
+
+
+def write_profiles_json(path: Path, profiles: list[dict[str, Any]]) -> None:
+    """Add/replace our profiles in config/source_profiles.json (matched by host + event_path_prefix)."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    keep = [p for p in data["profiles"]
+            if (p["match"].get("host"), p["match"].get("event_path_prefix"))
+            not in {(q["match"]["host"], q["match"]["event_path_prefix"]) for q in profiles}]
+    # most specific first: a CC part ("…/1068/non") lives inside its ISU folder ("…/1068") and the loader takes the first match
+    data["profiles"] = keep + sorted(profiles, key=lambda q: (q["match"]["host"], -len(q["match"]["event_path_prefix"])))
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def event_prefix(url: str) -> str:
@@ -153,10 +201,11 @@ def profile_key_for(host: str, prefix: str) -> str:
     return f"ec_{cleaned[:56]}_{digest}"
 
 
-def upsert_profile(cur: psycopg.Cursor, url: str, stream: str) -> int:
+def upsert_profile(cur: psycopg.Cursor, url: str, stream: str, parser_profile: str = "fs_manager",
+                   representation: dict[str, Any] | None = None) -> int:
     host, prefix = urlparse(url).netloc, event_prefix(url)
     settings = {
-        "representation": {"primary": "nation", "store_nation": True, "store_club": True},
+        "representation": representation or {"primary": "nation", "store_nation": True, "store_club": True},
         "source_family": "europeancriterium",
         "source_system": "fs_manager",
     }
@@ -166,7 +215,7 @@ def upsert_profile(cur: psycopg.Cursor, url: str, stream: str) -> int:
           profile_key, parser_profile, host, event_path_prefix,
           competition_stream, representation_primary, settings
         )
-        VALUES (%s, 'fs_manager', %s, %s, %s, 'nation', %s)
+        VALUES (%s, %s, %s, %s, %s, 'nation', %s)
         ON CONFLICT (profile_key) DO UPDATE SET
           parser_profile = EXCLUDED.parser_profile,
           competition_stream = EXCLUDED.competition_stream,
@@ -174,7 +223,7 @@ def upsert_profile(cur: psycopg.Cursor, url: str, stream: str) -> int:
           updated_at = now()
         RETURNING id
         """,
-        (profile_key_for(host, prefix), host, prefix, stream, Jsonb(settings)),
+        (profile_key_for(host, prefix), parser_profile, host, prefix, stream, Jsonb({**settings, "source_system": parser_profile})),
     )
     return int(cur.fetchone()[0])
 
@@ -187,10 +236,11 @@ def upsert_registry(cur: psycopg.Cursor, site: EcResultSite, url: str, profile_i
           url, resolved_url, source_profile_id, parser_profile, competition_stream,
           status, validation_status, last_validated_at, summary, notes
         )
-        VALUES (%s, %s, %s, 'fs_manager', %s, %s, %s, now(), %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, now(), %s, %s)
         ON CONFLICT (url) DO UPDATE SET
           resolved_url = EXCLUDED.resolved_url,
           source_profile_id = COALESCE(ingest.source_url_registry.source_profile_id, EXCLUDED.source_profile_id),
+          parser_profile = EXCLUDED.parser_profile,
           status = CASE WHEN ingest.source_url_registry.status = 'imported'
                         THEN ingest.source_url_registry.status ELSE EXCLUDED.status END,
           validation_status = CASE WHEN ingest.source_url_registry.status = 'imported'
@@ -200,7 +250,8 @@ def upsert_registry(cur: psycopg.Cursor, site: EcResultSite, url: str, profile_i
           updated_at = now()
         """,
         (
-            url, summary.get("resolved_url"), profile_id, site.stream, status, validation_status,
+            url, summary.get("resolved_url"), profile_id, summary.get("parser_profile", "fs_manager"), site.stream,
+            status, validation_status,
             Jsonb({**asdict(site), **summary, "source": EC_LIST_URL}),
             f"Discovered from europeancriterium.eu ({site.part} part).",
         ),
@@ -219,6 +270,8 @@ def main() -> int:
     parser.add_argument("--limit", type=int, help="Only the first N competitions (newest first).")
     parser.add_argument("--delay", type=float, default=1.0, help="Seconds between requests to the site.")
     parser.add_argument("--config", help="Local env file with database settings.")
+    parser.add_argument("--profiles-json", default=str(Path(__file__).resolve().parents[1] / "config" / "source_profiles.json"),
+                        help="config/source_profiles.json to add one profile per result site to (the standard import profile).")
     args = parser.parse_args()
 
     opener = _opener()
@@ -241,24 +294,45 @@ def main() -> int:
             ))
 
     report: list[dict[str, Any]] = []
+    json_profiles: list[dict[str, Any]] = []
     with psycopg.connect(database_dsn(args.config)) as conn:
         imported = completed_import_urls(conn)
         with conn.transaction(), conn.cursor() as cur:
             for site in sites:
                 time.sleep(args.delay)
                 summary, validation_status, final_url = validate_result_index(site.index_url)
+                representation = None
+                if validation_status == "passed":
+                    representation = detect_representation(summary.pop("_parsed", {}))
+                    summary["representation"] = representation
+                    url_for_profile = final_url or site.index_url
+                    json_profiles.append({
+                        "id": profile_id_for(site, (summary.get("event") or {}).get("name")),
+                        "match": {"host": urlparse(url_for_profile).netloc, "event_path_prefix": event_prefix(url_for_profile)},
+                        "parser_profile": summary.get("parser_profile", "fs_manager"),
+                        "competition_stream": site.stream,
+                        "representation": representation,
+                    })
+                else:
+                    summary.pop("_parsed", None)
                 url = final_url or site.index_url
                 duplicate = url in imported or site.index_url in imported
                 status = "skipped" if validation_status == "failed" else (
                     "analyzed" if duplicate else "ready_for_import")
                 if not args.dry_run:
-                    profile_id = upsert_profile(cur, url, site.stream) if validation_status == "passed" else None
+                    profile_id = (upsert_profile(cur, url, site.stream, summary.get("parser_profile", "fs_manager"),
+                                                 representation)
+                                  if validation_status == "passed" else None)
                     upsert_registry(cur, site, url, profile_id, status, validation_status, summary)
                 report.append({**asdict(site), "url": url, "status": status,
                                "validation_status": validation_status, "duplicate_exact": duplicate,
+                               "parser_profile": summary.get("parser_profile"),
+                               "representation": summary.get("representation"),
                                "event": summary.get("event"), "categories": summary.get("categories"),
                                "reason": summary.get("reason") or summary.get("parse_error")})
 
+    if args.profiles_json and not args.dry_run and json_profiles:
+        write_profiles_json(Path(args.profiles_json), json_profiles)
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
 

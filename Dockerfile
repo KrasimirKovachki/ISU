@@ -8,8 +8,11 @@ WORKDIR /app
 COPY pyproject.toml README.md /app/
 COPY isu_parser /app/isu_parser
 COPY skating_api /app/skating_api
+# Edited 2026-10-12 by Claude (AI assistant): the parsers read the per-source profiles (club/nation columns) during imports
+COPY config/source_profiles.json /app/config/source_profiles.json
 
-RUN pip install --no-cache-dir .
+# Edited 2026-10-12 by Claude (AI assistant): [pdf] = judges-score PDFs (element scores + judge marks) during imports
+RUN pip install --no-cache-dir ".[pdf]"
 
 EXPOSE 8000
 
