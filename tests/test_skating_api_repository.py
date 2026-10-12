@@ -132,6 +132,8 @@ def test_score_detail_attaches_elements_components_and_evidence():
                     "segment_score_key": 10,
                     "score_source": "pdf_score_summary",
                     "segment_key": 55,
+                    "event_key": 3,
+                    "category_key": 30,
                     "skater_name": "Eva Example",
                     "nation_code": "BUL",
                     "club_name": None,
@@ -141,6 +143,7 @@ def test_score_detail_attaches_elements_components_and_evidence():
                     "segment_name": "Free Skating",
                 }
             ],
+            [{"segment_score_key": 10, "segment_name": "Free Skating", "place": 1, "tss": Decimal("50.00")}],
             [{"judge_number": 1, "name": "Judge One", "nation_code": "BUL"}],
             [{"element_score_key": 99, "base_value": Decimal("3.30")}],
             [{"element_score_key": 99, "judge_number": 1, "score": -1}],
@@ -157,11 +160,17 @@ def test_score_detail_attaches_elements_components_and_evidence():
     assert score["elements"] == [{"element_score_key": 99, "base_value": 3.3, "judge_marks": [{"element_score_key": 99, "judge_number": 1, "score": -1}]}]
     assert score["components"] == [{"component_score_key": 5, "score": 7.25, "judge_marks": [{"component_score_key": 5, "judge_number": 1, "score": 7.5}]}]
     assert score["evidence"] == [{"source_document_key": 7, "source_url": "https://example.test"}]
+    # the same skater's segments in this category (SP <-> FS switch)
+    assert score["category_segments"] == [{"segment_score_key": 10, "segment_name": "Free Skating", "place": 1, "tss": 50.0}]
+    assert conn.cursors[1].params == {"event_key": 3, "category_key": 30, "skater_name": "Eva Example"}
+    # component judges use the known segment, not the deep cleaned-appearance view
+    assert "v_skater_appearances_clean" not in conn.cursors[6].sql
+    assert conn.cursors[6].params["segment_key"] == 55
     # Evidence query uses direct PDF + import-run lookup (cheap), not the
     # deep-stack mart.v_skater_source_evidence (it took ~15s per call).
-    assert "ingest.pdf_score_summaries" in conn.cursors[6].sql
-    assert "ingest.source_documents" in conn.cursors[6].sql
-    assert conn.cursors[6].params["pss_id"] == 10
+    assert "ingest.pdf_score_summaries" in conn.cursors[7].sql
+    assert "ingest.source_documents" in conn.cursors[7].sql
+    assert conn.cursors[7].params["pss_id"] == 10
 
 
 def test_skater_scores_include_source_and_element_count():
@@ -232,6 +241,8 @@ def test_score_detail_passes_negative_keys_unchanged():
                     "segment_score_key": -588,
                     "score_source": "html_segment_result",
                     "segment_key": 48,
+                    "event_key": 185,
+                    "category_key": 2569,
                     "skater_name": "ALEXANDRA FEIGIN",
                     "nation_code": "BUL",
                     "club_name": None,
@@ -241,6 +252,7 @@ def test_score_detail_passes_negative_keys_unchanged():
                     "segment_name": "Short Program",
                 }
             ],
+            [],  # segments in this category
             [],  # judges
             [],  # elements
             [],  # element judge marks
