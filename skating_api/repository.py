@@ -73,6 +73,64 @@ def fetch_one(conn: Any, sql: str, params: dict[str, Any] | None = None) -> dict
         return public_row(row) if row else None
 
 
+_SEG_ABBR = {
+    "short program": "SP", "free skating": "FS", "free dance": "FD",
+    "rhythm dance": "RD", "pattern dance": "PD", "free program": "FP",
+}
+
+
+def _seg_abbr(name: str) -> str:
+    return _SEG_ABBR.get((name or "").strip().lower(), "")
+
+
+def event_schedule(conn: Any, event_key: int) -> dict[str, Any]:
+    """Categories + segments for an event, from the parsed ENTRY schedule (schedule_items).
+
+    This is the correct source for seeding a competition's categories/segments — unlike
+    results, which only cover categories that were actually scored.
+    """
+    rows = fetch_all(
+        conn,
+        """
+SELECT category_name, segment_name, MIN(source_order) AS ord
+FROM ingest.schedule_items
+WHERE event_id = %(e)s AND category_name IS NOT NULL
+GROUP BY category_name, segment_name
+ORDER BY ord NULLS LAST, category_name
+""",
+        {"e": event_key},
+    )
+    cats: dict[str, dict[str, Any]] = {}
+    seg_order: list[str] = []
+    for r in rows:
+        c, s = r["category_name"], r["segment_name"]
+        entry = cats.setdefault(c, {"name": c, "segments": []})
+        if s and s not in [x["name"] for x in entry["segments"]]:
+            entry["segments"].append({"name": s, "abbr": _seg_abbr(s)})
+        if s and s not in seg_order:
+            seg_order.append(s)
+    return {
+        "event_key": event_key,
+        "categories": list(cats.values()),
+        "segments": [{"name": s, "abbr": _seg_abbr(s)} for s in seg_order],
+    }
+
+
+def api_meta(conn: Any) -> dict[str, Any]:
+    """Freshness + size for the /meta endpoint (so consumers can show data age)."""
+    return fetch_one(
+        conn,
+        """
+SELECT
+  (SELECT count(*) FROM api.mv_dim_event)               AS events,
+  (SELECT count(*) FROM api.mv_skater_search)            AS skaters,
+  (SELECT count(*) FROM core.clubs)                      AS clubs,
+  (SELECT max(started_at) FROM ingest.import_runs)       AS last_import_at,
+  (SELECT max(event_start_date) FROM api.mv_dim_event)   AS latest_event_date
+""",
+    )
+
+
 def search_skaters(conn: Any, query: str | None, limit: int | None = None) -> list[dict[str, Any]]:
     where = ""
     params: dict[str, Any] = {"limit": clamp_limit(limit)}

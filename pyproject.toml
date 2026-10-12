@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "httpx>=0.27"]
 pdf = ["pypdf>=5.0", "pdfplumber>=0.11"]
 
 [tool.pytest.ini_options]
