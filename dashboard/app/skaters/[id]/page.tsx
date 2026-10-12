@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /** Skater profile — KPI tiles, TSS progression chart, recent scores. */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -91,7 +92,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {skater.nation_code ? (
               <Link
                 href={`/nationalities/${encodeURIComponent(skater.nation_code)}`}
-                className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
               >
                 Country page <ArrowRight className="h-4 w-4" />
               </Link>
@@ -99,7 +100,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {skater.club_name ? (
               <Link
                 href={`/clubs/${encodeURIComponent(skater.club_name)}`}
-                className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
               >
                 Club page <ArrowRight className="h-4 w-4" />
               </Link>
@@ -182,43 +183,43 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             </p>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-2xl border bg-slate-50/70 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Same club</p>
+            <div className="surface-inset rounded-2xl border p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Same club</p>
               <div className="mt-3 space-y-3">
                 {relatedClubSkaters.length > 0 ? (
                   relatedClubSkaters.map((row) => (
                     <div key={row.skater_key} className="flex items-start justify-between gap-3">
                       <div>
-                        <Link href={`/skaters/${row.skater_key}`} className="font-medium text-slate-900 hover:underline">
+                        <Link href={`/skaters/${row.skater_key}`} className="font-medium text-slate-100 hover:underline">
                           {row.skater_name}
                         </Link>
-                        <p className="text-sm text-slate-500">{number(row.competitions)} comps</p>
+                        <p className="text-sm text-slate-400">{number(row.competitions)} comps</p>
                       </div>
-                      <span className="text-sm font-medium text-slate-700">{points(row.best_tss)}</span>
+                      <span className="text-sm font-medium text-slate-200">{points(row.best_tss)}</span>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-slate-500">No other visible club profiles yet.</p>
+                  <p className="text-sm text-slate-400">No other visible club profiles yet.</p>
                 )}
               </div>
             </div>
-            <div className="rounded-2xl border bg-sky-50/70 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Same country</p>
+            <div className="surface-inset-accent rounded-2xl border p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Same country</p>
               <div className="mt-3 space-y-3">
                 {relatedNationSkaters.length > 0 ? (
                   relatedNationSkaters.map((row) => (
                     <div key={row.skater_key} className="flex items-start justify-between gap-3">
                       <div>
-                        <Link href={`/skaters/${row.skater_key}`} className="font-medium text-slate-900 hover:underline">
+                        <Link href={`/skaters/${row.skater_key}`} className="font-medium text-slate-100 hover:underline">
                           {row.skater_name}
                         </Link>
-                        <p className="text-sm text-slate-500">{row.club_name ?? "Independent profile"}</p>
+                        <p className="text-sm text-slate-400">{row.club_name ?? "Independent profile"}</p>
                       </div>
-                      <span className="text-sm font-medium text-slate-700">{points(row.best_tss)}</span>
+                      <span className="text-sm font-medium text-slate-200">{points(row.best_tss)}</span>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-slate-500">No other visible country profiles yet.</p>
+                  <p className="text-sm text-slate-400">No other visible country profiles yet.</p>
                 )}
               </div>
             </div>
@@ -230,11 +231,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </CardHeader>
           <CardContent className="space-y-3">
             {latestScores.map((score) => (
-              <div key={score.segment_score_key} className="rounded-2xl border p-4">
+              <div key={score.segment_score_key} className="surface-inset rounded-2xl border p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium text-slate-900">{score.segment_name ?? "Segment detail"}</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="font-medium text-slate-100">{score.segment_name ?? "Segment detail"}</p>
+                    <p className="text-sm text-slate-400">
                       <Link href={`/events/${score.event_key}`} className="hover:underline">
                         {score.event_name ?? "Event page"}
                       </Link>
@@ -242,7 +243,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                       {formatDate(score.event_start_date)}
                     </p>
                   </div>
-                  <span className="text-sm font-medium text-slate-700">{points(score.tss)}</span>
+                  <span className="text-sm font-medium text-slate-200">{points(score.tss)}</span>
                 </div>
               </div>
             ))}

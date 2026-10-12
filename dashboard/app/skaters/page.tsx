@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { ArrowRight, Search, Trophy, Users } from "lucide-react";
 
@@ -38,7 +39,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
         right={
           <Link
             href="/insights"
-            className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium"
           >
             See analytics <ArrowRight className="h-4 w-4" />
           </Link>
@@ -46,7 +47,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
       />
 
       <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
-        <Card className="bg-slate-950 text-slate-50">
+        <Card className="border-slate-800 bg-slate-950 text-slate-50">
           <CardHeader>
             <CardTitle className="text-base text-white">Browse skaters like a public directory</CardTitle>
           </CardHeader>
@@ -56,36 +57,49 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
           </CardContent>
         </Card>
         <div className="grid gap-4 sm:grid-cols-3">
-          <KpiCard label="Profiles" value={items.length} icon={Users} />
-          <KpiCard label="Latest Seen" value={featured ? formatDate(featured.latest_seen_date) : "—"} icon={Search} />
-          <KpiCard label="Top Visible TSS" value={featured ? points(featured.best_tss) : "—"} icon={Trophy} hint={featured ? featured.skater_name : undefined} />
+          <KpiCard label="Profiles" value={items.length} icon={Users} href="/skaters#directory" ctaLabel="Browse directory" />
+          <KpiCard
+            label="Latest Seen"
+            value={featured ? formatDate(featured.latest_seen_date) : "—"}
+            icon={Search}
+            href={featured ? `/skaters/${featured.skater_key}` : "/skaters"}
+            ctaLabel="Open latest profile"
+          />
+          <KpiCard
+            label="Top Visible TSS"
+            value={featured ? points(featured.best_tss) : "—"}
+            icon={Trophy}
+            hint={featured ? featured.skater_name : undefined}
+            href={featured ? `/skaters/${featured.skater_key}` : "/skaters"}
+            ctaLabel="Open featured skater"
+          />
         </div>
       </section>
 
       {featured ? (
-        <Card>
+        <Card className="border-slate-800 bg-slate-950">
           <CardHeader>
-            <CardTitle className="text-base">Featured visible profile</CardTitle>
+            <CardTitle className="text-base text-slate-100">Featured visible profile</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-lg font-semibold">{featured.skater_name}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="text-lg font-semibold text-slate-100">{featured.skater_name}</p>
+              <p className="mt-1 text-sm text-slate-400">
                 {nationDisplay(featured.nation_code)}
                 {featured.club_name ? ` · ${featured.club_name}` : ""}
                 {` · latest seen ${formatDate(featured.latest_seen_date)}`}
               </p>
             </div>
-            <Link href={`/skaters/${featured.skater_key}`} className="inline-flex items-center gap-2 text-sm font-medium text-sky-800 hover:text-sky-950">
+            <Link href={`/skaters/${featured.skater_key}`} className="inline-flex items-center gap-2 text-sm font-medium text-sky-300 hover:text-sky-200">
               Open profile <ArrowRight className="h-4 w-4" />
             </Link>
           </CardContent>
         </Card>
       ) : null}
 
-      <Card>
+      <Card id="directory" className="border-slate-800 bg-slate-950 scroll-mt-28">
         <CardHeader>
-          <CardTitle className="text-base">Skater directory</CardTitle>
+          <CardTitle className="text-base text-slate-100">Skater directory</CardTitle>
         </CardHeader>
         <CardContent className="p-4"><SkatersTable rows={items} /></CardContent>
       </Card>

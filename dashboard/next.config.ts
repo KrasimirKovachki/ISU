@@ -13,6 +13,7 @@ import type { NextConfig } from "next";
 const SKATING_API_URL = process.env.SKATING_API_URL || "http://127.0.0.1:8000";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${SKATING_API_URL}/api/:path*` }];
   },

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -103,23 +104,55 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {score.skater_key ? (
               <Link
                 href={`/skaters/${score.skater_key}`}
-                className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
               >
                 Skater page <ArrowRight className="h-4 w-4" />
               </Link>
             ) : null}
             <Link
               href={`/events/${score.event_key}`}
-              className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
             >
               Event page <ArrowRight className="h-4 w-4" />
             </Link>
+            {/* Edited 2026-10-12 by Claude (AI assistant): the organizer's own results page */}
+            {score.root_url ? (
+              <a
+                href={score.root_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
+              >
+                Original results <ArrowRight className="h-4 w-4" />
+              </a>
+            ) : null}
             <Badge variant={score.score_source === "pdf_score_summary" ? "secondary" : "outline"}>
               {score.score_source === "pdf_score_summary" ? "PDF score summary" : "HTML fallback"}
             </Badge>
           </>
         }
       />
+
+      {/* Edited 2026-10-12 by Claude (AI assistant): switch between this skater's segments in the category */}
+      {(score.category_segments?.length ?? 0) > 1 ? (
+        <nav className="flex flex-wrap gap-2" aria-label="Segments">
+          {score.category_segments!.map((s) =>
+            s.segment_score_key === score.segment_score_key ? (
+              <span key={s.segment_score_key} className="rounded-full border border-sky-400 bg-sky-400/15 px-4 py-1.5 text-sm font-medium">
+                {s.segment_name ?? "Segment"} · {points(s.tss ?? null)}
+              </span>
+            ) : (
+              <Link
+                key={s.segment_score_key}
+                href={`/scores/${s.segment_score_key}`}
+                className="surface-action rounded-full border px-4 py-1.5 text-sm transition hover:underline"
+              >
+                {s.segment_name ?? "Segment"} · {points(s.tss ?? null)}
+              </Link>
+            ),
+          )}
+        </nav>
+      ) : null}
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard label="TSS" value={points(score.tss)} />
@@ -344,17 +377,17 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <CardContent className="space-y-3">
             {moreFromSkater.length > 0 ? (
               moreFromSkater.map((row) => (
-                <div key={row.segment_score_key} className="rounded-2xl border p-4">
+                <div key={row.segment_score_key} className="surface-inset rounded-2xl border p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <Link href={`/scores/${row.segment_score_key}`} className="font-medium text-slate-900 hover:underline">
+                      <Link href={`/scores/${row.segment_score_key}`} className="font-medium text-slate-100 hover:underline">
                         {row.segment_name ?? "Segment detail"}
                       </Link>
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-slate-400">
                         {row.event_name ?? "Event page"} · {formatDate(row.event_start_date)}
                       </p>
                     </div>
-                    <span className="text-sm font-medium text-slate-700">{points(row.tss)}</span>
+                    <span className="text-sm font-medium text-slate-200">{points(row.tss)}</span>
                   </div>
                 </div>
               ))
@@ -373,10 +406,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <CardContent className="space-y-3">
             {moreFromEvent.length > 0 ? (
               moreFromEvent.map((row) => (
-                <div key={row.competition_result_key} className="rounded-2xl border p-4">
+                <div key={row.competition_result_key} className="surface-inset rounded-2xl border p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-medium text-slate-900">
+                      <p className="font-medium text-slate-100">
                         {row.skater_key ? (
                           <Link href={`/skaters/${row.skater_key}`} className="hover:underline">
                             {row.skater_name}
@@ -385,11 +418,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                           row.skater_name
                         )}
                       </p>
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-slate-400">
                         {row.category_name ?? "Category pending"} · place {row.final_place ?? "—"}
                       </p>
                     </div>
-                    <span className="text-sm font-medium text-slate-700">{points(row.points)}</span>
+                    <span className="text-sm font-medium text-slate-200">{points(row.points)}</span>
                   </div>
                 </div>
               ))
@@ -425,21 +458,21 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-slate-800 bg-slate-950">
         <CardHeader>
-          <CardTitle className="text-base">How to read this page</CardTitle>
+          <CardTitle className="text-base text-slate-100">How to read this page</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3 text-sm leading-6 text-slate-600">
+        <CardContent className="grid gap-4 text-sm leading-6 text-slate-400 md:grid-cols-3">
           <div>
-            <p className="font-medium text-slate-900"><Trophy className="mr-2 inline h-4 w-4 text-amber-600" />Totals first</p>
+            <p className="font-medium text-slate-100"><Trophy className="mr-2 inline h-4 w-4 text-amber-400" />Totals first</p>
             <p className="mt-2">The KPI strip gives the quickest reading of the segment outcome: total, technical, components, and deductions.</p>
           </div>
           <div>
-            <p className="font-medium text-slate-900"><Gavel className="mr-2 inline h-4 w-4 text-sky-700" />Judge detail</p>
+            <p className="font-medium text-slate-100"><Gavel className="mr-2 inline h-4 w-4 text-sky-300" />Judge detail</p>
             <p className="mt-2">Judge tables and trimmed marks help explain how panel scoring produced the visible totals.</p>
           </div>
           <div>
-            <p className="font-medium text-slate-900"><ShieldCheck className="mr-2 inline h-4 w-4 text-emerald-700" />Source traceability</p>
+            <p className="font-medium text-slate-100"><ShieldCheck className="mr-2 inline h-4 w-4 text-emerald-300" />Source traceability</p>
             <p className="mt-2">Evidence links keep the public page anchored to original published competition documents.</p>
           </div>
         </CardContent>

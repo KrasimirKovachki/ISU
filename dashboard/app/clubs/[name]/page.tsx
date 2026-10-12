@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -81,7 +82,7 @@ export default async function Page({ params }: { params: Promise<{ name: string 
           club.country_code ? (
             <Link
               href={`/nationalities/${encodeURIComponent(club.country_code)}`}
-              className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
             >
               Country page <ArrowRight className="h-4 w-4" />
             </Link>
@@ -181,17 +182,20 @@ export default async function Page({ params }: { params: Promise<{ name: string 
           </CardHeader>
           <CardContent className="space-y-3">
             {featuredSkaters.map((row) => (
-              <div key={row.skater_key} className="rounded-2xl border p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <Link href={`/skaters/${row.skater_key}`} className="font-medium text-slate-900 hover:underline">
+              <div key={row.skater_key} className="surface-inset rounded-2xl border p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/skaters/${row.skater_key}`}
+                      className="block text-base font-semibold leading-snug tracking-tight text-slate-100 text-balance hover:underline"
+                    >
                       {row.skater_name}
                     </Link>
-                    <p className="text-sm text-slate-500">
+                    <p className="mt-1 text-sm font-medium text-slate-400">
                       {STATUS_LABEL[row.competitor_status] ?? row.competitor_status} · {number(row.competitions)} comps
                     </p>
                   </div>
-                  <span className="text-sm font-medium text-slate-700">{points(row.best_tss)}</span>
+                  <span className="shrink-0 text-sm font-semibold text-slate-200">{points(row.best_tss)}</span>
                 </div>
               </div>
             ))}
@@ -206,15 +210,15 @@ export default async function Page({ params }: { params: Promise<{ name: string 
           </CardHeader>
           <CardContent className="space-y-4">
             {nation ? (
-              <div className="rounded-2xl border bg-sky-50/70 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Country coverage</p>
-                <p className="mt-2 text-base font-semibold text-slate-900">{nationDisplay(nation.nation_code)}</p>
-                <p className="mt-1 text-sm text-slate-500">
+              <div className="surface-inset-accent rounded-2xl border p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Country coverage</p>
+                <p className="mt-2 text-base font-semibold text-slate-100">{nationDisplay(nation.nation_code)}</p>
+                <p className="mt-1 text-sm text-slate-400">
                   {number(nation.skaters)} skaters · {number(nation.events)} events · top total {points(nation.best_tss)}
                 </p>
                 <Link
                   href={`/nationalities/${encodeURIComponent(nation.nation_code)}`}
-                  className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-sky-800 hover:underline"
+                  className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-sky-300 hover:underline"
                 >
                   Open country page <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -224,14 +228,14 @@ export default async function Page({ params }: { params: Promise<{ name: string 
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Peer clubs</p>
               {peerClubs.length > 0 ? (
                 peerClubs.map((row) => (
-                  <div key={row.club_name} className="flex items-start justify-between gap-3 rounded-2xl border p-4">
+                  <div key={row.club_name} className="surface-inset rounded-2xl border p-4 flex items-start justify-between gap-3">
                     <div>
-                      <Link href={`/clubs/${encodeURIComponent(row.club_name)}`} className="font-medium text-slate-900 hover:underline">
+                      <Link href={`/clubs/${encodeURIComponent(row.club_name)}`} className="font-medium text-slate-100 hover:underline">
                         {row.club_name}
                       </Link>
-                      <p className="text-sm text-slate-500">{number(row.skaters)} skaters · {number(row.events)} events</p>
+                      <p className="text-sm text-slate-400">{number(row.skaters)} skaters · {number(row.events)} events</p>
                     </div>
-                    <span className="text-sm font-medium text-slate-700">{points(row.best_tss)}</span>
+                    <span className="text-sm font-medium text-slate-200">{points(row.best_tss)}</span>
                   </div>
                 ))
               ) : (
@@ -245,7 +249,7 @@ export default async function Page({ params }: { params: Promise<{ name: string 
       <div className="flex justify-end">
         <Link
           href="/clubs"
-          className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
         >
           Back to clubs <ArrowRight className="h-4 w-4" />
         </Link>

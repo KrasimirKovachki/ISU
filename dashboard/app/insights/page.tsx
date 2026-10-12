@@ -1,10 +1,11 @@
+export const dynamic = "force-dynamic";
 import { InsightsOverview } from "@/components/insights-overview";
 import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 30;
 export const metadata = buildMetadata({
-  title: "Insights",
-  description: "Analytical views across skaters, clubs, countries, and event types in the Skating Data public site.",
+  title: "Club Stats",
+  description: "Analytical views across skaters, clubs, countries, and event types in the Ice Skating Club website.",
   path: "/insights",
 });
 
@@ -16,7 +17,7 @@ export default async function Page({
   return (
     <InsightsOverview
       searchParams={searchParams}
-      title="Insights"
+      title="Club Stats"
       subtitle="Analytical views across skaters, clubs, countries, and event types."
     />
   );

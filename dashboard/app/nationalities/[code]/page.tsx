@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,7 +10,7 @@ import { MedalRibbonIcon } from "@/components/skating-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getNationality, listClubs } from "@/lib/api";
-import { formatDate, nationDisplay, number, points } from "@/lib/format";
+import { formatDate, nationDisplay, nationFlag, number, points } from "@/lib/format";
 import { buildMetadata } from "@/lib/site";
 
 export const revalidate = 60;
@@ -60,6 +61,8 @@ export default async function Page({ params }: { params: Promise<{ code: string 
           `${number(nation.events)} events`,
           `${number(nation.segment_scores)} segment scores`,
         ]}
+        titleClassName="text-white"
+        subtitleClassName="text-sky-100/85"
       />
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -70,7 +73,7 @@ export default async function Page({ params }: { params: Promise<{ code: string 
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
-        <Card className="bg-slate-950 text-slate-50">
+        <Card className="border-slate-800 bg-slate-950 text-slate-50">
           <CardHeader>
             <CardTitle className="text-base text-white">Country-level public view</CardTitle>
           </CardHeader>
@@ -80,31 +83,31 @@ export default async function Page({ params }: { params: Promise<{ code: string 
           </CardContent>
         </Card>
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card>
+          <Card className="border-slate-800 bg-slate-950">
             <CardContent className="p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Country</p>
-              <p className="mt-2 text-base font-semibold"><Globe2 className="mr-2 inline h-4 w-4 text-sky-700" />{nationDisplay(nation.nation_code)}</p>
+              <p className="mt-2 text-base font-semibold text-slate-100"><Globe2 className="mr-2 inline h-4 w-4 text-sky-300" />{nationFlag(nation.nation_code)} {nation.nation_code}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-slate-800 bg-slate-950">
             <CardContent className="p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Visible skaters</p>
-              <p className="mt-2 text-base font-semibold"><Users className="mr-2 inline h-4 w-4 text-sky-700" />{number(nation.skaters_list?.length ?? 0)}</p>
+              <p className="mt-2 text-base font-semibold text-slate-100"><Users className="mr-2 inline h-4 w-4 text-sky-300" />{number(nation.skaters_list?.length ?? 0)}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-slate-800 bg-slate-950">
             <CardContent className="p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Top total</p>
-              <p className="mt-2 text-base font-semibold"><Medal className="mr-2 inline h-4 w-4 text-amber-600" />{points(nation.best_tss)}</p>
+              <p className="mt-2 text-base font-semibold text-slate-100"><Medal className="mr-2 inline h-4 w-4 text-amber-400" />{points(nation.best_tss)}</p>
             </CardContent>
           </Card>
         </div>
       </section>
 
-      <Card>
+      <Card className="border-slate-800 bg-slate-950">
         <CardHeader>
-          <CardTitle className="text-base">Visible skaters ({nation.skaters_list?.length ?? 0})</CardTitle>
-          <p className="text-sm text-muted-foreground">
+          <CardTitle className="text-base text-slate-100">Visible skaters ({nation.skaters_list?.length ?? 0})</CardTitle>
+          <p className="text-sm text-slate-400">
             Public skater profiles linked from this country page, ordered by the current backend list.
           </p>
         </CardHeader>
@@ -125,7 +128,7 @@ export default async function Page({ params }: { params: Promise<{ code: string 
                   <TableCell className="font-medium">
                     <Link href={`/skaters/${s.skater_key}`} className="hover:underline">{s.skater_name}</Link>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="text-slate-400">
                     {s.club_name ? (
                       <Link href={`/clubs/${encodeURIComponent(s.club_name)}`} className="hover:underline">{s.club_name}</Link>
                     ) : (
@@ -134,7 +137,7 @@ export default async function Page({ params }: { params: Promise<{ code: string 
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{s.competitions}</TableCell>
                   <TableCell className="text-right tabular-nums">{points(s.best_tss)}</TableCell>
-                  <TableCell className="text-muted-foreground">{formatDate(s.latest_seen_date)}</TableCell>
+                  <TableCell className="text-slate-400">{formatDate(s.latest_seen_date)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -143,48 +146,48 @@ export default async function Page({ params }: { params: Promise<{ code: string 
       </Card>
 
       <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-        <Card>
+        <Card className="border-slate-800 bg-slate-950">
           <CardHeader>
-            <CardTitle className="text-base">Featured visible profiles</CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <CardTitle className="text-base text-slate-100">Featured visible profiles</CardTitle>
+            <p className="text-sm text-slate-400">
               Country pages should surface a few representative profiles instead of acting only as a raw directory.
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
             {featuredSkaters.map((row) => (
-              <div key={row.skater_key} className="flex items-start justify-between gap-3 rounded-2xl border p-4">
+              <div key={row.skater_key} className="surface-inset rounded-2xl border p-4 flex items-start justify-between gap-3">
                 <div>
-                  <Link href={`/skaters/${row.skater_key}`} className="font-medium text-slate-900 hover:underline">
+                  <Link href={`/skaters/${row.skater_key}`} className="font-medium text-slate-100 hover:underline">
                     {row.skater_name}
                   </Link>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-400">
                     {row.club_name ? row.club_name : "Club pending"} · {number(row.competitions)} comps
                   </p>
                 </div>
-                <span className="text-sm font-medium text-slate-700">{points(row.best_tss)}</span>
+                <span className="text-sm font-medium text-slate-200">{points(row.best_tss)}</span>
               </div>
             ))}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-slate-800 bg-slate-950">
           <CardHeader>
-            <CardTitle className="text-base">Active clubs in this country</CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <CardTitle className="text-base text-slate-100">Active clubs in this country</CardTitle>
+            <p className="text-sm text-slate-400">
               This adds a club-layer entry point so country pages can branch into both people and organizations.
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
             {relatedClubs.length > 0 ? (
               relatedClubs.map((row) => (
-                <div key={row.club_name} className="rounded-2xl border p-4">
+                <div key={row.club_name} className="surface-inset rounded-2xl border p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <Link href={`/clubs/${encodeURIComponent(row.club_name)}`} className="font-medium text-slate-900 hover:underline">
+                      <Link href={`/clubs/${encodeURIComponent(row.club_name)}`} className="font-medium text-slate-100 hover:underline">
                         {row.club_name}
                       </Link>
-                      <p className="text-sm text-slate-500">{number(row.skaters)} skaters · {number(row.events)} events</p>
+                      <p className="text-sm text-slate-400">{number(row.skaters)} skaters · {number(row.events)} events</p>
                     </div>
-                    <span className="text-sm font-medium text-slate-700">{points(row.best_tss)}</span>
+                    <span className="text-sm font-medium text-slate-200">{points(row.best_tss)}</span>
                   </div>
                 </div>
               ))
@@ -198,7 +201,7 @@ export default async function Page({ params }: { params: Promise<{ code: string 
       <div className="flex justify-end">
         <Link
           href="/nationalities"
-          className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
         >
           Back to countries <ArrowRight className="h-4 w-4" />
         </Link>

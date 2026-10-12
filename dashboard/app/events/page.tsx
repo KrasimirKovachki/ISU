@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { ArrowRight, CalendarRange, Globe2, MapPin } from "lucide-react";
 
@@ -41,7 +42,7 @@ export default async function Page({
       />
 
       <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
-        <Card className="bg-slate-950 text-slate-50">
+        <Card className="border-slate-800 bg-slate-950 text-slate-50">
           <CardHeader>
             <CardTitle className="text-base text-white">Competition browse surface</CardTitle>
           </CardHeader>
@@ -51,34 +52,47 @@ export default async function Page({
           </CardContent>
         </Card>
         <div className="grid gap-4 sm:grid-cols-3">
-          <KpiCard label="Events" value={items.length} icon={CalendarRange} />
-          <KpiCard label="Latest Date" value={featured ? formatDate(featured.event_start_date) : "—"} icon={Globe2} />
-          <KpiCard label="Featured Location" value={featured?.location ?? "—"} icon={MapPin} hint={featured?.event_name ?? undefined} />
+          <KpiCard label="Events" value={items.length} icon={CalendarRange} href="/events#archive" ctaLabel="Browse archive" />
+          <KpiCard
+            label="Latest Date"
+            value={featured ? formatDate(featured.event_start_date) : "—"}
+            icon={Globe2}
+            href={featured ? `/events/${featured.event_key}` : "/events"}
+            ctaLabel="Open latest event"
+          />
+          <KpiCard
+            label="Featured Location"
+            value={featured?.location ?? "—"}
+            icon={MapPin}
+            hint={featured?.event_name ?? undefined}
+            href={featured ? `/events/${featured.event_key}` : "/events"}
+            ctaLabel="Open featured event"
+          />
         </div>
       </section>
 
       {featured ? (
-        <Card>
+        <Card className="border-slate-800 bg-slate-950">
           <CardHeader>
-            <CardTitle className="text-base">Featured visible competition</CardTitle>
+            <CardTitle className="text-base text-slate-100">Featured visible competition</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-lg font-semibold">{featured.event_name ?? "Unnamed event"}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="text-lg font-semibold text-slate-100">{featured.event_name ?? "Unnamed event"}</p>
+              <p className="mt-1 text-sm text-slate-400">
                 {formatDate(featured.event_start_date)} · {featured.location ?? "Location pending"} · {featured.competition_stream ?? featured.event_type ?? "format pending"}
               </p>
             </div>
-            <Link href={`/events/${featured.event_key}`} className="inline-flex items-center gap-2 text-sm font-medium text-sky-800 hover:text-sky-950">
+            <Link href={`/events/${featured.event_key}`} className="inline-flex items-center gap-2 text-sm font-medium text-sky-300 hover:text-sky-200">
               Open event page <ArrowRight className="h-4 w-4" />
             </Link>
           </CardContent>
         </Card>
       ) : null}
 
-      <Card>
+      <Card id="archive" className="border-slate-800 bg-slate-950 scroll-mt-28">
         <CardHeader>
-          <CardTitle className="text-base">Competition archive</CardTitle>
+          <CardTitle className="text-base text-slate-100">Competition archive</CardTitle>
         </CardHeader>
         <CardContent className="p-4"><EventsTable rows={items} /></CardContent>
       </Card>

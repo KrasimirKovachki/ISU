@@ -2,7 +2,7 @@
 import Link from "next/link";
 
 import { DataTable, type Column } from "@/components/data-table";
-import { formatDate, nationDisplay, points } from "@/lib/format";
+import { formatDate, nationFlag, points } from "@/lib/format";
 import type { NationalityRow } from "@/lib/types";
 
 type Row = NationalityRow & Record<string, unknown>;
@@ -10,8 +10,9 @@ type Row = NationalityRow & Record<string, unknown>;
 const columns: Column<Row>[] = [
   { key: "nation_code", header: "Nation",
     cell: (r) => (
-      <Link href={`/nationalities/${encodeURIComponent(r.nation_code)}`} className="font-medium hover:underline">
-        {nationDisplay(r.nation_code)}
+      <Link href={`/nationalities/${encodeURIComponent(r.nation_code)}`} className="flex items-center gap-2 font-medium hover:underline">
+        <span className="text-base">{nationFlag(r.nation_code)}</span>
+        <span>{r.nation_code}</span>
       </Link>
     ),
     defaultDirection: "asc" },

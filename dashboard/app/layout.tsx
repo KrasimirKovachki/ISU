@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 
 import { Providers } from "./providers";
-import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_THEME_COLOR, SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -40,17 +39,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+    <html lang="en" className="dark h-full antialiased" suppressHydrationWarning>
       <body className="min-h-full bg-background">
         <Providers>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <div className="flex-1 flex flex-col min-w-0">
-              <Suspense fallback={<div className="sticky top-0 z-10 h-[61px] border-b bg-background/80 backdrop-blur" />}>
-                <Topbar />
-              </Suspense>
-              <main className="flex-1 px-4 md:px-6 py-6">{children}</main>
-            </div>
+          <div className="min-h-screen">
+            <Suspense fallback={<div className="sticky top-0 z-10 h-[88px] border-b bg-background/80 backdrop-blur" />}>
+              <Topbar />
+            </Suspense>
+            <main className="mx-auto flex-1 w-full max-w-[1600px] px-4 py-6 md:px-6 lg:px-8">{children}</main>
           </div>
         </Providers>
       </body>

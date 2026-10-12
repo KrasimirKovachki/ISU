@@ -1,5 +1,6 @@
 "use client";
 /** Donut chart of events by scope (international / federation / club_or_open / unknown). */
+import { useRouter } from "next/navigation";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { ChartFrame } from "@/components/chart-frame";
@@ -12,13 +13,20 @@ const COLORS: Record<string, string> = {
   unknown: "var(--chart-4)",
 };
 
-export function CompetitionMixDonut({ rows }: { rows: CompetitionMixRow[] }) {
+export function CompetitionMixDonut({
+  rows,
+  href,
+}: {
+  rows: CompetitionMixRow[];
+  href?: string;
+}) {
+  const router = useRouter();
   const grouped = new Map<string, number>();
   for (const r of rows) {
     const key = r.scope_hint ?? "unknown";
     grouped.set(key, (grouped.get(key) ?? 0) + r.events);
   }
-  const data = [...grouped.entries()].map(([name, value]) => ({ name, value }));
+  const data = [...grouped.entries()].map(([name, value]) => ({ name, value, href }));
   return (
     <ChartFrame>
       <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 600, height: 288 }}>
@@ -31,6 +39,11 @@ export function CompetitionMixDonut({ rows }: { rows: CompetitionMixRow[] }) {
             outerRadius={90}
             paddingAngle={2}
             stroke="var(--background)"
+            onClick={(state) => {
+              const href = state?.href;
+              if (typeof href === "string") router.push(href);
+            }}
+            style={{ cursor: href ? "pointer" : "default" }}
           >
             {data.map((d) => (
               <Cell key={d.name} fill={COLORS[d.name] ?? "var(--muted)"} />

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -88,7 +89,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <>
             <Link
               href="/events"
-              className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
             >
               Event archive <ArrowRight className="h-4 w-4" />
             </Link>
@@ -97,7 +98,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 href={event.root_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
               >
                 Original source <ArrowRight className="h-4 w-4" />
               </a>
@@ -163,7 +164,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                     <TableRow key={r.competition_result_key}>
                       <TableCell className="text-right tabular-nums text-muted-foreground">{r.final_place ?? "—"}</TableCell>
                       <TableCell className="font-medium">
-                        {r.skater_key ? (
+                        {/* Edited 2026-10-12 by Claude (AI assistant): name opens this skater's score sheet in this category */}
+                        {r.segments?.length ? (
+                          <Link href={`/scores/${r.segments[0].segment_score_key}`} className="hover:underline">{r.skater_name}</Link>
+                        ) : r.skater_key ? (
                           <Link href={`/skaters/${r.skater_key}`} className="hover:underline">{r.skater_name}</Link>
                         ) : (
                           r.skater_name
@@ -197,9 +201,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <CardContent className="space-y-3">
             {podiumRows.length > 0 ? (
               podiumRows.map((row) => (
-                <div key={row.competition_result_key} className="flex items-start justify-between gap-3 rounded-2xl border p-4">
+                <div key={row.competition_result_key} className="surface-inset rounded-2xl border p-4">
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-slate-100">
                       #{row.final_place}{" "}
                       {row.skater_key ? (
                         <Link href={`/skaters/${row.skater_key}`} className="hover:underline">
@@ -209,12 +213,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                         row.skater_name
                       )}
                     </p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-slate-400">
                       {row.category_name ?? "Category pending"}
                       {row.club_name ? ` · ${row.club_name}` : ""}
                     </p>
                   </div>
-                  <span className="text-sm font-medium text-slate-700">{points(row.points)}</span>
+                  <span className="text-sm font-medium text-slate-200">{points(row.points)}</span>
                 </div>
               ))
             ) : (
@@ -232,11 +236,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <CardContent className="space-y-3">
             {relatedEvents.length > 0 ? (
               relatedEvents.map((row) => (
-                <div key={row.event_key} className="rounded-2xl border p-4">
-                  <Link href={`/events/${row.event_key}`} className="font-medium text-slate-900 hover:underline">
+                <div key={row.event_key} className="surface-inset rounded-2xl border p-4">
+                  <Link href={`/events/${row.event_key}`} className="font-medium text-slate-100 hover:underline">
                     {row.event_name ?? "Competition page"}
                   </Link>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-400">
                     {formatDate(row.event_start_date)} · {row.location ?? "Location pending"}
                   </p>
                 </div>
@@ -248,21 +252,21 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </Card>
       </section>
 
-      <Card>
+      <Card className="border-slate-800 bg-slate-950">
         <CardHeader>
-          <CardTitle className="text-base">How to read this event page</CardTitle>
+          <CardTitle className="text-base text-slate-100">How to read this event page</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3 text-sm leading-6 text-slate-600">
+        <CardContent className="grid gap-4 text-sm leading-6 text-slate-400 md:grid-cols-3">
           <div>
-            <p className="font-medium text-slate-900"><Trophy className="mr-2 inline h-4 w-4 text-amber-600" />Placements</p>
+            <p className="font-medium text-slate-100"><Trophy className="mr-2 inline h-4 w-4 text-amber-400" />Placements</p>
             <p className="mt-2">Rows are grouped by category and ordered by final place when available.</p>
           </div>
           <div>
-            <p className="font-medium text-slate-900">Entity links</p>
+            <p className="font-medium text-slate-100">Entity links</p>
             <p className="mt-2">Skater and club links should turn event browsing into deeper profile exploration.</p>
           </div>
           <div>
-            <p className="font-medium text-slate-900">Source traceability</p>
+            <p className="font-medium text-slate-100">Source traceability</p>
             <p className="mt-2">The event source link should remain visible because the imported page is derived from official published results.</p>
           </div>
         </CardContent>

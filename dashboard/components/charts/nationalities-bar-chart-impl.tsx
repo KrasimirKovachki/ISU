@@ -1,15 +1,30 @@
 "use client";
 /** Recharts horizontal bar — top N nations by segment_scores. */
+import { useRouter } from "next/navigation";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { ChartFrame } from "@/components/chart-frame";
 import type { NationalityRow } from "@/lib/types";
 
-export function NationalitiesBarChart({ rows, take = 12 }: { rows: NationalityRow[]; take?: number }) {
+export function NationalitiesBarChart({
+  rows,
+  take = 12,
+  hrefBase,
+}: {
+  rows: NationalityRow[];
+  take?: number;
+  hrefBase?: string;
+}) {
+  const router = useRouter();
   const data = [...rows]
     .sort((a, b) => b.segment_scores - a.segment_scores)
     .slice(0, take)
-    .map((n) => ({ name: n.nation_code, scores: n.segment_scores, skaters: n.skaters }))
+    .map((n) => ({
+      name: n.nation_code,
+      scores: n.segment_scores,
+      skaters: n.skaters,
+      href: hrefBase ? `${hrefBase}${encodeURIComponent(n.nation_code)}` : undefined,
+    }))
     .reverse();
   return (
     <ChartFrame>
@@ -33,7 +48,16 @@ export function NationalitiesBarChart({ rows, take = 12 }: { rows: NationalityRo
                 : [typeof value === "number" ? value.toLocaleString() : String(value ?? "—"), "Skaters"]
             }
           />
-          <Bar dataKey="scores" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
+          <Bar
+            dataKey="scores"
+            fill="var(--chart-1)"
+            radius={[0, 4, 4, 0]}
+            onClick={(state) => {
+              const href = state?.href;
+              if (typeof href === "string") router.push(href);
+            }}
+            style={{ cursor: hrefBase ? "pointer" : "default" }}
+          />
         </BarChart>
       </ResponsiveContainer>
     </ChartFrame>

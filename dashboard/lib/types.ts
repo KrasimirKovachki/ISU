@@ -199,6 +199,15 @@ export type EventResultRow = {
   final_place: number | null;
   points: number | null;
   segment_places: Record<string, number> | null;
+  // Edited 2026-10-12 by Claude (AI assistant): this skater's score sheets in the category (name links to the first)
+  segments?: SegmentLink[];
+};
+
+export type SegmentLink = {
+  segment_score_key: number;
+  segment_name: string | null;
+  place?: number | null;
+  tss?: number | null;
 };
 
 export type EventDetail = EventRow & {
@@ -267,6 +276,7 @@ export type ScoreDetail = {
   element_score_total: number | null;
   judge_count: number | null;
   root_url: string | null;
+  category_segments?: SegmentLink[];
   judges: Judge[];
   elements: ScoreElement[];
   components: ComponentScore[];
