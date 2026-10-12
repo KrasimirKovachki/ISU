@@ -76,10 +76,15 @@ _cache_lock = threading.Lock()
 
 
 def _data_version(conn: Any) -> Any:
-    row = conn.execute(
-        "SELECT greatest(last_analyze, last_autoanalyze) FROM pg_stat_user_tables "
-        "WHERE relid = 'api.mv_identity_lookup'::regclass"
-    ).fetchone()
+    # Edited 2026-10-12 by Claude (AI assistant): with per-event tables (db/40) the data's own change marker is
+    # api.data_version; the older materialized-view setup still uses the lookup table's last ANALYZE.
+    if conn.execute("SELECT to_regclass('api.data_version') IS NOT NULL").fetchone()[0]:
+        row = conn.execute("SELECT changed_at FROM api.data_version WHERE id = 1").fetchone()
+    else:
+        row = conn.execute(
+            "SELECT greatest(last_analyze, last_autoanalyze) FROM pg_stat_user_tables "
+            "WHERE relid = 'api.mv_identity_lookup'::regclass"
+        ).fetchone()
     return row[0] if row else None
 
 

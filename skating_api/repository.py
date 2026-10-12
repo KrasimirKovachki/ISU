@@ -888,6 +888,16 @@ WITH profile AS (
   JOIN api.mv_skater_search ss ON ss.identity_key = ai.identity_key
   WHERE sac.event_id = %(event_key)s
   ORDER BY sac.category_id, sac.skater_name
+),
+-- the skater's score sheets in this category (SP, FS, ...): the event page links the name to the first one
+segment_scores AS (
+  SELECT fss.category_key, fss.skater_name,
+         jsonb_agg(jsonb_build_object('segment_score_key', fss.segment_score_key, 'segment_name', ds.segment_name)
+                   ORDER BY fss.segment_key) AS segments
+  FROM api.mv_segment_score fss
+  LEFT JOIN api.mv_dim_segment ds ON ds.segment_key = fss.segment_key
+  WHERE fss.event_key = %(event_key)s
+  GROUP BY 1, 2
 )
 SELECT
   fcr.competition_result_key,
@@ -900,10 +910,12 @@ SELECT
   fcr.club_name,
   fcr.final_place,
   fcr.points,
-  fcr.segment_places
+  fcr.segment_places,
+  COALESCE(sc.segments, '[]'::jsonb) AS segments
 FROM api.mv_competition_result fcr
 LEFT JOIN api.mv_dim_category dc ON dc.category_key = fcr.category_key
 LEFT JOIN profile p ON p.category_id = fcr.category_key AND p.skater_name = fcr.skater_name
+LEFT JOIN segment_scores sc ON sc.category_key = fcr.category_key AND sc.skater_name = fcr.skater_name
 WHERE fcr.event_key = %(event_key)s
 ORDER BY dc.category_name, fcr.final_place NULLS LAST, fcr.points DESC NULLS LAST
 LIMIT %(limit)s
@@ -928,6 +940,7 @@ SELECT
   fss.event_key,
   de.event_name,
   de.event_start_date,
+  fss.category_key,
   dc.category_name,
   dseg.segment_name,
   fss.place,
@@ -952,6 +965,18 @@ WHERE fss.segment_score_key = %(segment_score_key)s
     if score is None:
         return None
 
+    # Edited 2026-10-12 by Claude (AI assistant): the same skater's other segments in this category (SP <-> FS switch)
+    score["category_segments"] = fetch_all(
+        conn,
+        """
+SELECT fss.segment_score_key, ds.segment_name, fss.place, fss.tss
+FROM api.mv_segment_score fss
+LEFT JOIN api.mv_dim_segment ds ON ds.segment_key = fss.segment_key
+WHERE fss.event_key = %(event_key)s AND fss.category_key = %(category_key)s AND fss.skater_name = %(skater_name)s
+ORDER BY fss.segment_key
+""",
+        {"event_key": score["event_key"], "category_key": score["category_key"], "skater_name": score["skater_name"]},
+    )
     score["judges"] = fetch_all(
         conn,
         """
@@ -1042,15 +1067,16 @@ SELECT
 FROM ingest.pdf_component_judge_scores pcjs
 JOIN ingest.pdf_program_components ppc ON ppc.id = pcjs.pdf_program_component_id
 JOIN ingest.pdf_score_summaries pss ON pss.id = ppc.pdf_score_summary_id
-JOIN analytics.v_skater_appearances_clean sac ON sac.skater_appearance_id = pss.skater_appearance_id
+-- Edited 2026-10-12 by Claude (AI assistant): the segment is already known; joining the cleaned-appearance view
+-- (a deep view stack) only to get it cost ~0.6 s per score sheet
 LEFT JOIN ingest.official_assignments oa
-  ON oa.segment_id = sac.segment_id
+  ON oa.segment_id = %(segment_key)s
  AND oa.judge_number = pcjs.judge_number
  AND oa.role_group = 'judge'
 WHERE pss.id = %(segment_score_key)s
 ORDER BY ppc.id, pcjs.judge_number
 """,
-        {"segment_score_key": segment_score_key},
+        {"segment_score_key": segment_score_key, "segment_key": score["segment_key"]},
     )
     marks_by_component: dict[int, list[dict[str, Any]]] = {}
     for mark in component_marks:
