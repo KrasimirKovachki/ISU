@@ -239,19 +239,21 @@ s AS (
 ),
 dev AS (
   SELECT DISTINCT
-    api.skater_identity_key(
-      sac.skater_name,
-      sac.nation_code,
-      COALESCE(sac.canonical_club_name, sac.club_name)
-    ) AS identity_key
+    il.identity_key
   FROM api.mv_skater_appearances_with_club sac
+  LEFT JOIN api.mv_identity_lookup il
+    ON il.skater_name = sac.skater_name AND il.nk = COALESCE(sac.nation_code, '∅')
+   AND il.ck = COALESCE(sac.canonical_club_name, sac.club_name, '∅')
   WHERE sac.event_start_date BETWEEN %(start)s AND %(end)s
     AND sac.category_name ILIKE 'Mlad Figurist%%'
 )
 SELECT
   (SELECT count(*) FROM e) AS events,
-  (SELECT count(DISTINCT api.skater_identity_key(skater_name, nation_code, club_name))
-     FROM s WHERE skater_name IS NOT NULL) AS skaters,
+  (SELECT count(DISTINCT il.identity_key)
+     FROM s
+     JOIN api.mv_identity_lookup il
+       ON il.skater_name = s.skater_name AND il.nk = COALESCE(s.nation_code, '∅') AND il.ck = COALESCE(s.club_name, '∅')
+     WHERE s.skater_name IS NOT NULL) AS skaters,
   (SELECT count(*) FROM core.clubs) AS registered_clubs,
   (SELECT count(DISTINCT club_name) FROM s WHERE club_name IS NOT NULL) AS scoring_clubs,
   (SELECT count(*) FROM s) AS segment_scores,
@@ -294,13 +296,15 @@ SELECT
   count(DISTINCT e.event_key)                                          AS events,
   count(DISTINCT s.skater_key) FILTER (WHERE s.skater_key IS NOT NULL) AS skaters_with_scores,
   count(DISTINCT s.club_name)  FILTER (WHERE s.club_name IS NOT NULL)  AS clubs_with_appearances,
-  count(DISTINCT api.skater_identity_key(s.skater_name, s.nation_code, s.club_name))
+  count(DISTINCT il.identity_key)
     FILTER (WHERE s.skater_name IS NOT NULL)                            AS skaters_with_appearances,
   count(s.segment_score_key)                                            AS segment_scores,
   min(e.event_start_date)                                               AS first_event_date,
   max(e.event_start_date)                                               AS latest_event_date
 FROM events_in_range e
 LEFT JOIN scores_in_range s ON s.event_key = e.event_key
+LEFT JOIN api.mv_identity_lookup il
+  ON il.skater_name = s.skater_name AND il.nk = COALESCE(s.nation_code, '∅') AND il.ck = COALESCE(s.club_name, '∅')
 GROUP BY 1, 2, 3, 4, 5
 ORDER BY events DESC, segment_scores DESC, competition_stream
 """,
@@ -321,13 +325,12 @@ WITH s AS (
 club_appearances AS (
   SELECT DISTINCT
     COALESCE(sac.canonical_club_name, sac.club_name) AS club_name,
-    api.skater_identity_key(
-      sac.skater_name,
-      sac.nation_code,
-      COALESCE(sac.canonical_club_name, sac.club_name)
-    ) AS identity_key,
+    il.identity_key,
     sac.category_name ILIKE 'Mlad Figurist%%' AS is_development
   FROM api.mv_skater_appearances_with_club sac
+  LEFT JOIN api.mv_identity_lookup il
+    ON il.skater_name = sac.skater_name AND il.nk = COALESCE(sac.nation_code, '∅')
+   AND il.ck = COALESCE(sac.canonical_club_name, sac.club_name, '∅')
   WHERE sac.club_name IS NOT NULL
     AND sac.event_start_date BETWEEN %(start)s AND %(end)s
 ),
@@ -397,13 +400,12 @@ nationality_appearances AS (
     sac.nation_code,
     sac.event_id,
     sac.event_start_date,
-    api.skater_identity_key(
-      sac.skater_name,
-      sac.nation_code,
-      COALESCE(sac.canonical_club_name, sac.club_name)
-    ) AS identity_key,
+    il.identity_key,
     sac.category_name ILIKE 'Mlad Figurist%%' AS is_development
   FROM api.mv_skater_appearances_with_club sac
+  LEFT JOIN api.mv_identity_lookup il
+    ON il.skater_name = sac.skater_name AND il.nk = COALESCE(sac.nation_code, '∅')
+   AND il.ck = COALESCE(sac.canonical_club_name, sac.club_name, '∅')
   WHERE sac.nation_code IS NOT NULL
     AND sac.event_start_date BETWEEN %(start)s AND %(end)s
 ),
@@ -427,7 +429,7 @@ nationality_development_counts AS (
 )
 SELECT
   s.nation_code,
-  count(DISTINCT api.skater_identity_key(s.skater_name, s.nation_code, s.club_name)) AS skaters,
+  count(DISTINCT il.identity_key) AS skaters,
   count(DISTINCT s.event_key) AS events,
   count(*)                    AS segment_scores,
   COALESCE(max(ndc.development_skaters), 0) AS development_skaters,
@@ -439,6 +441,8 @@ SELECT
   min(s.date_key) AS first_seen_date,
   max(s.date_key) AS latest_seen_date
 FROM s
+LEFT JOIN api.mv_identity_lookup il
+  ON il.skater_name = s.skater_name AND il.nk = COALESCE(s.nation_code, '∅') AND il.ck = COALESCE(s.club_name, '∅')
 LEFT JOIN nationality_development_counts ndc ON ndc.nation_code = s.nation_code
 GROUP BY s.nation_code
 ORDER BY segment_scores DESC, skaters DESC, latest_seen_date DESC NULLS LAST, s.nation_code
@@ -497,9 +501,10 @@ def skater_component_summary(conn: Any, skater_key: int) -> list[dict[str, Any]]
         """
 WITH segs AS (
   SELECT segment_score_key
-  FROM api.mv_segment_score fss
-  JOIN api.mv_skater_search mss
-    ON mss.identity_key = api.skater_identity_key(fss.skater_name, fss.nation_code, fss.club_name)
+  FROM api.mv_skater_search mss
+  JOIN api.mv_identity_lookup il ON il.identity_key = mss.identity_key
+  JOIN api.mv_segment_score fss
+    ON fss.skater_name = il.skater_name AND COALESCE(fss.nation_code, '∅') = il.nk AND COALESCE(fss.club_name, '∅') = il.ck
   WHERE mss.skater_key = %(skater_key)s
 )
 SELECT
@@ -759,9 +764,10 @@ SELECT
   fss.element_score_total,
   fss.judge_count,
   de.root_url
-FROM api.mv_segment_score fss
-JOIN api.mv_skater_search mss
-  ON mss.identity_key = api.skater_identity_key(fss.skater_name, fss.nation_code, fss.club_name)
+FROM api.mv_skater_search mss
+JOIN api.mv_identity_lookup il ON il.identity_key = mss.identity_key
+JOIN api.mv_segment_score fss
+  ON fss.skater_name = il.skater_name AND COALESCE(fss.nation_code, '∅') = il.nk AND COALESCE(fss.club_name, '∅') = il.ck
 LEFT JOIN api.mv_dim_event de ON de.event_key = fss.event_key
 LEFT JOIN api.mv_dim_category dc ON dc.category_key = fss.category_key
 LEFT JOIN api.mv_dim_segment dseg ON dseg.segment_key = fss.segment_key
@@ -794,9 +800,12 @@ SELECT
   goe,
   bonus,
   panel_score
-FROM api.mv_element_score
-JOIN api.mv_skater_search mss
-  ON mss.identity_key = api.skater_identity_key(api.mv_element_score.skater_name, api.mv_element_score.nation_code, api.mv_element_score.club_name)
+FROM api.mv_skater_search mss
+JOIN api.mv_identity_lookup il ON il.identity_key = mss.identity_key
+JOIN api.mv_element_score
+  ON api.mv_element_score.skater_name = il.skater_name
+ AND COALESCE(api.mv_element_score.nation_code, '∅') = il.nk
+ AND COALESCE(api.mv_element_score.club_name, '∅') = il.ck
 WHERE mss.skater_key = %(skater_key)s
 ORDER BY date_key DESC NULLS LAST, segment_score_key DESC, element_no
 LIMIT %(limit)s
@@ -845,7 +854,7 @@ SELECT
   event_protocol_url
 FROM api.mv_dim_event
 {where}
-ORDER BY event_start_date DESC NULLS LAST, event_name
+ORDER BY event_start_date DESC NULLS LAST, event_name, event_key  -- event_key: stable order for same date+name
 LIMIT %(limit)s
 """,
         params,

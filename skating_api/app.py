@@ -8,12 +8,27 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from skating_api import repository
-from skating_api.db import connection_dependency
+from skating_api.db import close_pool, connection_dependency
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 app = FastAPI(title="Skating Data API", version="1.0.0")
+
+
+# Edited 2026-10-12 by Claude (AI assistant): data only changes when results are imported, so browsers may
+# reuse an answer for 5 minutes ("private": it is members-only data, no shared caches).
+@app.middleware("http")
+async def cache_headers(request, call_next):
+    response = await call_next(request)
+    if request.method == "GET" and request.url.path.startswith("/api/") and response.status_code == 200:
+        response.headers.setdefault("Cache-Control", "private, max-age=300")
+    return response
+
+
+@app.on_event("shutdown")
+def _close_pool() -> None:
+    close_pool()
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
@@ -49,12 +64,38 @@ def legend(conn: Any = Depends(connection_dependency)) -> dict[str, Any]:
     return {"markers": repository.list_marker_legend(conn)}
 
 
+# Edited 2026-10-12 by Claude (AI assistant): Insights answers are kept in memory until the data changes.
+# scripts/refresh_api_mvs.sh ends with ANALYZE api.mv_identity_lookup, so its last-analyze time is the data version.
+_dashboard_cache: dict[tuple[int | None, int | None], tuple[Any, dict[str, Any]]] = {}
+
+
+def _data_version(conn: Any) -> Any:
+    row = conn.execute(
+        "SELECT greatest(last_analyze, last_autoanalyze) FROM pg_stat_user_tables "
+        "WHERE relid = 'api.mv_identity_lookup'::regclass"
+    ).fetchone()
+    return row[0] if row else None
+
+
 @api.get("/dashboard")
 def dashboard(
     from_year: int | None = None,
     to_year: int | None = None,
     conn: Any = Depends(connection_dependency),
 ) -> dict[str, Any]:
+    key = (from_year, to_year)
+    version = _data_version(conn)
+    cached = _dashboard_cache.get(key)
+    if cached and version is not None and cached[0] == version:
+        return cached[1]
+    result = _dashboard(conn, from_year, to_year)
+    if len(_dashboard_cache) > 200:
+        _dashboard_cache.clear()
+    _dashboard_cache[key] = (version, result)
+    return result
+
+
+def _dashboard(conn: Any, from_year: int | None, to_year: int | None) -> dict[str, Any]:
     if from_year is None and to_year is None:
         return {
             "period": None,

@@ -1,0 +1,25 @@
+# Edited 2026-10-12 by Claude (AI assistant): same rules as the data.icepeaktrophy.com block on prod (137.184.50.26).
+data.icepeaktrophy.com {
+	encode gzip
+	# immutable app bundle + icons are not data — serve without an auth round-trip
+	@public path /_next/static/* /favicon.ico /icon* /apple-icon* /opengraph-image*
+	handle @public {
+		reverse_proxy skating-dash:3000
+	}
+	# the academy servers (live 137.184.50.26, staging 130.61.157.150) read the API directly (read-only data)
+	@academy_api {
+		remote_ip 137.184.50.26 130.61.157.150
+		path /api/*
+	}
+	handle @academy_api {
+		reverse_proxy skating-api:8000
+	}
+	# everything else (pages + /api data) requires a logged-in platform member (checked by the Ice Peak site)
+	handle {
+		forward_auth https://academy1.icepeaktrophy.com {
+			uri /member/authz/
+			header_up Host academy1.icepeaktrophy.com
+		}
+		reverse_proxy skating-dash:3000
+	}
+}
