@@ -69,7 +69,7 @@ def main() -> int:
     conn = connect()
     # latest imported version of each URL (re-imports keep older rows)
     docs = conn.execute("""
-      SELECT DISTINCT ON (sd.url) sd.url, sd.content_hash, coalesce(e.event_name, ir.root_url) AS event
+      SELECT DISTINCT ON (sd.url) sd.url, sd.content_hash, coalesce(e.name, ir.root_url) AS event
       FROM ingest.source_documents sd
       JOIN ingest.import_runs ir ON ir.id = sd.import_run_id
       LEFT JOIN ingest.events e ON e.import_run_id = ir.id

@@ -38,6 +38,9 @@ def cached_fetch(url: str, *, timeout: int = 30, force: bool = False) -> bytes:
     path = _cache_path(url)
     if not bypass and path.is_file():
         return path.read_bytes()
+    # Edited 2026-10-12 by Claude (AI assistant): archive-only imports never touch the network
+    if os.environ.get("SKATING_ARCHIVE_ONLY") == "1":
+        raise urllib.error.URLError(f"not in the local archive: {url}")
 
     request = Request(url, headers={"User-Agent": USER_AGENT})
     try:
@@ -53,11 +56,17 @@ def cached_fetch(url: str, *, timeout: int = 30, force: bool = False) -> bytes:
         ) as response:
             body = response.read()
 
+    store(url, body)
+    return body
+
+
+def store(url: str, body: bytes) -> None:
+    """Keep these bytes as the archived copy of ``url`` (atomic write)."""
+    path = _cache_path(url)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".bin.tmp")
     tmp.write_bytes(body)
     tmp.replace(path)
-    return body
 
 
 def cache_size() -> tuple[int, int]:

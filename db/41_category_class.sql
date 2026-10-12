@@ -35,3 +35,17 @@ SELECT c.category_key, c.event_key, c.category_name,
   CASE WHEN c.category_name ~* '\m(girls|ladies|women|female)\M' THEN 'female'
        WHEN c.category_name ~* '\m(boys|men|male)\M' THEN 'male' END AS gender
 FROM api.mv_dim_category c LEFT JOIN api.category_override o USING (category_key);
+
+-- Bulgarian Skating Federation classes (bsf.bg National Championships, Priz Victoria, Spring Cup). Mapped from data:
+-- the same skaters in the same season skate these ISU-style categories elsewhere (2026-10-12 cross-check):
+-- I=Senior, II=Junior, III=Advanced Novice, IV=Intermediate Novice, V=Basic Novice, VI=Cubs, VII=Chicks,
+-- VII+ / VII Plus = beginners (Recreational, Mlad Figurist).
+INSERT INTO api.category_rule(priority, pattern, level, discipline, age_group, note) VALUES
+ (1, 'klas\s*-?\s*vii\s*(\+|plus)',       'recreational', NULL, 'beginner',            'BSF VII+'),
+ (2, 'klas\s*-?\s*vii\s*[ab]?\M',          'national', NULL, 'chicks',              'BSF VII'),
+ (3, 'klas\s*-?\s*vi\s*[ab]?\M',           'national', NULL, 'cubs',                'BSF VI'),
+ (4, 'klas\s*-?\s*v\s*[ab]?\M',            'national', NULL, 'basic_novice',        'BSF V'),
+ (5, 'klas\s*-?\s*iv\M',                   'national', NULL, 'intermediate_novice', 'BSF IV'),
+ (6, 'klas\s*-?\s*iii\M',                  'national', NULL, 'advanced_novice',     'BSF III'),
+ (7, 'klas\s*-?\s*ii\M',                   'national', NULL, 'junior',              'BSF II'),
+ (8, 'klas\s*-?\s*i\M',                    'national', NULL, 'senior',              'BSF I');

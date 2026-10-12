@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import os
 import re
 import ssl
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
+
+from isu_parser.fetch_cache import _cache_path, store
 
 
 USER_AGENT = "isu-skating-source-check/0.1"
@@ -45,17 +48,29 @@ class SourceCheckResult:
 
 
 def fetch_bytes(url: str, timeout: int = 30) -> tuple[bytes, str]:
+    # Edited 2026-10-12 by Claude (AI assistant): our archive (the importer's download cache) is the fallback when
+    # the source site is down or gone, and SKATING_ARCHIVE_ONLY=1 imports from the archive without any network.
+    archived = _cache_path(url)
+    if os.environ.get("SKATING_ARCHIVE_ONLY") == "1":
+        if archived.is_file():
+            return archived.read_bytes(), url
+        raise URLError(f"not in the local archive: {url}")
     request = Request(url, headers={"User-Agent": USER_AGENT})
     try:
-        with urlopen(request, timeout=timeout) as response:
-            final_url = response.geturl()
-            return response.read(), final_url
-    except URLError as exc:
-        if "CERTIFICATE_VERIFY_FAILED" not in str(exc.reason):
-            raise
-        with urlopen(request, timeout=timeout, context=ssl._create_unverified_context()) as response:  # noqa: S323
-            final_url = response.geturl()
-            return response.read(), final_url
+        try:
+            with urlopen(request, timeout=timeout) as response:
+                final_url, body = response.geturl(), response.read()
+        except URLError as exc:
+            if "CERTIFICATE_VERIFY_FAILED" not in str(exc.reason):
+                raise
+            with urlopen(request, timeout=timeout, context=ssl._create_unverified_context()) as response:  # noqa: S323
+                final_url, body = response.geturl(), response.read()
+        store(url, body)  # every page we look at is kept, not only the ones the importer fetches
+        return body, final_url
+    except (URLError, OSError):
+        if archived.is_file():
+            return archived.read_bytes(), url
+        raise
 
 
 def decode_html(data: bytes) -> str:
