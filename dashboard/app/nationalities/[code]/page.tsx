@@ -61,8 +61,8 @@ export default async function Page({ params }: { params: Promise<{ code: string 
           `${number(nation.events)} events`,
           `${number(nation.segment_scores)} segment scores`,
         ]}
-        titleClassName="text-white"
-        subtitleClassName="text-sky-100/85"
+        titleClassName="text-foreground"
+        subtitleClassName="text-brand"
       />
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -72,42 +72,33 @@ export default async function Page({ params }: { params: Promise<{ code: string 
         <KpiCard label="Best TSS" value={points(nation.best_tss)} hint={`PCS ${points(nation.best_pcs)}`} />
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
-        <Card className="border-slate-800 bg-slate-950 text-slate-50">
-          <CardHeader>
-            <CardTitle className="text-base text-white">Country-level public view</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
-            <p>Country pages should help visitors understand the breadth of representation in the dataset without needing to start from a specific competition.</p>
-            <p>They work best when they summarize visible depth and then link down into public skater profiles and clubs.</p>
-          </CardContent>
-        </Card>
+      <section className="grid gap-4">
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card className="border-slate-800 bg-slate-950">
+          <Card className="border-border bg-card">
             <CardContent className="p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Country</p>
-              <p className="mt-2 text-base font-semibold text-slate-100"><Globe2 className="mr-2 inline h-4 w-4 text-sky-300" />{nationFlag(nation.nation_code)} {nation.nation_code}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Country</p>
+              <p className="mt-2 text-base font-semibold text-foreground"><Globe2 className="mr-2 inline h-4 w-4 text-brand" />{nationFlag(nation.nation_code)} {nation.nation_code}</p>
             </CardContent>
           </Card>
-          <Card className="border-slate-800 bg-slate-950">
+          <Card className="border-border bg-card">
             <CardContent className="p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Visible skaters</p>
-              <p className="mt-2 text-base font-semibold text-slate-100"><Users className="mr-2 inline h-4 w-4 text-sky-300" />{number(nation.skaters_list?.length ?? 0)}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Visible skaters</p>
+              <p className="mt-2 text-base font-semibold text-foreground"><Users className="mr-2 inline h-4 w-4 text-brand" />{number(nation.skaters_list?.length ?? 0)}</p>
             </CardContent>
           </Card>
-          <Card className="border-slate-800 bg-slate-950">
+          <Card className="border-border bg-card">
             <CardContent className="p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Top total</p>
-              <p className="mt-2 text-base font-semibold text-slate-100"><Medal className="mr-2 inline h-4 w-4 text-amber-400" />{points(nation.best_tss)}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Top total</p>
+              <p className="mt-2 text-base font-semibold text-foreground"><Medal className="mr-2 inline h-4 w-4 text-gold" />{points(nation.best_tss)}</p>
             </CardContent>
           </Card>
         </div>
       </section>
 
-      <Card className="border-slate-800 bg-slate-950">
+      <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-base text-slate-100">Visible skaters ({nation.skaters_list?.length ?? 0})</CardTitle>
-          <p className="text-sm text-slate-400">
+          <CardTitle className="text-base text-foreground">Visible skaters ({nation.skaters_list?.length ?? 0})</CardTitle>
+          <p className="text-sm text-muted-foreground">
             Public skater profiles linked from this country page, ordered by the current backend list.
           </p>
         </CardHeader>
@@ -128,7 +119,7 @@ export default async function Page({ params }: { params: Promise<{ code: string 
                   <TableCell className="font-medium">
                     <Link href={`/skaters/${s.skater_key}`} className="hover:underline">{s.skater_name}</Link>
                   </TableCell>
-                  <TableCell className="text-slate-400">
+                  <TableCell className="text-muted-foreground">
                     {s.club_name ? (
                       <Link href={`/clubs/${encodeURIComponent(s.club_name)}`} className="hover:underline">{s.club_name}</Link>
                     ) : (
@@ -137,7 +128,7 @@ export default async function Page({ params }: { params: Promise<{ code: string 
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{s.competitions}</TableCell>
                   <TableCell className="text-right tabular-nums">{points(s.best_tss)}</TableCell>
-                  <TableCell className="text-slate-400">{formatDate(s.latest_seen_date)}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(s.latest_seen_date)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -146,10 +137,10 @@ export default async function Page({ params }: { params: Promise<{ code: string 
       </Card>
 
       <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-        <Card className="border-slate-800 bg-slate-950">
+        <Card className="border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-base text-slate-100">Featured visible profiles</CardTitle>
-            <p className="text-sm text-slate-400">
+            <CardTitle className="text-base text-foreground">Featured visible profiles</CardTitle>
+            <p className="text-sm text-muted-foreground">
               Country pages should surface a few representative profiles instead of acting only as a raw directory.
             </p>
           </CardHeader>
@@ -157,22 +148,22 @@ export default async function Page({ params }: { params: Promise<{ code: string 
             {featuredSkaters.map((row) => (
               <div key={row.skater_key} className="surface-inset rounded-2xl border p-4 flex items-start justify-between gap-3">
                 <div>
-                  <Link href={`/skaters/${row.skater_key}`} className="font-medium text-slate-100 hover:underline">
+                  <Link href={`/skaters/${row.skater_key}`} className="font-medium text-foreground hover:underline">
                     {row.skater_name}
                   </Link>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-muted-foreground">
                     {row.club_name ? row.club_name : "Club pending"} · {number(row.competitions)} comps
                   </p>
                 </div>
-                <span className="text-sm font-medium text-slate-200">{points(row.best_tss)}</span>
+                <span className="text-sm font-medium text-foreground">{points(row.best_tss)}</span>
               </div>
             ))}
           </CardContent>
         </Card>
-        <Card className="border-slate-800 bg-slate-950">
+        <Card className="border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-base text-slate-100">Active clubs in this country</CardTitle>
-            <p className="text-sm text-slate-400">
+            <CardTitle className="text-base text-foreground">Active clubs in this country</CardTitle>
+            <p className="text-sm text-muted-foreground">
               This adds a club-layer entry point so country pages can branch into both people and organizations.
             </p>
           </CardHeader>
@@ -182,17 +173,17 @@ export default async function Page({ params }: { params: Promise<{ code: string 
                 <div key={row.club_name} className="surface-inset rounded-2xl border p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <Link href={`/clubs/${encodeURIComponent(row.club_name)}`} className="font-medium text-slate-100 hover:underline">
+                      <Link href={`/clubs/${encodeURIComponent(row.club_name)}`} className="font-medium text-foreground hover:underline">
                         {row.club_name}
                       </Link>
-                      <p className="text-sm text-slate-400">{number(row.skaters)} skaters · {number(row.events)} events</p>
+                      <p className="text-sm text-muted-foreground">{number(row.skaters)} skaters · {number(row.events)} events</p>
                     </div>
-                    <span className="text-sm font-medium text-slate-200">{points(row.best_tss)}</span>
+                    <span className="text-sm font-medium text-foreground">{points(row.best_tss)}</span>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-500">No club coverage is currently visible for this country code.</p>
+              <p className="text-sm text-muted-foreground">No club coverage is currently visible for this country code.</p>
             )}
           </CardContent>
         </Card>

@@ -1,10 +1,15 @@
 import type { Metadata, Viewport } from "next";
+import { Archivo, IBM_Plex_Mono } from "next/font/google";
 import { Suspense } from "react";
 
 import { Providers } from "./providers";
 import { Topbar } from "@/components/topbar";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_THEME_COLOR, SITE_URL } from "@/lib/site";
 import "./globals.css";
+
+// Edited 2026-10-12 by Claude (AI assistant): redesign fonts — Archivo for text, IBM Plex Mono for every score
+const archivo = Archivo({ subsets: ["latin", "latin-ext"], variable: "--font-archivo", display: "swap" });
+const plexMono = IBM_Plex_Mono({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600"], variable: "--font-plex-mono", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -39,14 +44,18 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="dark h-full antialiased" suppressHydrationWarning>
+    <html lang="en" className={`${archivo.variable} ${plexMono.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full bg-background">
         <Providers>
           <div className="min-h-screen">
-            <Suspense fallback={<div className="sticky top-0 z-10 h-[88px] border-b bg-background/80 backdrop-blur" />}>
+            <Suspense fallback={<div className="sticky top-0 z-10 h-[72px] bg-navy" />}>
               <Topbar />
             </Suspense>
-            <main className="mx-auto flex-1 w-full max-w-[1600px] px-4 py-6 md:px-6 lg:px-8">{children}</main>
+            {/* navy band behind the top of every page; page headers overlap it */}
+            <div className="relative">
+              <div className="hero-band absolute inset-x-0 top-0 h-36" aria-hidden="true" />
+              <main className="relative mx-auto w-full max-w-[1280px] px-4 pb-10 pt-3 md:px-6">{children}</main>
+            </div>
           </div>
         </Providers>
       </body>

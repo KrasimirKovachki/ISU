@@ -35,29 +35,20 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
         right={
           <Link
             href="/insights#top-nations"
-            className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium"
-          >
+                className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-input px-4 text-sm font-semibold text-foreground hover:bg-ice-2 hover:no-underline"
+              >
             See country insights <ArrowRight className="h-4 w-4" />
           </Link>
         }
-        titleClassName="text-white"
-        subtitleClassName="text-sky-100/85"
+        titleClassName="text-foreground"
+        subtitleClassName="text-brand"
       />
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <Card className="border-slate-800 bg-slate-950 text-slate-50">
+        <Card className="border-border bg-card text-foreground">
           <CardHeader>
-            <CardTitle className="text-base text-white">Country-level browse</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
-            <p>Country pages give visitors a quick way to understand the international footprint of the dataset without starting from an individual skater or event.</p>
-            <p>They should frame participation and performance, then link down into public skater pages.</p>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-800 bg-slate-950 text-slate-200">
-          <CardHeader>
-            <CardTitle className="text-base text-slate-100">Global footprint map</CardTitle>
-            <p className="text-sm text-slate-400">
+            <CardTitle className="text-base text-foreground">Global footprint map</CardTitle>
+            <p className="text-sm text-muted-foreground">
               Visible countries with stronger score volume highlighted first.
             </p>
           </CardHeader>
@@ -87,27 +78,27 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
       </section>
 
       {featured ? (
-        <Card className="border-slate-800 bg-slate-950">
+        <Card className="border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-base text-slate-100">Featured country view</CardTitle>
+            <CardTitle className="text-base text-foreground">Featured country view</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-lg font-semibold text-slate-100">{nationDisplay(featured.nation_code)}</p>
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="text-lg font-semibold text-foreground">{nationDisplay(featured.nation_code)}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {number(featured.skaters)} skaters · {number(featured.events)} events · {number(featured.segment_scores)} segment scores
               </p>
             </div>
-            <Link href={`/nationalities/${encodeURIComponent(featured.nation_code)}`} className="inline-flex items-center gap-2 text-sm font-medium text-sky-300 hover:text-sky-200">
+            <Link href={`/nationalities/${encodeURIComponent(featured.nation_code)}`} className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:text-brand">
               Open country page <ArrowRight className="h-4 w-4" />
             </Link>
           </CardContent>
         </Card>
       ) : null}
 
-      <Card id="directory" className="border-slate-800 bg-slate-950 scroll-mt-28">
+      <Card id="directory" className="border-border bg-card scroll-mt-28">
         <CardHeader>
-          <CardTitle className="text-base text-slate-100">Country directory</CardTitle>
+          <CardTitle className="text-base text-foreground">Country directory</CardTitle>
         </CardHeader>
         <CardContent className="p-4"><NationalitiesTable rows={items} /></CardContent>
       </Card>

@@ -20,12 +20,12 @@ export default async function Page() {
 
   return (
     <div className="space-y-8">
-      <section className="ice-grid ice-sheen rounded-3xl border border-slate-900/80 bg-[linear-gradient(145deg,_rgb(2_6_23)_0%,_rgb(8_47_73)_42%,_rgb(15_23_42)_100%)] p-8 text-slate-200 shadow-[0_30px_90px_rgba(2,6,23,0.2)] md:p-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300/85">About The Project</p>
-        <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-balance text-slate-100">
+      <section className="ice-grid ice-sheen rounded-3xl border border-border bg-card p-8 text-foreground shadow-[0_10px_30px_rgba(11,27,43,0.10)] md:p-10">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">About The Project</p>
+        <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-balance text-foreground">
           A public figure-skating data site built from verified competition sources.
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
+        <p className="mt-4 max-w-2xl text-base leading-7 text-ink-2">
           This site turns structured results, score sheets, and source evidence into searchable public pages for skaters,
           clubs, competitions, and countries. It is designed as an information product first: transparent coverage,
           explainable metrics, and direct links back to original sources.
@@ -33,32 +33,32 @@ export default async function Page() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <Card className="border-slate-900/80 bg-slate-950 text-slate-200">
+        <Card className="border-border bg-card text-foreground">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base text-slate-100"><Database className="h-4 w-4 text-sky-400" /> Data Coverage</CardTitle>
-            <Link href="/events" className="text-sm font-medium text-sky-300 hover:text-sky-200">Open events</Link>
+            <CardTitle className="flex items-center gap-2 text-base text-foreground"><Database className="h-4 w-4 text-brand" /> Data Coverage</CardTitle>
+            <Link href="/events" className="text-sm font-medium text-brand hover:text-brand">Open events</Link>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-slate-300">
+          <CardContent className="space-y-2 text-sm text-ink-2">
             <p>{number(overview.events)} events and {number(overview.segment_scores)} scored segments are currently indexed.</p>
             <p>Coverage spans from {formatDate(overview.first_event_date)} to {formatDate(overview.latest_event_date)}.</p>
           </CardContent>
         </Card>
-        <Card className="border-slate-900/80 bg-slate-950 text-slate-200">
+        <Card className="border-border bg-card text-foreground">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base text-slate-100"><Globe2 className="h-4 w-4 text-sky-400" /> Public Structure</CardTitle>
-            <Link href="/skaters" className="text-sm font-medium text-sky-300 hover:text-sky-200">Open profiles</Link>
+            <CardTitle className="flex items-center gap-2 text-base text-foreground"><Globe2 className="h-4 w-4 text-brand" /> Public Structure</CardTitle>
+            <Link href="/skaters" className="text-sm font-medium text-brand hover:text-brand">Open profiles</Link>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-slate-300">
+          <CardContent className="space-y-2 text-sm text-ink-2">
             <p>Each skater, club, event, and country page is generated from the same shared data model.</p>
             <p>The goal is a browsable site, not only an internal dashboard.</p>
           </CardContent>
         </Card>
-        <Card className="border-slate-900/80 bg-slate-950 text-slate-200">
+        <Card className="border-border bg-card text-foreground">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base text-slate-100"><ShieldCheck className="h-4 w-4 text-sky-400" /> Source Transparency</CardTitle>
-            <Link href="/insights" className="text-sm font-medium text-sky-300 hover:text-sky-200">Open insights</Link>
+            <CardTitle className="flex items-center gap-2 text-base text-foreground"><ShieldCheck className="h-4 w-4 text-brand" /> Source Transparency</CardTitle>
+            <Link href="/insights" className="text-sm font-medium text-brand hover:text-brand">Open insights</Link>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-slate-300">
+          <CardContent className="space-y-2 text-sm text-ink-2">
             <p>Pages are backed by official result sources and imported score evidence whenever available.</p>
             <p>Known gaps and evolving source coverage should remain visible, not hidden.</p>
           </CardContent>
@@ -66,24 +66,24 @@ export default async function Page() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <Card className="border-slate-900/80 bg-slate-950 text-slate-200">
+        <Card className="border-border bg-card text-foreground">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base text-slate-100">What This Site Should Feel Like</CardTitle>
-            <Link href="/" className="text-sm font-medium text-sky-300 hover:text-sky-200">Open homepage</Link>
+            <CardTitle className="text-base text-foreground">What This Site Should Feel Like</CardTitle>
+            <Link href="/" className="text-sm font-medium text-brand hover:text-brand">Open homepage</Link>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
+          <CardContent className="space-y-3 text-sm leading-6 text-ink-2">
             <p>Editorial and informative rather than app-heavy. Charts support the story, but clear explanations, rankings, and profile pages should lead.</p>
             <p>Search, deep links, and source-backed pages matter more than account flows in the first public version.</p>
           </CardContent>
         </Card>
-        <Card className="border-slate-900/80 bg-slate-950 text-slate-200">
+        <Card className="border-border bg-card text-foreground">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base text-slate-100">Next Public Layers</CardTitle>
-            <Link href="/clubs" className="text-sm font-medium text-sky-300 hover:text-sky-200">Open clubs</Link>
+            <CardTitle className="text-base text-foreground">Next Public Layers</CardTitle>
+            <Link href="/clubs" className="text-sm font-medium text-brand hover:text-brand">Open clubs</Link>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
+          <CardContent className="space-y-3 text-sm leading-6 text-ink-2">
             <p>Homepage storytelling, richer skater profiles, club snapshots, event pages, and country overviews should become the main public surface.</p>
-            <Link href="/insights" className="inline-flex items-center gap-2 font-medium text-sky-300 hover:text-sky-200">
+            <Link href="/insights" className="inline-flex items-center gap-2 font-medium text-brand hover:text-brand">
               See the current analytics layer <ArrowRight className="h-4 w-4" />
             </Link>
           </CardContent>

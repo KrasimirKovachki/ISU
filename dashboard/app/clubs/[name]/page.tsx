@@ -104,32 +104,23 @@ export default async function Page({ params }: { params: Promise<{ name: string 
         <KpiCard label="Mlad Figurist" value={club.development_skaters} hint={`${club.converted_development_skaters} converted`} />
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
-        <Card className="bg-slate-950 text-slate-50">
-          <CardHeader>
-            <CardTitle className="text-base text-white">Club snapshot</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
-            <p>Club pages should become shareable public summaries: who competes for the club, how active it is, and what level of events it appears in.</p>
-            <p>They are a natural bridge between public skater profiles and competition pages, especially when families or coaches follow a single club.</p>
-          </CardContent>
-        </Card>
+      <section className="grid gap-4">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Club facts</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Country</p>
-              <p className="mt-1 text-base font-semibold"><Globe2 className="mr-2 inline h-4 w-4 text-sky-700" />{nationDisplay(club.country_code)}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Country</p>
+              <p className="mt-1 text-base font-semibold"><Globe2 className="mr-2 inline h-4 w-4 text-brand" />{nationDisplay(club.country_code)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Activity</p>
-              <p className="mt-1 text-base font-semibold"><Building2 className="mr-2 inline h-4 w-4 text-sky-700" />{number(club.events)} competitions</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Activity</p>
+              <p className="mt-1 text-base font-semibold"><Building2 className="mr-2 inline h-4 w-4 text-brand" />{number(club.events)} competitions</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Roster</p>
-              <p className="mt-1 text-base font-semibold"><Users className="mr-2 inline h-4 w-4 text-sky-700" />{number(club.skater_rows?.length ?? 0)} profiled skaters</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Roster</p>
+              <p className="mt-1 text-base font-semibold"><Users className="mr-2 inline h-4 w-4 text-brand" />{number(club.skater_rows?.length ?? 0)} profiled skaters</p>
             </div>
           </CardContent>
         </Card>
@@ -187,15 +178,15 @@ export default async function Page({ params }: { params: Promise<{ name: string 
                   <div className="min-w-0 flex-1">
                     <Link
                       href={`/skaters/${row.skater_key}`}
-                      className="block text-base font-semibold leading-snug tracking-tight text-slate-100 text-balance hover:underline"
+                      className="block text-base font-semibold leading-snug tracking-tight text-foreground text-balance hover:underline"
                     >
                       {row.skater_name}
                     </Link>
-                    <p className="mt-1 text-sm font-medium text-slate-400">
+                    <p className="mt-1 text-sm font-medium text-muted-foreground">
                       {STATUS_LABEL[row.competitor_status] ?? row.competitor_status} · {number(row.competitions)} comps
                     </p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold text-slate-200">{points(row.best_tss)}</span>
+                  <span className="shrink-0 text-sm font-semibold text-foreground">{points(row.best_tss)}</span>
                 </div>
               </div>
             ))}
@@ -211,35 +202,35 @@ export default async function Page({ params }: { params: Promise<{ name: string 
           <CardContent className="space-y-4">
             {nation ? (
               <div className="surface-inset-accent rounded-2xl border p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Country coverage</p>
-                <p className="mt-2 text-base font-semibold text-slate-100">{nationDisplay(nation.nation_code)}</p>
-                <p className="mt-1 text-sm text-slate-400">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Country coverage</p>
+                <p className="mt-2 text-base font-semibold text-foreground">{nationDisplay(nation.nation_code)}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
                   {number(nation.skaters)} skaters · {number(nation.events)} events · top total {points(nation.best_tss)}
                 </p>
                 <Link
                   href={`/nationalities/${encodeURIComponent(nation.nation_code)}`}
-                  className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-sky-300 hover:underline"
+                  className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
                 >
                   Open country page <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             ) : null}
             <div className="space-y-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Peer clubs</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Peer clubs</p>
               {peerClubs.length > 0 ? (
                 peerClubs.map((row) => (
                   <div key={row.club_name} className="surface-inset rounded-2xl border p-4 flex items-start justify-between gap-3">
                     <div>
-                      <Link href={`/clubs/${encodeURIComponent(row.club_name)}`} className="font-medium text-slate-100 hover:underline">
+                      <Link href={`/clubs/${encodeURIComponent(row.club_name)}`} className="font-medium text-foreground hover:underline">
                         {row.club_name}
                       </Link>
-                      <p className="text-sm text-slate-400">{number(row.skaters)} skaters · {number(row.events)} events</p>
+                      <p className="text-sm text-muted-foreground">{number(row.skaters)} skaters · {number(row.events)} events</p>
                     </div>
-                    <span className="text-sm font-medium text-slate-200">{points(row.best_tss)}</span>
+                    <span className="text-sm font-medium text-foreground">{points(row.best_tss)}</span>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-slate-500">No other same-country clubs are visible in the current index.</p>
+                <p className="text-sm text-muted-foreground">No other same-country clubs are visible in the current index.</p>
               )}
             </div>
           </CardContent>

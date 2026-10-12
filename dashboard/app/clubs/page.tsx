@@ -34,28 +34,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
         right={
           <Link
             href="/insights#active-clubs"
-            className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium"
-          >
+                className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-input px-4 text-sm font-semibold text-foreground hover:bg-ice-2 hover:no-underline"
+              >
             See club insights <ArrowRight className="h-4 w-4" />
           </Link>
         }
-        className="ice-sheen ice-grid border-slate-900/80 bg-[linear-gradient(135deg,_rgb(2_6_23)_0%,_rgb(8_47_73)_48%,_rgb(15_23_42)_100%)] shadow-[0_30px_80px_rgba(2,6,23,0.24)]"
-        titleClassName="text-white"
-        subtitleClassName="text-sky-100/85"
-        eyebrowClassName="border-slate-700/80 bg-slate-950/75 text-sky-200"
-        metaClassName="border-slate-700/80 bg-slate-950/75 text-slate-300"
+        className="ice-sheen ice-grid border-border bg-card shadow-[0_10px_30px_rgba(11,27,43,0.10)]"
+        titleClassName="text-foreground"
+        subtitleClassName="text-brand"
+        eyebrowClassName="border-border bg-card text-brand"
+        metaClassName="border-border bg-card text-ink-2"
       />
 
-      <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
-        <Card className="border-slate-800 bg-slate-950 text-slate-50">
-          <CardHeader>
-            <CardTitle className="text-base text-white">Public club browse surface</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
-            <p>Club pages are strong public entry points because families and coaches often follow a club before they follow an individual skater.</p>
-            <p>This index should surface the most active clubs clearly and make it easy to move from club to roster pages.</p>
-          </CardContent>
-        </Card>
+      <section className="grid gap-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <KpiCard label="Clubs" value={items.length} icon={Building2} href="/clubs#directory" ctaLabel="Browse clubs" />
           <KpiCard
@@ -78,27 +69,27 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
       </section>
 
       {featured ? (
-        <Card className="border-slate-800 bg-slate-950">
+        <Card className="border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-base text-slate-100">Featured club</CardTitle>
+            <CardTitle className="text-base text-foreground">Featured club</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-lg font-semibold text-slate-100">{featured.club_name}</p>
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="text-lg font-semibold text-foreground">{featured.club_name}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {nationDisplay(featured.country_code)} · {number(featured.skaters)} skaters · {number(featured.events)} events · latest {formatDate(featured.latest_seen_date)}
               </p>
             </div>
-            <Link href={`/clubs/${encodeURIComponent(featured.club_name)}`} className="inline-flex items-center gap-2 text-sm font-medium text-sky-300 hover:text-sky-200">
+            <Link href={`/clubs/${encodeURIComponent(featured.club_name)}`} className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:text-brand">
               Open club page <ArrowRight className="h-4 w-4" />
             </Link>
           </CardContent>
         </Card>
       ) : null}
 
-      <Card id="directory" className="border-slate-800 bg-slate-950 scroll-mt-28">
+      <Card id="directory" className="border-border bg-card scroll-mt-28">
         <CardHeader>
-          <CardTitle className="text-base text-slate-100">Club directory</CardTitle>
+          <CardTitle className="text-base text-foreground">Club directory</CardTitle>
         </CardHeader>
         <CardContent className="p-4"><ClubsTable rows={items} /></CardContent>
       </Card>

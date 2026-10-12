@@ -1,37 +1,76 @@
 export const dynamic = "force-dynamic";
+/** Event page — redesign 2026-10-12 (owner-approved mockup): header card, category list, podium + results of the
+ * selected category; a skater's name opens their score sheet in that category.
+ * Edited 2026-10-12 by Claude (AI assistant). */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, Globe2, MapPin, Trophy } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
-import { ScoreSheetIcon } from "@/components/skating-icons";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getEvent, listEvents } from "@/lib/api";
-import { formatDate, number, nationDisplay, points } from "@/lib/format";
+import { formatDate, number, points } from "@/lib/format";
 import { buildMetadata } from "@/lib/site";
+import type { EventResultRow } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export const revalidate = 60;
+
+const STREAM_LABEL: Record<string, string> = {
+  ISU: "ISU", ISUCS: "ISU Challenger", NonISU: "Non-ISU", national_club: "National", club: "Club",
+  club_amateur: "Recreational", club_test: "Club test", club_control: "Club control", FRP: "National (ROU)", DP: "Development",
+};
+
+const MEDAL = [
+  { bar: "border-t-gold", ink: "text-gold-ink", label: "1st" },
+  { bar: "border-t-silver", ink: "text-silver-ink", label: "2nd" },
+  { bar: "border-t-bronze", ink: "text-bronze-ink", label: "3rd" },
+];
+
+// segments in skating order, unknown codes after
+const SEGMENT_ORDER = ["QR", "PP", "SP", "RD", "PD", "FS", "FD", "FP"];
+function segmentRank(code: string) {
+  const i = SEGMENT_ORDER.indexOf(code.toUpperCase());
+  return i < 0 ? 99 : i;
+}
+
+/** "CUBS II. GIRLS (1.7.2016 - 30.6.2017)" -> name + the bracketed birth-date range on its own line */
+function splitCategory(name: string): { name: string; detail: string | null } {
+  const m = name.match(/^(.*?)\s*\(([^)]*\d[^)]*)\)\s*$/);
+  return m ? { name: m[1], detail: m[2] } : { name, detail: null };
+}
+
+function resultHref(r: EventResultRow): string | null {
+  if (r.segments?.length) return `/scores/${r.segments[0].segment_score_key}`;
+  if (r.skater_key) return `/skaters/${r.skater_key}`;
+  return null;
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const key = Number(id);
-  if (!Number.isFinite(key)) return buildMetadata({ title: "Competition Page", path: `/events/${id}` });
+  if (!Number.isFinite(key)) return buildMetadata({ title: "Competition", path: `/events/${id}` });
   try {
     const event = await getEvent(key);
     return buildMetadata({
       title: `${event.event_name ?? "Competition"}`,
-      description: `Public competition page for ${event.event_name ?? "this event"} with categorized results and source-backed result links.`,
+      description: `Results of ${event.event_name ?? "this competition"} by category, with score sheets and the original result pages.`,
       path: `/events/${key}`,
     });
   } catch {
-    return buildMetadata({ title: "Competition Page", path: `/events/${id}` });
+    return buildMetadata({ title: "Competition", path: `/events/${id}` });
   }
 }
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ category?: string }>;
+}) {
   const { id } = await params;
+  const { category } = await searchParams;
   const key = Number(id);
   if (!Number.isFinite(key)) notFound();
 
@@ -42,235 +81,216 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     notFound();
   }
 
-  // Group results by category for cleaner navigation.
-  const grouped = new Map<string, typeof event.results>();
+  // categories in import order (= the event's own schedule order)
+  const byCategory = new Map<number, { name: string; rows: EventResultRow[] }>();
   for (const r of event.results) {
-    const k = r.category_name ?? "(no category)";
-    if (!grouped.has(k)) grouped.set(k, []);
-    grouped.get(k)!.push(r);
+    const entry = byCategory.get(r.category_key) ?? { name: r.category_name ?? "(no category)", rows: [] };
+    entry.rows.push(r);
+    byCategory.set(r.category_key, entry);
   }
-  const categories = [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const categories = [...byCategory.entries()].sort(([a], [b]) => a - b);
+  const selectedKey = categories.find(([k]) => String(k) === category)?.[0] ?? categories[0]?.[0];
+  const selected = selectedKey !== undefined ? byCategory.get(selectedKey) : undefined;
+  const rows = [...(selected?.rows ?? [])].sort((a, b) => (a.final_place ?? 999) - (b.final_place ?? 999));
+  const podium = rows.filter((r) => r.final_place !== null && r.final_place <= 3).slice(0, 3);
+  const segmentCodes = [...new Set(rows.flatMap((r) => Object.keys(r.segment_places ?? {})))].sort((a, b) => segmentRank(a) - segmentRank(b));
+  const hasClubs = rows.some((r) => r.club_name);
+  const selectedName = splitCategory(selected?.name ?? "Results");
+  const countries = new Set(event.results.map((r) => r.nation_code).filter(Boolean)).size;
+
   const eventYear = event.event_start_date ? new Date(event.event_start_date).getUTCFullYear() : undefined;
-  const nearbyEvents = eventYear
+  const nearby = eventYear
     ? await listEvents({ from_year: eventYear, to_year: eventYear, limit: 250 }).catch(() => ({ items: [] }))
     : { items: [] };
-  const relatedEvents = nearbyEvents.items
+  const relatedEvents = nearby.items
     .filter((row) => row.event_key !== event.event_key)
-    .sort((a, b) => {
-      const aLocation = a.location && event.location && a.location === event.location ? 1 : 0;
-      const bLocation = b.location && event.location && b.location === event.location ? 1 : 0;
-      if (aLocation !== bLocation) return bLocation - aLocation;
-      return (b.event_start_date ?? "").localeCompare(a.event_start_date ?? "");
-    })
+    .sort((a, b) => (b.event_start_date ?? "").localeCompare(a.event_start_date ?? ""))
     .slice(0, 4);
-  const podiumRows = [...event.results]
-    .filter((row) => row.final_place !== null)
-    .sort((a, b) => (a.final_place ?? 999) - (b.final_place ?? 999))
-    .slice(0, 3);
+
+  const stream = event.competition_stream ? STREAM_LABEL[event.competition_stream] ?? event.competition_stream : null;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Competition Page"
-        icon={<ScoreSheetIcon className="h-5 w-5" />}
+        eyebrow={[stream, event.date_range ?? formatDate(event.event_start_date)].filter(Boolean).join(" · ")}
         title={event.event_name ?? "(unnamed event)"}
-        subtitle={
-          <>
-            {formatDate(event.event_start_date)} · {event.location ?? "?"}{event.venue ? ` · ${event.venue}` : ""}
-          </>
-        }
-        meta={[
-          `${number(categories.length)} categories`,
-          `${number(event.results.length)} entries`,
-          event.competition_level ?? "level pending",
-          event.competition_stream ?? "stream pending",
+        subtitle={[event.location, event.venue].filter(Boolean).join(" · ") || null}
+        stats={[
+          { label: "categories", value: number(categories.length) },
+          { label: "skaters", value: number(event.results.length) },
+          { label: "countries", value: number(countries) },
         ]}
         right={
           <>
-            <Link
-              href="/events"
-              className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
-            >
-              Event archive <ArrowRight className="h-4 w-4" />
-            </Link>
             {event.root_url ? (
               <a
                 href={event.root_url}
                 target="_blank"
-                rel="noreferrer"
-                className="surface-action inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
+                rel="noopener noreferrer"
+                className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-input px-4 text-sm font-semibold text-foreground hover:bg-ice-2 hover:no-underline"
               >
-                Original source <ArrowRight className="h-4 w-4" />
+                <ArrowUpRight className="h-4 w-4" /> Original results
               </a>
             ) : null}
+            <Link
+              href="/events"
+              className="inline-flex h-11 items-center rounded-[10px] border border-input px-4 text-sm font-semibold text-foreground hover:bg-ice-2 hover:no-underline"
+            >
+              All competitions
+            </Link>
           </>
         }
       />
 
-      <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <Card className="bg-slate-950 text-slate-50">
-          <CardHeader>
-            <CardTitle className="text-base text-white">Event overview</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
-            <p>This page should work as a public results page first: what the event is, where it happened, how many categories it contains, and how visitors can navigate the result tables.</p>
-            <p>Official source links matter here because event pages are the strongest bridge between public browsing and imported evidence.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Event facts</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">When</p>
-              <p className="mt-1 text-base font-semibold">{formatDate(event.event_start_date)}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Where</p>
-              <p className="mt-1 text-base font-semibold"><MapPin className="mr-2 inline h-4 w-4 text-sky-700" />{event.location ?? "—"}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Format</p>
-              <p className="mt-1 text-base font-semibold"><Globe2 className="mr-2 inline h-4 w-4 text-sky-700" />{event.event_type ?? event.competition_level ?? "—"}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+      <div className="flex flex-wrap items-start gap-6">
+        {/* phones: categories as a sideways row of chips (mockup); larger screens: the list on the left */}
+        <nav aria-label="Categories" className="-mx-4 flex w-[calc(100%+2rem)] gap-2 overflow-x-auto px-4 pb-1 lg:hidden">
+          {categories.map(([k, c]) => (
+            <Link
+              key={k}
+              href={`/events/${event.event_key}?category=${k}`}
+              scroll={false}
+              aria-current={k === selectedKey ? "page" : undefined}
+              className={cn(
+                "inline-flex h-10 shrink-0 items-center rounded-full px-3.5 text-sm hover:no-underline",
+                k === selectedKey ? "bg-navy font-bold text-white" : "border border-input bg-card text-foreground",
+              )}
+            >
+              {splitCategory(c.name).name}
+            </Link>
+          ))}
+        </nav>
+        <aside aria-label="Categories" className="hidden flex-[1_1_260px] rounded-2xl bg-card p-4 lg:block">
+          <div className="eyebrow px-2 pb-2.5">Categories</div>
+          <nav className="flex flex-col gap-0.5 text-[15px]">
+            {categories.map(([k, c]) => (
+              <Link
+                key={k}
+                href={`/events/${event.event_key}?category=${k}`}
+                scroll={false}
+                aria-current={k === selectedKey ? "page" : undefined}
+                className={cn(
+                  "flex justify-between gap-3 rounded-[10px] px-3 py-2.5 text-foreground hover:bg-background hover:no-underline",
+                  k === selectedKey && "bg-ice-2 font-bold text-brand-strong hover:bg-ice-2",
+                )}
+              >
+                <span className="min-w-0">
+                  {splitCategory(c.name).name}
+                  {splitCategory(c.name).detail ? (
+                    <span className={cn("block text-[13px] font-normal", k === selectedKey ? "text-brand-strong/80" : "text-muted-foreground")}>{splitCategory(c.name).detail}</span>
+                  ) : null}
+                </span>
+                <span className={cn("num", k !== selectedKey && "text-muted-foreground")}>{c.rows.length}</span>
+              </Link>
+            ))}
+          </nav>
+        </aside>
 
-      {categories.map(([category, rows]) => (
-        <Card key={category}>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <span>{category}</span>
-              <span className="text-xs font-normal text-muted-foreground">· {rows.length} skater{rows.length === 1 ? "" : "s"}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12 text-right">#</TableHead>
-                  <TableHead>Skater</TableHead>
-                  <TableHead>Nation</TableHead>
-                  <TableHead>Club</TableHead>
-                  <TableHead className="text-right">Points</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[...rows]
-                  .sort((a, b) => (a.final_place ?? 999) - (b.final_place ?? 999))
-                  .map((r) => (
-                    <TableRow key={r.competition_result_key}>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">{r.final_place ?? "—"}</TableCell>
-                      <TableCell className="font-medium">
-                        {/* Edited 2026-10-12 by Claude (AI assistant): name opens this skater's score sheet in this category */}
-                        {r.segments?.length ? (
-                          <Link href={`/scores/${r.segments[0].segment_score_key}`} className="hover:underline">{r.skater_name}</Link>
-                        ) : r.skater_key ? (
-                          <Link href={`/skaters/${r.skater_key}`} className="hover:underline">{r.skater_name}</Link>
-                        ) : (
-                          r.skater_name
-                        )}
-                      </TableCell>
-                      <TableCell>{nationDisplay(r.nation_code)}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {r.club_name ? (
-                          <Link href={`/clubs/${encodeURIComponent(r.club_name)}`} className="hover:underline">{r.club_name}</Link>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{points(r.points)}</TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ))}
+        <section className="flex min-w-0 flex-[999_1_320px] flex-col gap-5">
+          <div className="flex flex-wrap items-baseline gap-3">
+            <h2 className="text-[28px] font-extrabold">{selectedName.name}</h2>
+            <span className="text-[15px] text-muted-foreground">
+              {selectedName.detail ? `born ${selectedName.detail} · ` : ""}
+              {rows.length} skater{rows.length === 1 ? "" : "s"}
+              {segmentCodes.length ? ` · ${segmentCodes.join(" + ")}` : ""}
+            </span>
+          </div>
 
-      <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Featured placements</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              A public competition page should help visitors identify the most relevant names quickly before they dive into full category tables.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {podiumRows.length > 0 ? (
-              podiumRows.map((row) => (
-                <div key={row.competition_result_key} className="surface-inset rounded-2xl border p-4">
-                  <div>
-                    <p className="font-medium text-slate-100">
-                      #{row.final_place}{" "}
-                      {row.skater_key ? (
-                        <Link href={`/skaters/${row.skater_key}`} className="hover:underline">
-                          {row.skater_name}
-                        </Link>
-                      ) : (
-                        row.skater_name
-                      )}
-                    </p>
-                    <p className="text-sm text-slate-400">
-                      {row.category_name ?? "Category pending"}
-                      {row.club_name ? ` · ${row.club_name}` : ""}
-                    </p>
-                  </div>
-                  <span className="text-sm font-medium text-slate-200">{points(row.points)}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-slate-500">Placements are not available for a featured summary on this event.</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">More to explore</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Visitors should be able to keep browsing the event archive by place and season, not stop on a single results page.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {relatedEvents.length > 0 ? (
-              relatedEvents.map((row) => (
-                <div key={row.event_key} className="surface-inset rounded-2xl border p-4">
-                  <Link href={`/events/${row.event_key}`} className="font-medium text-slate-100 hover:underline">
-                    {row.event_name ?? "Competition page"}
-                  </Link>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {formatDate(row.event_start_date)} · {row.location ?? "Location pending"}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-slate-500">No nearby archive events were found for this season.</p>
-            )}
-          </CardContent>
-        </Card>
-      </section>
+          {podium.length > 0 ? (
+            <div className="grid gap-3.5 sm:grid-cols-3">
+              {podium.map((r, i) => {
+                const href = resultHref(r);
+                const body = (
+                  <>
+                    <span className={cn("num text-sm font-semibold", MEDAL[i].ink)}>{MEDAL[i].label}</span>
+                    <span className="text-lg font-bold">{r.skater_name}</span>
+                    <span className="text-sm text-muted-foreground">{[r.nation_code, r.club_name].filter(Boolean).join(" · ") || "—"}</span>
+                    <span className="num text-[30px] font-semibold">{points(r.points)}</span>
+                  </>
+                );
+                const cls = cn("flex flex-col gap-1.5 rounded-2xl border-t-[5px] bg-card p-[18px] text-foreground", MEDAL[i].bar);
+                return href ? (
+                  <Link key={r.competition_result_key} href={href} className={cn(cls, "hover:no-underline hover:shadow-md")}>{body}</Link>
+                ) : (
+                  <div key={r.competition_result_key} className={cls}>{body}</div>
+                );
+              })}
+            </div>
+          ) : null}
 
-      <Card className="border-slate-800 bg-slate-950">
-        <CardHeader>
-          <CardTitle className="text-base text-slate-100">How to read this event page</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 text-sm leading-6 text-slate-400 md:grid-cols-3">
-          <div>
-            <p className="font-medium text-slate-100"><Trophy className="mr-2 inline h-4 w-4 text-amber-400" />Placements</p>
-            <p className="mt-2">Rows are grouped by category and ordered by final place when available.</p>
+          <div className="overflow-hidden rounded-2xl bg-card">
+            <div className="flex flex-wrap items-center gap-2 border-b px-[18px] py-3.5">
+              <span className="font-bold">Final result</span>
+              <span className="text-sm text-muted-foreground">Select a name for the full score sheet</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[480px] border-collapse text-[15px]">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                    <th scope="col" className="w-14 px-[18px] py-3 text-right font-medium">Pl.</th>
+                    <th scope="col" className="px-2 py-3 font-medium">Skater</th>
+                    {hasClubs ? <th scope="col" className="px-2 py-3 font-medium">Club</th> : null}
+                    {segmentCodes.map((s) => (
+                      <th key={s} scope="col" className="px-2 py-3 text-right font-medium">{s}</th>
+                    ))}
+                    <th scope="col" className="px-[18px] py-3 text-right font-medium">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => {
+                    const href = resultHref(r);
+                    const top = r.final_place !== null && r.final_place <= 3;
+                    return (
+                      <tr key={r.competition_result_key} className="border-t">
+                        <td className={cn("num px-[18px] py-3.5 text-right", top && "font-semibold")}>{r.final_place ?? "—"}</td>
+                        <td className="px-2 py-3.5">
+                          {href ? (
+                            <Link href={href} className={cn("text-brand", top ? "font-bold" : "font-semibold")}>{r.skater_name}</Link>
+                          ) : (
+                            <span className="font-semibold">{r.skater_name}</span>
+                          )}{" "}
+                          <span className="text-[13px] text-muted-foreground">{r.nation_code ?? ""}</span>
+                        </td>
+                        {hasClubs ? (
+                          <td className="px-2 py-3.5 text-ink-2">
+                            {r.club_name ? (
+                              <Link href={`/clubs/${encodeURIComponent(r.club_name)}`} className="text-ink-2 hover:text-brand">{r.club_name}</Link>
+                            ) : "—"}
+                          </td>
+                        ) : null}
+                        {segmentCodes.map((s) => (
+                          <td key={s} className="num px-2 py-3.5 text-right text-ink-2">{r.segment_places?.[s] ?? "—"}</td>
+                        ))}
+                        <td className={cn("num px-[18px] py-3.5 text-right", top && "font-semibold")}>{points(r.points)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-slate-100">Entity links</p>
-            <p className="mt-2">Skater and club links should turn event browsing into deeper profile exploration.</p>
+        </section>
+      </div>
+
+      {relatedEvents.length > 0 ? (
+        <section className="rounded-2xl bg-card p-5">
+          <h2 className="text-xl font-extrabold">More competitions in {eventYear}</h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {relatedEvents.map((row) => (
+              <Link
+                key={row.event_key}
+                href={`/events/${row.event_key}`}
+                className="rounded-xl bg-background p-4 text-foreground hover:bg-ice-2 hover:no-underline"
+              >
+                <span className="block font-bold">{row.event_name ?? "Competition"}</span>
+                <span className="mt-1 block text-sm text-muted-foreground">
+                  {formatDate(row.event_start_date)} · {row.location ?? "—"}
+                </span>
+              </Link>
+            ))}
           </div>
-          <div>
-            <p className="font-medium text-slate-100">Source traceability</p>
-            <p className="mt-2">The event source link should remain visible because the imported page is derived from official published results.</p>
-          </div>
-        </CardContent>
-      </Card>
+        </section>
+      ) : null}
     </div>
   );
 }

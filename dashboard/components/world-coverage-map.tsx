@@ -77,13 +77,13 @@ export function WorldCoverageMap({ rows, take = 24 }: { rows: NationalityRow[]; 
 
   return (
     <div className="space-y-4">
-      <div className="rounded-[1.5rem] border border-slate-800 bg-[radial-gradient(circle_at_30%_20%,rgba(56,189,248,0.18),transparent_26%),radial-gradient(circle_at_72%_28%,rgba(14,165,233,0.12),transparent_24%),linear-gradient(180deg,rgba(2,6,23,0.98),rgba(15,23,42,1))] p-4 md:p-5">
+      <div className="rounded-[1.5rem] border border-border bg-[radial-gradient(circle_at_30%_20%,rgba(56,189,248,0.18),transparent_26%),radial-gradient(circle_at_72%_28%,rgba(14,165,233,0.12),transparent_24%),linear-gradient(180deg,rgba(2,6,23,0.98),rgba(15,23,42,1))] p-4 md:p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-sky-300/80">Coverage Map</p>
-            <p className="mt-1 text-sm text-slate-300">Visible country footprint across the indexed skating results.</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-brand">Coverage Map</p>
+            <p className="mt-1 text-sm text-ink-2">Visible country footprint across the indexed skating results.</p>
           </div>
-          <div className="rounded-full border border-slate-700/80 bg-slate-950/75 px-3 py-1 text-xs text-slate-300">
+          <div className="rounded-full border border-border bg-card px-3 py-1 text-xs text-ink-2">
             {points.length} plotted
           </div>
         </div>
@@ -142,11 +142,11 @@ export function WorldCoverageMap({ rows, take = 24 }: { rows: NationalityRow[]; 
             href={`/nationalities/${encodeURIComponent(row.nation_code)}`}
             className="surface-inset flex items-center justify-between rounded-2xl border p-3"
           >
-            <span className="flex items-center gap-2 text-sm text-slate-100">
+            <span className="flex items-center gap-2 text-sm text-foreground">
               <span className="text-base">{nationFlag(row.nation_code)}</span>
               <span>{row.nation_code}</span>
             </span>
-            <span className="text-xs text-slate-400">{row.segment_scores.toLocaleString()} scores</span>
+            <span className="text-xs text-muted-foreground">{row.segment_scores.toLocaleString()} scores</span>
           </Link>
         ))}
       </div>

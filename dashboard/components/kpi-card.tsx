@@ -25,14 +25,15 @@ export function KpiCard({ label, value, icon: Icon, hint, className, href, ctaLa
         ? value.toLocaleString()
         : value;
   const content = (
-    <CardContent className="p-4">
+    <CardContent className="p-[18px]">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span className="uppercase tracking-wide font-medium">{label}</span>
+        <span className="text-[13px] uppercase tracking-[0.08em]">{label}</span>
         {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
       </div>
-      <div className="mt-1 text-2xl font-semibold tabular-nums">{display}</div>
+      {/* numbers in the score font, names (e.g. a club) as normal bold text */}
+      <div className={cn("mt-1 leading-tight", /^[\d\s.,:+\-—%/]+$/.test(String(display)) ? "num text-[30px] font-semibold" : "text-xl font-bold")}>{display}</div>
       {hint ? <div className="mt-1 text-xs text-muted-foreground">{hint}</div> : null}
-      {href ? <div className="mt-3 text-xs font-medium text-sky-300">{ctaLabel}</div> : null}
+      {href ? <div className="mt-3 text-xs font-medium text-brand">{ctaLabel}</div> : null}
     </CardContent>
   );
 
@@ -40,7 +41,7 @@ export function KpiCard({ label, value, icon: Icon, hint, className, href, ctaLa
     return (
       <Card
         className={cn(
-          "border-slate-800 bg-slate-950 text-slate-100 transition-colors transition-shadow hover:border-slate-700 hover:bg-slate-900/90 hover:shadow-sm",
+          "rounded-2xl border-0 bg-card text-foreground shadow-none transition-shadow hover:shadow-md",
           className,
         )}
       >
@@ -54,7 +55,7 @@ export function KpiCard({ label, value, icon: Icon, hint, className, href, ctaLa
   return (
     <Card
       className={cn(
-        "border-slate-800 bg-slate-950 text-slate-100 transition-colors transition-shadow hover:border-slate-700 hover:bg-slate-900/90 hover:shadow-sm",
+        "rounded-2xl border-0 bg-card text-foreground shadow-none",
         className,
       )}
     >

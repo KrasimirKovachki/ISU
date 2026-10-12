@@ -4,76 +4,59 @@
 
 /* shadcn/ui neutral palette + design tokens (Tailwind v4 inline @theme).
    Tweak --primary / --chart-* etc. to rebrand the whole app from one place. */
+/* Edited 2026-10-12 by Claude (AI assistant): "ice" redesign approved by the owner (mockup
+   https://claude.ai/artifact/4SN1ZC7sqmTNG5y65VakRF) — pale ice ground, navy ink, one ice-blue accent,
+   medal colours only for places. Fonts come from next/font in app/layout.tsx (Archivo + IBM Plex Mono). */
 :root {
-  --font-geist-sans: "Avenir Next", "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-geist-mono: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
-  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  --radius: 0.625rem;
-  --background: oklch(0.965 0.008 240);
-  --foreground: oklch(0.22 0.02 255);
-  --card: oklch(0.992 0.004 240);
-  --card-foreground: oklch(0.22 0.02 255);
-  --popover: oklch(0.992 0.004 240);
-  --popover-foreground: oklch(0.22 0.02 255);
-  --primary: oklch(0.26 0.04 255);
-  --primary-foreground: oklch(0.98 0.002 240);
-  --secondary: oklch(0.95 0.01 240);
-  --secondary-foreground: oklch(0.25 0.02 255);
-  --muted: oklch(0.95 0.008 240);
-  --muted-foreground: oklch(0.5 0.015 255);
-  --accent: oklch(0.93 0.014 240);
-  --accent-foreground: oklch(0.22 0.02 255);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.88 0.012 245);
-  --input: oklch(0.9 0.01 245);
-  --ring: oklch(0.64 0.06 235);
-  --chart-1: oklch(0.58 0.16 240);
-  --chart-2: oklch(0.66 0.13 205);
-  --chart-3: oklch(0.46 0.06 255);
-  --chart-4: oklch(0.72 0.14 85);
-  --chart-5: oklch(0.68 0.14 45);
-  --sidebar: oklch(0.18 0.015 255);
-  --sidebar-foreground: oklch(0.9 0.004 240);
-  --sidebar-primary: oklch(0.24 0.03 250);
-  --sidebar-primary-foreground: oklch(0.97 0.004 240);
-  --sidebar-accent: oklch(0.24 0.02 250);
-  --sidebar-accent-foreground: oklch(0.95 0.004 240);
-  --sidebar-border: oklch(0.3 0.015 250);
-  --sidebar-ring: oklch(0.66 0.06 235);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --font-geist-sans: var(--font-archivo), "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-geist-mono: var(--font-plex-mono), "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-display: var(--font-archivo), "Segoe UI", sans-serif;
+  --radius: 0.75rem;
+  --background: #F3F6F9;
+  --foreground: #0B1B2B;
+  --card: #FFFFFF;
+  --card-foreground: #0B1B2B;
+  --popover: #FFFFFF;
+  --popover-foreground: #0B1B2B;
+  --primary: #1A5FBF;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F3F6F9;
+  --secondary-foreground: #0B1B2B;
+  --muted: #F3F6F9;
+  --muted-foreground: #4A6178;
+  --accent: #E6F0FB;
+  --accent-foreground: #0E3F86;
+  --destructive: #B42318;
+  --border: #E3EAF1;
+  --input: #C9D6E3;
+  --ring: #1A5FBF;
+  --chart-1: #1A5FBF;
+  --chart-2: #1F8A5B;
+  --chart-3: #C99A2E;
+  --chart-4: #7A8FA6;
+  --chart-5: #C2541B;
+  --sidebar: #0B1B2B;
+  --sidebar-foreground: #C9D6E3;
+  --sidebar-primary: #1B2F45;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1B2F45;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #2A425C;
+  --sidebar-ring: #7FC4FF;
+  --brand: #1A5FBF;
+  --brand-strong: #0E3F86;
+  --navy: #0B1B2B;
+  --navy-2: #1B2F45;
+  --ink-2: #3E5368;
+  --ice-2: #E6F0FB;
+  --gold: #C99A2E;
+  --gold-ink: #7A5B12;
+  --silver: #8E9AA6;
+  --silver-ink: #4A5560;
+  --bronze: #B0703C;
+  --bronze-ink: #7A4520;
+  --good: #1F6B47;
+  --bad: #9A3D0B;
 }
 
 @theme inline {
@@ -114,6 +97,20 @@
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
+  --color-ink-2: var(--ink-2);
+  --color-ice-2: var(--ice-2);
+  --color-gold: var(--gold);
+  --color-gold-ink: var(--gold-ink);
+  --color-silver: var(--silver);
+  --color-silver-ink: var(--silver-ink);
+  --color-bronze: var(--bronze);
+  --color-bronze-ink: var(--bronze-ink);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
 }
 
 @layer base {
@@ -122,18 +119,14 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    background-image:
-      radial-gradient(circle at top left, rgb(14 165 233 / 0.14), transparent 26%),
-      radial-gradient(circle at top right, rgb(59 130 246 / 0.08), transparent 22%),
-      linear-gradient(180deg, rgb(2 6 23 / 0.98), rgb(15 23 42 / 0.98));
-    background-attachment: fixed;
+    font-family: var(--font-geist-sans);
   }
 
   h1,
   h2,
   h3 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
   }
 
   a {
@@ -141,85 +134,56 @@
   }
 
   ::selection {
-    background: rgb(14 116 144 / 0.18);
+    background: rgb(26 95 191 / 0.16);
     color: inherit;
   }
 }
 
 @layer components {
-  .ice-sheen {
-    position: relative;
-    overflow: hidden;
+  /* navy band behind the top of every page; the page header card overlaps it */
+  .hero-band {
+    background: var(--navy);
   }
 
-  .ice-sheen::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-      linear-gradient(140deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0) 42%),
-      radial-gradient(circle at top right, rgb(125 211 252 / 0.08), transparent 38%);
+  .num {
+    font-family: var(--font-geist-mono);
+    font-variant-numeric: tabular-nums;
   }
 
-  .ice-grid {
-    position: relative;
+  .eyebrow {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
   }
 
-  .ice-grid::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.5;
-    background-image:
-      linear-gradient(rgb(255 255 255 / 0.18) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(255 255 255 / 0.18) 1px, transparent 1px);
-    background-size: 34px 34px;
-    mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.7), transparent 86%);
+  /* older class names kept so every page restyles in one place */
+  .ice-sheen, .ice-grid { position: relative; }
+  .ice-emblem { background: var(--ice-2); color: var(--brand-strong); }
+  .site-panel, .site-panel-dark {
+    background: var(--card);
+    border-color: var(--border);
+    color: var(--foreground);
+    box-shadow: 0 10px 30px rgb(11 27 43 / 0.08);
   }
-
-  .ice-emblem {
-    background:
-      radial-gradient(circle at top left, rgb(255 255 255 / 0.92), rgb(186 230 253 / 0.7) 55%, rgb(125 211 252 / 0.28));
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.75),
-      0 10px 24px rgb(14 116 144 / 0.08);
-  }
-
-  .site-panel {
-    background: linear-gradient(180deg, rgb(15 23 42 / 0.96), rgb(15 23 42 / 0.92));
-    border-color: rgb(51 65 85 / 0.8);
-    color: rgb(226 232 240);
-    box-shadow: 0 18px 48px rgb(2 6 23 / 0.18);
-  }
-
-  .site-panel-dark {
-    background: linear-gradient(180deg, rgb(15 23 42 / 0.96), rgb(15 23 42 / 0.92));
-    border-color: rgb(51 65 85 / 0.8);
-    box-shadow: 0 18px 48px rgb(2 6 23 / 0.18);
-  }
-
   .surface-action {
-    border-color: rgb(51 65 85 / 0.85);
-    background: rgb(15 23 42 / 0.88);
-    color: rgb(226 232 240);
+    border-color: var(--input);
+    background: var(--card);
+    color: var(--foreground);
   }
-
   .surface-action:hover {
-    background: rgb(30 41 59 / 0.96);
-    color: rgb(240 249 255);
+    background: var(--ice-2);
+    color: var(--brand-strong);
   }
-
   .surface-inset {
-    border-color: rgb(51 65 85 / 0.78);
-    background: linear-gradient(180deg, rgb(15 23 42 / 0.86), rgb(15 23 42 / 0.78));
-    color: rgb(226 232 240);
+    border-color: var(--border);
+    background: var(--background);
+    color: var(--foreground);
   }
-
   .surface-inset-accent {
-    border-color: rgb(56 189 248 / 0.16);
-    background: linear-gradient(180deg, rgb(8 47 73 / 0.9), rgb(15 23 42 / 0.82));
-    color: rgb(226 232 240);
+    border-color: transparent;
+    background: var(--ice-2);
+    color: var(--brand-strong);
   }
 }

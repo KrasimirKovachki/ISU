@@ -41,16 +41,7 @@ export default async function Page({
         right={<YearRangeFilter minYear={2013} maxYear={2026} />}
       />
 
-      <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
-        <Card className="border-slate-800 bg-slate-950 text-slate-50">
-          <CardHeader>
-            <CardTitle className="text-base text-white">Competition browse surface</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
-            <p>Event pages are the backbone of the public site because they connect official sources to skaters, clubs, and score evidence.</p>
-            <p>This index should feel like an archive visitors can browse by date, place, and event type before drilling into result tables.</p>
-          </CardContent>
-        </Card>
+      <section className="grid gap-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <KpiCard label="Events" value={items.length} icon={CalendarRange} href="/events#archive" ctaLabel="Browse archive" />
           <KpiCard
@@ -72,27 +63,27 @@ export default async function Page({
       </section>
 
       {featured ? (
-        <Card className="border-slate-800 bg-slate-950">
+        <Card className="border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-base text-slate-100">Featured visible competition</CardTitle>
+            <CardTitle className="text-base text-foreground">Featured visible competition</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-lg font-semibold text-slate-100">{featured.event_name ?? "Unnamed event"}</p>
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="text-lg font-semibold text-foreground">{featured.event_name ?? "Unnamed event"}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {formatDate(featured.event_start_date)} · {featured.location ?? "Location pending"} · {featured.competition_stream ?? featured.event_type ?? "format pending"}
               </p>
             </div>
-            <Link href={`/events/${featured.event_key}`} className="inline-flex items-center gap-2 text-sm font-medium text-sky-300 hover:text-sky-200">
+            <Link href={`/events/${featured.event_key}`} className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:text-brand">
               Open event page <ArrowRight className="h-4 w-4" />
             </Link>
           </CardContent>
         </Card>
       ) : null}
 
-      <Card id="archive" className="border-slate-800 bg-slate-950 scroll-mt-28">
+      <Card id="archive" className="border-border bg-card scroll-mt-28">
         <CardHeader>
-          <CardTitle className="text-base text-slate-100">Competition archive</CardTitle>
+          <CardTitle className="text-base text-foreground">Competition archive</CardTitle>
         </CardHeader>
         <CardContent className="p-4"><EventsTable rows={items} /></CardContent>
       </Card>
