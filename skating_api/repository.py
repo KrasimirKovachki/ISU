@@ -875,14 +875,26 @@ WHERE event_key = %(event_key)s
 
 
 def event_results(conn: Any, event_key: int, limit: int | None = None) -> list[dict[str, Any]]:
+    # Edited 2026-10-12 by Claude (AI assistant): skater_key is the skater PROFILE key (the one /skaters/{key} opens),
+    # found through this event's appearances; fcr.skater_key is only the per-competition row and stays as
+    # source_skater_key. Results carry the club code as printed ("LEI"), so name+club matching misses ~13 %.
     return fetch_all(
         conn,
         """
+WITH profile AS (
+  SELECT DISTINCT ON (sac.category_id, sac.skater_name) sac.category_id, sac.skater_name, ss.skater_key
+  FROM api.mv_skater_appearances_with_club sac
+  JOIN api.mv_appearance_identity ai ON ai.skater_appearance_id = sac.skater_appearance_id
+  JOIN api.mv_skater_search ss ON ss.identity_key = ai.identity_key
+  WHERE sac.event_id = %(event_key)s
+  ORDER BY sac.category_id, sac.skater_name
+)
 SELECT
   fcr.competition_result_key,
   fcr.category_key,
   dc.category_name,
-  fcr.skater_key,
+  p.skater_key,
+  fcr.skater_key AS source_skater_key,
   fcr.skater_name,
   fcr.nation_code,
   fcr.club_name,
@@ -891,6 +903,7 @@ SELECT
   fcr.segment_places
 FROM api.mv_competition_result fcr
 LEFT JOIN api.mv_dim_category dc ON dc.category_key = fcr.category_key
+LEFT JOIN profile p ON p.category_id = fcr.category_key AND p.skater_name = fcr.skater_name
 WHERE fcr.event_key = %(event_key)s
 ORDER BY dc.category_name, fcr.final_place NULLS LAST, fcr.points DESC NULLS LAST
 LIMIT %(limit)s
@@ -906,7 +919,8 @@ def score_detail(conn: Any, segment_score_key: int) -> dict[str, Any] | None:
 SELECT
   fss.segment_score_key,
   fss.score_source,
-  fss.skater_key,
+  ss.skater_key,
+  fss.skater_key AS source_skater_key,
   fss.segment_key,
   fss.skater_name,
   fss.nation_code,
@@ -926,6 +940,8 @@ SELECT
   fss.judge_count,
   de.root_url
 FROM api.mv_segment_score fss
+LEFT JOIN api.mv_score_identity si ON si.segment_score_key = fss.segment_score_key
+LEFT JOIN api.mv_skater_search ss ON ss.identity_key = si.identity_key
 LEFT JOIN api.mv_dim_event de ON de.event_key = fss.event_key
 LEFT JOIN api.mv_dim_category dc ON dc.category_key = fss.category_key
 LEFT JOIN api.mv_dim_segment dseg ON dseg.segment_key = fss.segment_key
