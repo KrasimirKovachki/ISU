@@ -70,12 +70,30 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     .slice(0, 4);
 
   const scores = [...skater.scores].sort((a, b) => (b.event_start_date ?? "").localeCompare(a.event_start_date ?? ""));
-  const seasons = new Map<string, SkaterScoreRow[]>();
+  // Edited 2026-10-13 by Claude (AI assistant): one skate ranked in two parts of the same competition (e.g. Non-ISU +
+  // national championship) is shown once, with every place
+  type Row = SkaterScoreRow & { places: { place: number; part: string | null }[] };
+  const merged: Row[] = [];
+  const byKey = new Map<string, Row>();
   for (const s of scores) {
+    const k = s.group_key ? `${s.group_key}|${s.segment_name}|${s.tss}` : `#${s.segment_score_key}`;
+    const hit = byKey.get(k);
+    const place = s.place !== null ? { place: s.place, part: s.part ?? null } : null;
+    if (hit) {
+      if (place) hit.places.push(place);
+      if (hit.part === "National championship" && s.part !== "National championship") Object.assign(hit, { ...s, places: hit.places });
+    } else {
+      const row: Row = { ...s, places: place ? [place] : [] };
+      byKey.set(k, row);
+      merged.push(row);
+    }
+  }
+  const seasons = new Map<string, Row[]>();
+  for (const s of merged) {
     const k = seasonOf(s.event_start_date);
     seasons.set(k, [...(seasons.get(k) ?? []), s]);
   }
-  const topThree = new Set(scores.filter((s) => s.place !== null && s.place <= 3).map((s) => s.event_key)).size;
+  const topThree = new Set(scores.filter((s) => s.place !== null && s.place <= 3).map((s) => s.group_key ?? s.event_key)).size;
 
   // best scored version of each element (by base code), top 5
   const bestByElement = new Map<string, { code: string; score: number; key: number }>();
@@ -138,9 +156,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                       <span className="font-bold">{s.event_name ?? "Competition"}</span>
                       <span className="block text-sm text-muted-foreground">{[s.category_name, s.segment_name].filter(Boolean).join(" · ")}</span>
                     </span>
-                    {s.place !== null ? (
-                      <span className={cn("rounded-full px-2.5 py-1 text-[13px] font-bold", PLACE_TONE[s.place] ?? "bg-background text-ink-2")}>{ordinal(s.place)}</span>
-                    ) : null}
+                    {s.places.map((p, i) => (
+                      <span key={i} className={cn("rounded-full px-2.5 py-1 text-[13px] font-bold", PLACE_TONE[p.place] ?? "bg-background text-ink-2")}>
+                        {ordinal(p.place)}{s.places.length > 1 && p.part ? ` · ${p.part}` : ""}
+                      </span>
+                    ))}
                     <span className="num w-16 text-right font-semibold">{points(s.tss)}</span>
                   </Link>
                 ))}

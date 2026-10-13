@@ -32,5 +32,8 @@ JOIN sk a ON a.event_id = n.event_key JOIN sk b ON b.event_id = o.event_key AND 
 GROUP BY 1, 2, 3, 4 HAVING count(DISTINCT b.identity_key) >= 0.5 * (SELECT count(DISTINCT identity_key) FROM sk WHERE event_id = n.event_key)"
 echo "== sources vs archive"; $X scripts/archive_check.py --remote 200 --list-missing 0 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(\"local\", d[\"local\"], \"remote\", d[\"remote\"])"
 $P -F" | " -c "select status, count(*) from ingest.source_checks where checked_at > now() - interval '1 day' group by 1"
+echo "== off-site copy -> 130.110.71.83:/opt/backups/skating-offsite (key may only rsync there)"
+O="ssh -i /home/ubuntu/.ssh/skating_offsite -o BatchMode=yes"
+rsync -a --delete -e "$O" backups/ ubuntu@130.110.71.83:backups/ && rsync -a -e "$O" archive/data/ ubuntu@130.110.71.83:archive/ && echo "off-site ok" || echo "OFF-SITE COPY FAILED"
 echo "== $(date -u +%FT%TZ) done"
 } > "$R" 2>&1

@@ -46,6 +46,9 @@ def main() -> int:
         print(json.dumps({"events": [], "note": "nothing new"}))
         return 0
     timing = conn.execute("SELECT api.refresh_events(%s::bigint[])", (events,)).fetchone()[0]
+    # competitions published in several parts (db/44): regroup after new / gone events
+    if conn.execute("SELECT to_regproc('api.rebuild_event_parts') IS NOT NULL").fetchone()[0]:
+        timing["event_parts"] = conn.execute("SELECT api.rebuild_event_parts()").fetchone()[0]
     conn.commit()
     print(json.dumps({"events": events, "timing": timing}))
     return 0

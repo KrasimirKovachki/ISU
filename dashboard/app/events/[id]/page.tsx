@@ -122,6 +122,18 @@ export default async function Page({
         ]}
         right={
           <>
+            {/* Edited 2026-10-13 by Claude (AI assistant): the competition's parts (ISU / Non-ISU / national championship) */}
+            {(event.parts?.length ?? 0) > 1 ? (
+              <nav aria-label="Parts of this competition" className="mr-auto flex flex-wrap gap-2">
+                {event.parts!.map((p) =>
+                  p.current ? (
+                    <span key={p.event_key} aria-current="page" className="inline-flex h-11 items-center rounded-full bg-navy px-4 text-sm font-semibold text-white">{p.part}</span>
+                  ) : (
+                    <Link key={p.event_key} href={`/events/${p.event_key}`} className="inline-flex h-11 items-center rounded-full border border-input px-4 text-sm text-foreground hover:bg-ice-2 hover:no-underline">{p.part}</Link>
+                  ),
+                )}
+              </nav>
+            ) : null}
             {event.root_url ? (
               <a
                 href={event.root_url}
