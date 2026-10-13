@@ -49,3 +49,11 @@ INSERT INTO api.category_rule(priority, pattern, level, discipline, age_group, n
  (6, 'klas\s*-?\s*iii\M',                  'national', NULL, 'advanced_novice',     'BSF III'),
  (7, 'klas\s*-?\s*ii\M',                   'national', NULL, 'junior',              'BSF II'),
  (8, 'klas\s*-?\s*i\M',                    'national', NULL, 'senior',              'BSF I');
+
+-- 2026-10-13: the last unclassified groups (Baltic development categories, Estonian Novice B, juvenile synchro)
+INSERT INTO api.category_rule(priority, pattern, level, discipline, age_group, note) VALUES
+ (15, '^elements\s+[a-d]\M',     'recreational', NULL, 'beginner',     'Latvia: Elements A-D (development)'),
+ (16, '^(pre-)?young\M',          'recreational', NULL, 'youth',        'Estonia: Young / Pre-Young (development)'),
+ (17, '^artistic$',                'recreational', NULL, NULL,           'Artistic at club cups'),
+ (45, '^novice\s+b\M',           'national',     NULL, 'basic_novice', 'Estonia: Novice B'),
+ (46, 'juvenile',                  'national',     NULL, 'juvenile',     'Juvenile');

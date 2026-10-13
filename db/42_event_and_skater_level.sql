@@ -6,6 +6,8 @@ SELECT e.event_key, e.event_name, e.root_url, sp.competition_stream AS profile_s
     WHEN e.root_url ~* '(recreational|rekreativ|interclub|adult|amateur|hobby)' OR e.event_name ~* '(recreational|interclub|adult|amateur|hobby)'
       OR sp.competition_stream IN ('club_amateur', 'club_test', 'club_control') THEN 'recreational'
     WHEN e.root_url ~* '(/|_)(jgp|gp|cs)(/|_|[0-9])' OR e.event_name ~* '(grand prix|challenger|world|european championships|four continents|olympic)'
+      -- 2026-10-13: senior internationals known by name (Challenger Series and other ISU internationals)
+      OR e.event_name ~* '(nebelhorn|golden spin|ice ?challenge|challenge ?cup|bavarian open|tallinn trophy|finlandia|lombardia|warsaw cup|denis ten|budapest trophy|ondrej nepela|nrw trophy)'
       OR sp.competition_stream = 'ISUCS' THEN 'isu_elite'
     WHEN e.root_url ~* '(/|_)(non-?isu|nonisu|non)(/|_|$)|/cc' OR sp.competition_stream IN ('NonISU', 'FRP', 'national_club', 'DP')
       OR e.event_name ~* 'national' THEN 'national'

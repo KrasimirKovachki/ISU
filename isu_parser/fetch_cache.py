@@ -60,10 +60,31 @@ def cached_fetch(url: str, *, timeout: int = 30, force: bool = False) -> bytes:
     return body
 
 
+VERSIONS_ROOT = CACHE_ROOT.parent / "source_versions"
+
+
+def version_path(url: str, body: bytes) -> Path:
+    """data/source_versions/<aa>/<sha256(url)>/<sha256(body)>.bin — one file per distinct content of a URL."""
+    url_digest = hashlib.sha256(url.encode("utf-8")).hexdigest()
+    return VERSIONS_ROOT / url_digest[:2] / url_digest / f"{hashlib.sha256(body).hexdigest()}.bin"
+
+
 def store(url: str, body: bytes) -> None:
-    """Keep these bytes as the archived copy of ``url`` (atomic write)."""
+    """Keep these bytes as the archived copy of ``url`` (atomic write).
+
+    Edited 2026-10-13 by Claude (AI assistant): a different earlier copy is never lost — it is kept under
+    source_versions/ (by content hash) before the current copy is replaced.
+    """
     path = _cache_path(url)
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.is_file():
+        old = path.read_bytes()
+        if old == body:
+            return
+        keep = version_path(url, old)
+        if not keep.is_file():
+            keep.parent.mkdir(parents=True, exist_ok=True)
+            keep.write_bytes(old)
     tmp = path.with_suffix(".bin.tmp")
     tmp.write_bytes(body)
     tmp.replace(path)
