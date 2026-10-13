@@ -683,3 +683,326 @@ Discovery:
   `scripts/export_source_archive.py`. All mart source-evidence rows now have an
   archive path: 40453/40453.
 - Full test suite passes: 38 tests.
+
+2026-04-30 ISU public API discovery and imports:
+
+- Confirmed and documented the public API base:
+  `https://api.isu-skating.com/api/`.
+- Added `db/26_isu_skater_directory.sql` for the API skater/team directory
+  snapshot layer:
+  `ingest.isu_skater_directory`, `ingest.isu_skater_person`,
+  `ingest.isu_skater_directory_member`, and
+  `analytics.v_isu_skater_directory`.
+- Added `db/27_isu_api_event_discovery.sql` for API event and skater-history
+  snapshots:
+  `ingest.isu_api_event_catalog`, `ingest.isu_skater_event_history`, and
+  `analytics.v_isu_api_result_url_candidates`.
+- Added API loader scripts:
+  - `scripts/discover_isu_api_events.py`
+  - `scripts/discover_isu_skaters.py`
+  - `scripts/discover_isu_skater_events.py`
+- Synced local Docker PostgreSQL from the VM database and switched
+  `config/local.env` to Docker (`127.0.0.1:55432`).
+- Loaded `event/mobile-list` for season `2025/2026`: 115 API event rows, 45
+  direct result URL candidates, and 115 rows queued in
+  `ingest.event_discovery_catalog` under `source_name='isu_api_events'`.
+- Registered API direct result URLs:
+  - 15 FS Manager result folders validated and imported.
+  - 30 shortlink/landing-page URLs remained `analyzed/failed` because they did
+    not validate as direct result folders.
+- Imported API-discovered result runs 220-234. All 15 completed:
+  - Aggregate imported stats: 87 categories, 170 segments, 1220 entries, 1220
+    category results, 2285 segment results, 1981 official assignments, and
+    1930 PDF score summaries.
+  - Notable clean run 220 (`Crystal Skate Open 2025`): 4 categories, 8
+    segments, 34 entries, 68 segment results, and 67 PDF score summaries.
+  - Run 221 (`Tallinn Trophy 2025`) completed with four informational
+    `skipped_non_judges_pdf_report` issues and zero PDF score summaries.
+  - Runs 228 (`Épinal Solo Ice Dance International`) and 233
+    (`Bavarian Open 2026`) completed with two `missing_pdf_skaters` parse
+    issues each; HTML segment/category result data still imported.
+- Current local registry summary after API imports:
+  - imported/passed FS Manager URLs: 50.
+  - imported/passed old ISUCalcFS URLs: 39.
+  - analyzed/failed API URL candidates: 30.
+  - analyzed/warning direct PDF result candidates: 4.
+- Local table counts after sync/import:
+  - `ingest.import_runs`: 93.
+  - `ingest.source_skater_appearances`: 47108.
+  - `ingest.pdf_score_summaries`: 12393.
+  - `ingest.source_documents`: 7411.
+- Refreshed local source archive after the API imports:
+  - 7302 documents written, about 220 MB.
+  - 5775 HTML source documents written.
+  - 1527 judges-score PDFs written.
+  - 109 judges-score PDF source-document records skipped because the URL did
+    not return PDF bytes.
+  - Loaded 7411 manifest rows into `ingest.source_archive_files`.
+- `db/24_validate_mart_and_discovery.sql` now reports all source-evidence rows
+  with archive paths: 47108/47108.
+- Full test suite passes locally: 22 tests.
+
+2026-04-30 historical ISU API season sweep:
+
+- Loaded `event/mobile-list` seasons `2018/2019` through `2024/2025` in
+  addition to the existing `2025/2026` API catalog rows.
+- API event catalog coverage by season:
+  - `2018/2019`: 86 events, 0 direct result URL candidate events.
+  - `2019/2020`: 82 events, 0 direct result URL candidate events.
+  - `2020/2021`: 31 events, 0 direct result URL candidate events.
+  - `2021/2022`: 76 events, 0 direct result URL candidate events.
+  - `2022/2023`: 93 events, 0 direct result URL candidate events.
+  - `2023/2024`: 92 events, 0 direct result URL candidate events.
+  - `2024/2025`: 104 events, 6 direct result URL candidate events.
+  - `2025/2026`: 115 events, 36 direct result URL candidate events.
+- `2024/2025` direct URL validation found two importable FS Manager result
+  folders, both for `Icechallenge 2024`:
+  - Run 235:
+    `https://results.skateaustria.at/competition/saison2425/020/index.htm`.
+    Completed with 11 categories, 23 segments, 77 entries, 146 segment
+    results, and 137 PDF score summaries.
+  - Run 238:
+    `https://results.skateaustria.at/competition/saison2425/021/index.htm`.
+    Completed with 6 categories, 6 segments, 38 entries, 37 segment results,
+    and 35 PDF score summaries.
+- Added missing-PDF resilience in `scripts/import_event.py`: a failed judges
+  PDF fetch now records a `pdf_fetch_failed` warning and failed
+  `source_documents` row instead of aborting the entire event import. This was
+  needed for one published `Icechallenge Interclub 2024` PDF link returning
+  HTTP 404.
+- Refreshed the local source archive again after the Icechallenge imports:
+  - 7424 documents written, about 231 MB.
+  - Loaded 7534 manifest rows into `ingest.source_archive_files`.
+  - `db/24_validate_mart_and_discovery.sql` reports all source-evidence rows
+    with archive paths: 47693/47693.
+- Current local counts:
+  - `ingest.import_runs`: 95.
+  - `ingest.source_archive_files`: 7534.
+  - `analytics.v_skater_appearances_clean`: 47693.
+- Full test suite passes locally: 22 tests.
+
+2026-04-30 all-run validation pass:
+
+- No `ready_for_import/passed` registry rows remain.
+- Validated all 95 completed import runs with `scripts/validate_import.py`;
+  all validation commands completed successfully.
+- Registry status:
+  - `imported/passed/fs_manager`: 52.
+  - `imported/passed/old_isucalcfs`: 39.
+  - `imported/warning/fs_manager`: 1.
+  - `analyzed/failed`: 35.
+  - `analyzed/warning/pdf_result`: 4.
+  - `skipped/failed`: 3.
+- API discovery rows:
+  - total `isu_api_events`: 679.
+  - candidate result URL rows: 42.
+  - catalog-only rows needing detail/result resolution: 637.
+- Broad validation results:
+  - `db/10_validate_skater_name_quality.sql`: zero rows.
+  - `db/24_validate_mart_and_discovery.sql`: all source evidence has archive
+    paths, 47693/47693.
+  - `analytics.v_skater_category_results where segment_places ? 'Points'`: 0.
+  - category result rows with missing final place or points: 756.
+  - club summary rows with null/zero best values: 272.
+  - segments with no PDF score summaries:
+    - `empty_category`: 28 segments across 14 runs.
+    - `missing_results_with_entries`: 153 segments across 47 runs.
+- Parse issue totals across all imports:
+  - errors: `missing_pdf_event_name` 27, `missing_pdf_skaters` 16,
+    `missing_mlad_figurist_results` 13, `missing_pdf_report_type` 3.
+  - warnings: `invalid_pdf_response` 105,
+    `category_result_page_parse_failed` 93, `missing_category_entries` 15,
+    `category_without_segments` 15, `missing_schedule` 11,
+    `pdf_fetch_failed` 1, `schedule_segment_not_in_reports` 1,
+    `duplicate_link` 1.
+  - info: `skipped_non_judges_pdf_report` 13.
+
+2026-04-30 PDF arithmetic validation cleanup:
+
+- Investigated 727 `pdf_score_arithmetic_mismatch` warnings across runs 14,
+  19, 190, 192, 193, 194, 204, 205, 208, and 210.
+- Root cause: the PDF parser stores deductions with their source sign. In these
+  rows deductions were negative, for example `-0.500`, and the source TSS equals
+  `TES + PCS + total_deductions`. The validator was treating all deductions as
+  positive and checking `TES + PCS - total_deductions`, which double-added the
+  penalty for negative values.
+- Updated `isu_parser/pdf_scores.py` so validation accepts both signed and
+  unsigned deduction conventions, including the pattern-dance averaged-score
+  variant.
+- Added a regression test for signed deductions.
+- Deleted the 727 stale false-positive parse issues from local PostgreSQL. The
+  current `pdf_score_arithmetic_mismatch` count is 0.
+- Revalidated all 95 completed imports; zero validation command failures.
+
+2026-05-01 Local Postgres 17 via Docker Compose:
+
+- Added `docker-compose.yml`, `docker/postgres/`, `config/local.docker.env.example`.
+- Container exposes Postgres 17 on host port `55432`, database `skating_data`,
+  user `skating_app`. README documents `docker compose up -d postgres` and the
+  copy of `config/local.docker.env.example` to `config/local.env`.
+- `.gitignore` now excludes `.env` and `data/video_cache/`.
+
+2026-05-01 Nation-code normalization and inference:
+
+- `db/17_analytics_views.sql` adds `analytics.normalized_nation_code()` (maps
+  `BIL`/`BUK` typos to `BUL`, otherwise upper-trims) and view
+  `analytics.v_skater_nation_inference` (per-skater nation when only one
+  observed value exists across imports).
+- `analytics.v_skater_appearances_clean` now coalesces normalized then inferred
+  nation code, exposes `nation_code_inferred`, and uses the same chain in
+  `display_affiliation`.
+
+2026-05-01 Club registry expansion:
+
+- `db/19_club_registry.sql` reseeds canonical clubs with refined aliases:
+  `Ice Dance Denkova Stavinski` (renamed from `Ice Dance Denkova-Staviski`),
+  splits `Odesos Varna` (BUL) and `ODS` (UKR) by skater nation, separates
+  `Ledeni`, `Ledeni Sportove Varna`, `Fokstrot na led`, and removes
+  `Ledena Zvezda`/`Varna` collapsed canonicals.
+
+2026-05-01 FRP HTML discovery:
+
+- Added `scripts/discover_frp_html.py` and `tests/test_discover_frp_html.py`
+  for parsing Russian Federation result-page HTML into candidate result URLs.
+
+2026-05-02 Event video sources pipeline:
+
+- Added `db/29_event_video_sources.sql`:
+  `ingest.event_video_sources`, `ingest.event_video_result_links`, and
+  `ingest.event_video_transcripts` for broadcast/video evidence keyed to
+  events with download/transcription state machines.
+- Added `isu_parser/video_pipeline.py`, `scripts/process_event_videos.py`, and
+  `scripts/seed_denkova_2025_videos.py` plus `tests/test_video_pipeline.py`.
+- Current local counts: 10 video sources, 14 result links, 0 transcripts.
+
+2026-05-02 API materialized views and FastAPI dashboard:
+
+- Added `db/28_api_dashboard_views.sql` (schema `api`):
+  helper functions `api.normalized_skater_name`,
+  `api.normalized_skater_nation_code`, `api.skater_identity_key`, and
+  materialized views `mv_skater_search`, `mv_dashboard_overview`,
+  `mv_competition_mix`, `mv_club_skater_status`, `mv_club_dashboard`.
+- Added `skating_api/` FastAPI service:
+  `app.py`, `repository.py`, `db.py`, `static/index.html`. Endpoints cover
+  dashboard, clubs, skaters, events, scores, and (added 2026-05-05)
+  nationalities. Country flags are rendered from ISO3 codes.
+- `pyproject.toml` adds `fastapi>=0.115` and `uvicorn[standard]>=0.30` runtime
+  dependencies and a setuptools package config so `skating_api` ships static
+  HTML.
+- README documents `docker compose up -d postgres`, applying
+  `db/28_api_dashboard_views.sql`, and running
+  `python -m uvicorn skating_api.app:app --host 127.0.0.1 --port 8000`.
+- Current dashboard counts: 158 events / 5410 skaters / 20149 segment scores
+  across `mv_skater_search` (5410) and `mv_club_dashboard` (221 clubs).
+
+2026-05-05 segment_score_key collision fix:
+
+- Discovered `mart.fact_segment_score.segment_score_key` was not unique:
+  `analytics.v_skater_segment_scores` unions PDF score summaries (`pss.id`)
+  with HTML segment-result fallbacks (`sr.id`), and the two sequences
+  collided on 1093 numeric ids. `/api/scores/{key}` could return one
+  skater's row joined with another skater's elements and per-judge marks
+  (e.g. FEIGIN HTML + CIRCELLI PDF both at id 588 in Sofia Trophy 2026).
+- Added `db/30_unique_segment_score_key.sql`:
+  `mart.fact_segment_score.segment_score_key` is now
+  `score_id` for PDF rows and `-score_id` for HTML rows.
+  `mart.fact_element_score`, `mart.fact_element_judge_mark`, and
+  `mart.fact_component_score` only carry PDF rows, so a negative key
+  naturally yields zero children — the correct behavior for an HTML
+  fallback row with no detail.
+- Refreshed `api.mv_dashboard_overview`, `api.mv_competition_mix`, and
+  `api.mv_club_dashboard`.
+- After fix: 21179 distinct keys = 21179 rows in `mart.fact_segment_score`.
+- Added regression test `test_score_detail_passes_negative_keys_unchanged`
+  asserting `score_detail(conn, -588)` threads the negative integer through
+  to PostgreSQL without sanitizing it.
+
+2026-05-05 Dashboard polish:
+
+- `/api/scores/{key}` UI now badges `score_source` (PDF score summary vs.
+  HTML fallback) and shows "No PDF score detail available" instead of empty
+  Elements/Components panels when a row has no children.
+- Added Nationalities tab + endpoints:
+  `GET /api/nationalities` (list) and
+  `GET /api/nationalities/{nation_code}` (rollup + top 200 skaters).
+- Active Nationalities table on the dashboard is now clickable into the
+  nationality detail view.
+- Full test suite passes locally: 53 tests.
+
+2026-05-07 ISU archive sweep — isuresults.com:
+
+- Added `scripts/discover_isu_results_archive.py`. Probes the
+  `https://www.isuresults.com/results/season{YY}{YY}/{eventcode}{YYYY}/`
+  URL convention against a curated list of ISU event codes (Worlds,
+  Junior Worlds, European Champs, Four Continents, Grand Prix Final,
+  Junior GP Final, World Team Trophy, FISU Universiade, senior GP
+  venues, Challenger Series venues, JGP venues across 30+ countries).
+- For each season we probe both `<code><start_year>` and
+  `<code><end_year>` to cover both autumn (e.g. JGP Poland in Sept) and
+  late-winter/spring (e.g. Worlds in March) timing patterns.
+- Probed 1,232 candidate URLs across seasons 2018/19 → 2025/26. 70
+  passed both HEAD and the existing `detect_parser` source-check
+  (all FS Manager). Registered into `ingest.source_url_registry`.
+- Bulk import via `scripts/import_ready_registry.py --family ""`:
+  69 events imported successfully, 1 skipped
+  (`season2425/wtt2025` — World Team Trophy uses the FSKXTEAM team
+  format which the current parser does not handle; tagged
+  `analyzed/warning` for a future team-format profile).
+- Per-season completed runs:
+  `2018/19=1, 2019/20=10, 2020/21=1, 2021/22=11, 2022/23=10,
+   2023/24=11, 2024/25=13, 2025/26=12`.
+- Refreshed all `api.mv_*` materialized views (skater_search,
+  dashboard_overview, competition_mix, club_skater_status,
+  club_dashboard, segment_score, element_score, element_judge_mark,
+  component_score, competition_result, nationality_dashboard) +
+  `ANALYZE`. Total refresh time: ~3 min.
+- Data growth:
+  - segment scores: 21,179 → 30,069 (+42%)
+  - element scores: 114,533 → 188,828 (+65%)
+  - element judge marks: 506,276 → 1,167,775 (+131%)
+  - skaters: 5,410 → 6,367 (+18%)
+  - nations represented: 87 → 91
+- Top nations now reflect international elite:
+  USA best TSS 238.24 (Ilia Malinin), FRA 206.90, ITA 194.72,
+  EST 173.93. BUL still leads in volume (1020 skaters / 9087 segment
+  scores) because of dense national/club data.
+- Validation: `db/10_validate_skater_name_quality.sql` reports 0
+  rows; `db/24_validate_mart_and_discovery.sql` reports 0 likely
+  club suffix names and 0 non-ISO nation codes (2 pre-existing
+  iso_code_as_club_no_nation rows unchanged).
+- Dashboard latency unchanged at ~30ms.
+- Full test suite passes locally: 53 tests.
+
+2026-05-07 isuresults.com parser-profile fix + local fetch cache:
+
+- Investigation of `season1920/ec2020/` (and 9 sibling runs that
+  imported with status=completed but 0 categories) showed the body
+  sniff in `scripts/import_event.py` was matching `<meta
+  generator="ISUCalcFS X.X.X by Swiss Timing">` and routing to
+  `old_isucalcfs.parse_index`, which returns 0 categories on these
+  pages. The same pages parse cleanly with `fs_manager` (link
+  convention is `CAT###EN.htm`, `SEG###.htm`,
+  `*_JudgesDetailsperSkater.pdf`).
+- Added `db/32_seed_isuresults_archive_profile.sql` — source profile
+  pinning `host=www.isuresults.com / event_path_prefix=results/` to
+  `parser_profile=fs_manager`. This is the per-platform configuration
+  pattern already used for clubdenkovastaviski.com, BSF, etc.
+- `scripts/import_event.py` now trusts a configured profile and skips
+  body sniffing when one matches. Body sniffing remains the fallback
+  for unconfigured hosts.
+- Re-imported the 10 broken runs (run ids 412-421): WJC 2019 (Zagreb,
+  699 skaters), GP France 2019, JGP Croatia/France/Italy/Latvia/
+  Poland/Russia/USA 2019, Europeans 2020 (Graz, 643 skaters / 122
+  final results). Each now has 3-4 categories and 80-215 PDF score
+  summaries.
+- Added `isu_parser/fetch_cache.py` with `cached_fetch(url)` reading/
+  writing `data/source_cache/<aa>/<sha256>.bin`. `import_event` and
+  `export_source_archive` both go through it. Repeat fetches go from
+  ~470ms (network) to <1ms (disk). Set `SKATING_FETCH_NOCACHE=1` to
+  bypass for a fresh download. Cache directory is gitignored.
+- Refreshed all `api.mv_*` materialized views. Post-fix counts:
+  segment_scores 31,706, element_scores 202,342, judge_marks
+  1,289,401, skaters 6,588, nations 92.
+- Dashboard verifies: Europeans 2020 detail now shows
+  Sinitsina/Katsalapov RUS 220.42 leading Ice Dance, matching the
+  actual 2020 podium.

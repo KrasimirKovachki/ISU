@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* shadcn/ui neutral palette + design tokens (Tailwind v4 inline @theme).
+   Tweak --primary / --chart-* etc. to rebrand the whole app from one place. */
+/* Edited 2026-10-12 by Claude (AI assistant): "ice" redesign approved by the owner (mockup
+   https://claude.ai/artifact/4SN1ZC7sqmTNG5y65VakRF) — pale ice ground, navy ink, one ice-blue accent,
+   medal colours only for places. Fonts come from next/font in app/layout.tsx (Archivo + IBM Plex Mono). */
+:root {
+  --font-geist-sans: var(--font-archivo), "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-geist-mono: var(--font-plex-mono), "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-display: var(--font-archivo), "Segoe UI", sans-serif;
+  --radius: 0.75rem;
+  --background: #F3F6F9;
+  --foreground: #0B1B2B;
+  --card: #FFFFFF;
+  --card-foreground: #0B1B2B;
+  --popover: #FFFFFF;
+  --popover-foreground: #0B1B2B;
+  --primary: #1A5FBF;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F3F6F9;
+  --secondary-foreground: #0B1B2B;
+  --muted: #F3F6F9;
+  --muted-foreground: #4A6178;
+  --accent: #E6F0FB;
+  --accent-foreground: #0E3F86;
+  --destructive: #B42318;
+  --border: #E3EAF1;
+  --input: #C9D6E3;
+  --ring: #1A5FBF;
+  --chart-1: #1A5FBF;
+  --chart-2: #1F8A5B;
+  --chart-3: #C99A2E;
+  --chart-4: #7A8FA6;
+  --chart-5: #C2541B;
+  --sidebar: #0B1B2B;
+  --sidebar-foreground: #C9D6E3;
+  --sidebar-primary: #1B2F45;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1B2F45;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #2A425C;
+  --sidebar-ring: #7FC4FF;
+  --brand: #1A5FBF;
+  --brand-strong: #0E3F86;
+  --navy: #0B1B2B;
+  --navy-2: #1B2F45;
+  --ink-2: #3E5368;
+  --ice-2: #E6F0FB;
+  --gold: #C99A2E;
+  --gold-ink: #7A5B12;
+  --silver: #8E9AA6;
+  --silver-ink: #4A5560;
+  --bronze: #B0703C;
+  --bronze-ink: #7A4520;
+  --good: #1F6B47;
+  --bad: #9A3D0B;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
+  --color-ink-2: var(--ink-2);
+  --color-ice-2: var(--ice-2);
+  --color-gold: var(--gold);
+  --color-gold-ink: var(--gold-ink);
+  --color-silver: var(--silver);
+  --color-silver-ink: var(--silver-ink);
+  --color-bronze: var(--bronze);
+  --color-bronze-ink: var(--bronze-ink);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-geist-sans);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  a {
+    text-underline-offset: 0.18em;
+  }
+
+  ::selection {
+    background: rgb(26 95 191 / 0.16);
+    color: inherit;
+  }
+}
+
+@layer components {
+  /* navy band behind the top of every page; the page header card overlaps it */
+  .hero-band {
+    background: var(--navy);
+  }
+
+  .num {
+    font-family: var(--font-geist-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .eyebrow {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  /* older class names kept so every page restyles in one place */
+  .ice-sheen, .ice-grid { position: relative; }
+  .ice-emblem { background: var(--ice-2); color: var(--brand-strong); }
+  .site-panel, .site-panel-dark {
+    background: var(--card);
+    border-color: var(--border);
+    color: var(--foreground);
+    box-shadow: 0 10px 30px rgb(11 27 43 / 0.08);
+  }
+  .surface-action {
+    border-color: var(--input);
+    background: var(--card);
+    color: var(--foreground);
+  }
+  .surface-action:hover {
+    background: var(--ice-2);
+    color: var(--brand-strong);
+  }
+  .surface-inset {
+    border-color: var(--border);
+    background: var(--background);
+    color: var(--foreground);
+  }
+  .surface-inset-accent {
+    border-color: transparent;
+    background: var(--ice-2);
+    color: var(--brand-strong);
+  }
+}

@@ -7,12 +7,23 @@ name = "isu-skating-data"
 version = "0.1.0"
 description = "Parsers and validators for ISU figure skating result sources."
 requires-python = ">=3.11"
-dependencies = ["beautifulsoup4>=4.12", "psycopg[binary]>=3.2"]
+dependencies = [
+    "beautifulsoup4>=4.12",
+    "fastapi>=0.115",
+    "psycopg[binary,pool]>=3.2",
+    "uvicorn[standard]>=0.30",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "httpx>=0.27"]
 pdf = ["pypdf>=5.0", "pdfplumber>=0.11"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.setuptools.packages.find]
+include = ["isu_parser*", "skating_api*"]
+
+[tool.setuptools.package-data]
+skating_api = ["static/*.html"]

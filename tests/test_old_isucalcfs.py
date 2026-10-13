@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from isu_parser.old_isucalcfs import (
     parse_category_result,
@@ -9,7 +10,9 @@ from isu_parser.old_isucalcfs import (
     validate_event_index,
 )
 from isu_parser.pdf_scores import (
+    _parse_pdfplumber_detail_table,
     _parse_pdfplumber_skater_table,
+    parse_judges_scores_pdf,
     parse_judges_scores_text,
     validate_judges_scores,
 )
@@ -195,6 +198,10 @@ RankName NationStartingNumberTotalSegmentScoreTotalElementScoreTotal Program Com
 2Rachel KUHN / Anthony MAKARUSA 1 14.2914.53 14.04 0.00#Executed Elements
 """
 
+FS_MANAGER_DANIELA_FS_PDF = Path(
+    "data/source_archive/files/cup.clubdenkovastaviski.com/2017/ISU/DSCup2017_SeniorLadies_FS_Scores.pdf"
+)
+
 
 PDFPLUMBER_SKATER_TABLE = [
     [
@@ -234,6 +241,24 @@ PDFPLUMBER_CLUB_SKATER_TABLE = [
         "Judges Total Program Component Score (factored) 11.69"
     ],
     ["Deductions: Falls -0.50 (1) -0.50"],
+]
+
+PDFPLUMBER_LEGACY_DETAIL_TABLE = [
+    [
+        "Executed Base Scores of\n"
+        "# GOE J1 J2 J3 J4 J5 J6 J7 J8 J9 Ref ofnI\n"
+        "Elements Value Panel\n"
+        "1 2Lz 2.10 0.14 0 1 1 1 -1 2.24\n"
+        "2 2Lz 2.10 -0.35 -3 -1 -1 -2 -2 1.75\n"
+        "3 1A+2Lo 2.80 -0.17 -2 0 -1 -1 -1 2.63\n"
+        "16.92 17.05\n"
+        "Program Components Factor\n"
+        "Skating Skills 1.70 3.75 4.25 4.25 4.50 3.25 4.08\n"
+        "Performance 1.70 4.00 4.00 4.50 4.25 3.25 4.08\n"
+        "Interpretation of the Music 1.70 3.75 4.25 4.50 4.25 3.50 4.08\n"
+        "Judges Total Program Component Score (factored) 20.82"
+    ],
+    ["Deductions 0.00"],
 ]
 
 
@@ -383,6 +408,38 @@ class OldISUCalcFSTest(unittest.TestCase):
         self.assertEqual(parsed["skaters"][2]["total_deductions"], 1.0)
         self.assertEqual(validate_judges_scores(parsed), [])
 
+    def test_parse_fs_manager_judges_scores_pdf_details(self) -> None:
+        parsed = parse_judges_scores_pdf(FS_MANAGER_DANIELA_FS_PDF)
+
+        self.assertEqual(parsed["event_name"], "Denkova-Staviski Cup 2017")
+        self.assertEqual(parsed["category"], "SENIOR LADIES")
+        self.assertEqual(parsed["segment"], "FREE SKATING")
+        daniela = next(skater for skater in parsed["skaters"] if skater["name"] == "Daniela STOEVA")
+        self.assertGreater(len(daniela["elements"]), 0)
+        self.assertGreater(len(daniela["program_components"]), 0)
+        self.assertEqual(daniela["elements"][0]["element_code"], "3Lo<<")
+        self.assertEqual(daniela["program_components"][0]["component"], "Skating Skills")
+        self.assertTrue(any(skater["elements"] for skater in parsed["skaters"]))
+        self.assertEqual(validate_judges_scores(parsed), [])
+
+    def test_validate_judges_scores_accepts_signed_deductions(self) -> None:
+        parsed = {
+            "category": "INTERMEDIATE NOVICE GIRLS",
+            "segment": "FREE SKATING",
+            "report_type": "JUDGES_SCORES",
+            "skaters": [
+                {
+                    "name": "Juliya VASILEVA",
+                    "total_segment_score": 43.72,
+                    "total_element_score": 18.44,
+                    "total_program_component_score": 25.78,
+                    "total_deductions": -0.50,
+                }
+            ],
+        }
+
+        self.assertEqual(validate_judges_scores(parsed), [])
+
     def test_parse_fs_manager_club_judges_scores_pdf_text(self) -> None:
         parsed = parse_judges_scores_text(FS_MANAGER_CLUB_PDF_TEXT)
 
@@ -461,6 +518,19 @@ class OldISUCalcFSTest(unittest.TestCase):
         self.assertEqual(parsed["elements"][0]["element_code"], "SSpB")
         self.assertEqual(parsed["elements"][0]["info"], "F")
         self.assertEqual(parsed["elements"][0]["judge_scores"], [-5, -5, -5])
+
+    def test_parse_pdfplumber_legacy_detail_table(self) -> None:
+        parsed = _parse_pdfplumber_detail_table(PDFPLUMBER_LEGACY_DETAIL_TABLE)
+
+        self.assertIsNotNone(parsed)
+        assert parsed is not None
+        self.assertEqual(parsed["judge_count"], 5)
+        self.assertEqual(parsed["base_value_total"], 16.92)
+        self.assertEqual(parsed["element_score_total"], 17.05)
+        self.assertEqual(parsed["elements"][0]["element_code"], "2Lz")
+        self.assertEqual(parsed["elements"][0]["judge_scores"], [0, 1, 1, 1, -1])
+        self.assertEqual(parsed["program_components"][0]["component"], "Skating Skills")
+        self.assertEqual(parsed["program_components"][0]["judge_scores"], [3.75, 4.25, 4.25, 4.5, 3.25])
 
 
 if __name__ == "__main__":

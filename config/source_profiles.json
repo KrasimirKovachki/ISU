@@ -379,6 +379,1168 @@
         "store_nation": true,
         "store_club": true
       }
+    },
+    {
+      "id": "ec_interclub_wulfenia_cup_2026_pontebba_cc",
+      "match": {
+        "host": "dev.mbit.si",
+        "event_path_prefix": "EC/intclwucu2026"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_european_wulfenia_cup_2026_isu",
+      "match": {
+        "host": "dev.mbit.si",
+        "event_path_prefix": "EC/euwucu2026"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "ec_skate_celje_2025_ccbi_cc",
+      "match": {
+        "host": "dev.mbit.si",
+        "event_path_prefix": "EC/sc2025ccbi"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_jesenice_2025_narcisa_cup_cc",
+      "match": {
+        "host": "dev.mbit.si",
+        "event_path_prefix": "EC/sj2025ccbi"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2025_ccbi_cc_2",
+      "match": {
+        "host": "dev.mbit.si",
+        "event_path_prefix": "EC/sh2025ccbi"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2025_isu_isu",
+      "match": {
+        "host": "dev.mbit.si",
+        "event_path_prefix": "EC/skcel2025"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2025_isu",
+      "match": {
+        "host": "dev.mbit.si",
+        "event_path_prefix": "EC/sh2025isu"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_narcisa_cup_2026_jesenice_cc",
+      "match": {
+        "host": "dev.mbit.si",
+        "event_path_prefix": "EC/nc2026"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "ec_33_triglav_trophy_2026_jesenice_isu",
+      "match": {
+        "host": "dev.mbit.si",
+        "event_path_prefix": "EC/tt2026"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "ec_skate_jeenice_2025_triglav_trophy_isu",
+      "match": {
+        "host": "dev.mbit.si",
+        "event_path_prefix": "EC/tt2025"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_folgaria_30a_coppa_europa_cc",
+      "match": {
+        "host": "dkc.simetric.si",
+        "event_path_prefix": "dinamic/rezultati/107"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_folgaria_30a_coppa_europa_isu_isu",
+      "match": {
+        "host": "dkc.simetric.si",
+        "event_path_prefix": "dinamic/rezultati/108"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_bellu_memorial_isu",
+      "match": {
+        "host": "frponline.ro",
+        "event_path_prefix": "BELLUISU"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_bellu_memorial_interclub_cc",
+      "match": {
+        "host": "frponline.ro",
+        "event_path_prefix": "BELLU"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_feh_rv_r_interclub_cc",
+      "match": {
+        "host": "jegmadarmukori.hu",
+        "event_path_prefix": "SkateFehervar2025/Skate%20Feh%C3%A9rv%C3%A1r%20Interclub"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "ec_skate_feh_rv_r_2025_isu",
+      "match": {
+        "host": "jegmadarmukori.hu",
+        "event_path_prefix": "SkateFehervar2025/Skate%20Feh%C3%A9rv%C3%A1r%202025"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2025_cc",
+      "match": {
+        "host": "sofia-trophy.clubdenkovastaviski.com",
+        "event_path_prefix": "2025/NonISU"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2024_cc",
+      "match": {
+        "host": "sofia-trophy.clubdenkovastaviski.com",
+        "event_path_prefix": "2024/NonISU"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2025_isu",
+      "match": {
+        "host": "sofia-trophy.clubdenkovastaviski.com",
+        "event_path_prefix": "2025/ISU"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2024_isu",
+      "match": {
+        "host": "sofia-trophy.clubdenkovastaviski.com",
+        "event_path_prefix": "2024/ISU"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2024_cc_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1083/non"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_jesenice_2024_narcisa_cup_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1082/non"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_beograd_17th_europa_cup_skate_helena_mini_2024_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1079/non"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2023_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1078/non"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skating_jesenice_narcisa_cup_2023_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1077/non"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_nonisu_2023_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1076/non"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2023_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1073/non"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2022_chicks_cubs_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1072/non"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sebesty_n_cup_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1071/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2022_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1068/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_mini_2022_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1067/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2021_chicks_cubs_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1066/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_mini_2021_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/67/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2021_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/68/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2020_chicks_cubs_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/63/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2019_chicks_cubs_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/62/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_folgaria_31a_coppa_europa_cc_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/60/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2019_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/59/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2019_chicks_cubs_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/58/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2018_chicks_cubs_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/57/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_geneva_ice_cup_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/55/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2018_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/53/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2017_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/52/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_canazei_29a_coppa_europa_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/51/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_coupe_meyrinoise_internationale_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/50/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": false,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2017_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/49/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2017_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/48/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2016_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/47/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_canazei_28a_coppa_europa_non_isu_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/44/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2016_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/41/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2015_cc",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/38/non"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "NonISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2024_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1083"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_jesenice_2024_triglav_trophy_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1082"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_beograd_17th_europa_cup_skate_helena_2024_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1079"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2023_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1078"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_jesenice_2023_triglav_trophy_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1077"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_isu_2023_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1076"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2023_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1073"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2022_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1072"
+      },
+      "parser_profile": "fs_manager",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sebesty_n_cup_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1071"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": false
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2022_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1068"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2022_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1067"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2021_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/1066"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2021_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/67"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2021_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/68"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2020_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/63"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2019_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/62"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_folgaria_31a_coppa_europa_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/60"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2019_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/59"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2019_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/58"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2018_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/57"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_geneva_ice_cup_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/55"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2018_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/54"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2018_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/53"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2017_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/52"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_canazei_29a_coppa_europa_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/51"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_coupe_meyrinoise_internationale_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/50"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": false,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_sofia_trophy_2017_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/49"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2017_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/48"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2016_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/47"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_canazei_28a_coppa_europa_isu_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/44"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_helena_2016_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/41"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
+    },
+    {
+      "id": "ec_skate_celje_2015_isu",
+      "match": {
+        "host": "www.europeancriterium.eu",
+        "event_path_prefix": "documents/html/38"
+      },
+      "parser_profile": "old_isucalcfs",
+      "competition_stream": "ISU",
+      "representation": {
+        "primary": "nation",
+        "store_nation": true,
+        "store_club": true
+      }
     }
   ]
 }

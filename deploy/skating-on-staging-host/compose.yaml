@@ -1,0 +1,52 @@
+# Edited 2026-10-13 by Claude (AI assistant): the Skating Database (data.icepeaktrophy.com) on 130.61.157.150
+# (owner: "we cannot create new server" - shares the staging host: 2 OCPU / 12 GB). Moved from 130.110.71.83 (1 GB micro).
+# Separate from the staging academy (project northstar-staging); the staging Caddy reaches api + dash over
+# the northstar_staging_edge network. Secrets in .env (mode 600, never printed).
+name: skating
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: skating-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: skating_data
+    command: ["postgres", "-c", "shared_buffers=2GB", "-c", "effective_cache_size=6GB", "-c", "work_mem=32MB",
+              "-c", "maintenance_work_mem=512MB", "-c", "random_page_cost=1.1", "-c", "jit=off", "-c", "max_connections=40"]
+    volumes: [skating_pg:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d skating_data"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  app:
+    build: { context: ./app }
+    image: skating-api:local
+    container_name: skating-api
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      SKATING_DB_HOST: skating-db
+      SKATING_DB_PORT: "5432"
+      SKATING_DB_NAME: skating_data
+      SKATING_DB_USER: skating_app
+      SKATING_DB_PASSWORD: ${SKATING_APP_PASSWORD}
+    # downloaded source pages/PDFs live on the host disk, never only inside the container
+    volumes: ["./archive/data:/app/data", "./tools/scripts:/app/scripts:ro", "./tools/source_profiles.json:/app/config/source_profiles.json"]
+    networks: [default, edge]
+  dash:
+    build: { context: ./dashboard }
+    image: skating-dashboard:local
+    container_name: skating-dash
+    restart: unless-stopped
+    depends_on: [app]
+    environment:
+      SKATING_API_URL: http://skating-api:8000
+      PORT: "3000"
+    networks: [default, edge]
+volumes:
+  skating_pg: {}
+networks:
+  edge:
+    name: northstar_staging_edge
+    external: true

@@ -40,6 +40,14 @@ def extract_pdf_text(path: str | Path) -> list[PDFTextPage]:
 
     pdf_path = Path(path)
     try:
+        import pdfplumber  # type: ignore
+
+        with pdfplumber.open(str(pdf_path)) as pdf:
+            return [PDFTextPage(index + 1, page.extract_text() or "") for index, page in enumerate(pdf.pages)]
+    except ModuleNotFoundError:
+        pass
+
+    try:
         from pypdf import PdfReader  # type: ignore
 
         reader = PdfReader(str(pdf_path))
@@ -74,7 +82,7 @@ def parse_judges_scores_pdf(path: str | Path) -> dict[str, Any]:
     mlad_figurist = parse_mlad_figurist_pdf(path)
     if mlad_figurist:
         return mlad_figurist
-    table_skaters = _parse_pdfplumber_skater_tables(path)
+    table_skaters = _parse_pdfplumber_skater_tables(path, parsed.get("skaters", []))
     if table_skaters:
         parsed["skaters"] = table_skaters
     return parsed
@@ -204,12 +212,16 @@ def validate_judges_scores(parsed: dict[str, Any]) -> list[dict[str, str]]:
     if not parsed.get("skaters"):
         issues.append({"level": "error", "code": "missing_pdf_skaters", "message": "No skater score summaries parsed from PDF text."})
     for skater in parsed.get("skaters", []):
-        combined_score = skater["total_element_score"] + skater["total_program_component_score"] - skater["total_deductions"]
-        averaged_score = ((skater["total_element_score"] + skater["total_program_component_score"]) / 2) - skater["total_deductions"]
-        if (
-            abs(combined_score - skater["total_segment_score"]) > 0.02
-            and abs(averaged_score - skater["total_segment_score"]) > 0.02
-        ):
+        tes = skater["total_element_score"]
+        pcs = skater["total_program_component_score"]
+        deductions = skater["total_deductions"]
+        possible_scores = [
+            tes + pcs - deductions,
+            tes + pcs + deductions,
+            ((tes + pcs) / 2) - deductions,
+            ((tes + pcs) / 2) + deductions,
+        ]
+        if all(abs(score - skater["total_segment_score"]) > 0.02 for score in possible_scores):
             issues.append(
                 {
                     "level": "warning",
@@ -220,19 +232,31 @@ def validate_judges_scores(parsed: dict[str, Any]) -> list[dict[str, str]]:
     return issues
 
 
-def _parse_pdfplumber_skater_tables(path: str | Path) -> list[dict[str, Any]]:
+def _parse_pdfplumber_skater_tables(path: str | Path, summaries: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
     try:
         import pdfplumber  # type: ignore
     except ModuleNotFoundError:
         return []
 
     skaters: list[dict[str, Any]] = []
+    detail_tables: list[dict[str, Any]] = []
     with pdfplumber.open(str(path)) as pdf:
         for page in pdf.pages:
             for table in page.extract_tables():
                 skater = _parse_pdfplumber_skater_table(table)
                 if skater:
                     skaters.append(skater)
+                    continue
+                details = _parse_pdfplumber_detail_table(table)
+                if details:
+                    detail_tables.append(details)
+    if skaters:
+        return skaters
+    if summaries and detail_tables and len(detail_tables) >= len(summaries):
+        merged: list[dict[str, Any]] = []
+        for summary, details in zip(summaries, detail_tables):
+            merged.append({**summary, **details})
+        return merged
     return skaters
 
 
@@ -245,6 +269,16 @@ def _parse_pdfplumber_skater_table(table: list[list[str | None]]) -> dict[str, A
     details = _parse_pdfplumber_details(table[1][0] or "")
     deductions_detail = _parse_pdfplumber_deductions(table[2][0] if len(table) > 2 and table[2] else "")
     return {**summary, **details, "deductions_detail": deductions_detail}
+
+
+def _parse_pdfplumber_detail_table(table: list[list[str | None]]) -> dict[str, Any] | None:
+    if not table or not table[0]:
+        return None
+    details = _parse_pdfplumber_details(table[0][0] or "")
+    if not details.get("elements") and not details.get("program_components"):
+        return None
+    deductions_detail = _parse_pdfplumber_deductions(table[1][0] if len(table) > 1 and table[1] else "")
+    return {**details, "deductions_detail": deductions_detail}
 
 
 def _parse_pdfplumber_summary(value: str) -> dict[str, Any] | None:
@@ -502,32 +536,76 @@ def _parse_legacy_multiline_summaries(lines: list[str]) -> list[dict[str, Any]]:
 
 
 def _looks_like_fs_manager_pdf(text: str) -> bool:
-    return "RankName NationStartingNumberTotalSegmentScore" in text
+    lines = [_clean_line(line) for line in text.splitlines()]
+    lines = [line for line in lines if line]
+    if not any("JUDGES DETAILS PER SKATER" in line for line in lines):
+        return False
+    has_program_components = any(
+        token in line for line in lines for token in ["Program Components", "ProgramComponent", "Program  Component", "Program Component"]
+    )
+    has_executed = any("Executed" in line for line in lines) and any("Elements" in line for line in lines)
+    has_starting = any("Starting" in line for line in lines) and any("Number" in line for line in lines)
+    return has_program_components and has_executed and has_starting
 
 
 def _parse_fs_manager_judges_scores_text(text: str) -> dict[str, Any]:
-    first_line = _clean_line(text.splitlines()[0]) if text.splitlines() else ""
+    lines = [_clean_line(line) for line in text.splitlines()]
+    lines = [line for line in lines if line]
+    first_line = lines[0] if lines else ""
     report_marker = "JUDGES DETAILS PER SKATER"
     event_name = first_line
     category = ""
     segment = ""
-    if report_marker in first_line:
-        event_name, category_segment = first_line.split(report_marker, 1)
-        event_name = _clean_line(event_name)
-        category, segment = _split_category_segment(_clean_line(category_segment))
+    for line in lines:
+        if report_marker not in line:
+            continue
+        if line == first_line:
+            event_name_part, category_segment = line.split(report_marker, 1)
+            if _clean_line(event_name_part):
+                event_name = _clean_line(event_name_part)
+            category, segment = _split_category_segment(_clean_line(category_segment))
+        else:
+            category, segment = _split_category_segment(_clean_line(line.replace(report_marker, "")))
+        break
 
     printed_at = ""
     printed_match = re.search(r"printed:\s*([0-9.:\s]+)", text)
     if printed_match:
         printed_at = _clean_line(printed_match.group(1))
 
-    skaters = []
-    block_pattern = re.compile(r"RankName NationStartingNumber.*?Total\s*Deductions(?P<summary>.*?)#Executed Elements", re.DOTALL)
-    for match in block_pattern.finditer(text):
-        summary = _clean_line(match.group("summary"))
-        parsed = _parse_fs_manager_summary(summary)
-        if parsed:
-            skaters.append(parsed)
+    skaters: list[dict[str, Any]] = []
+    current_summary: dict[str, Any] | None = None
+    current_detail_lines: list[str] = []
+    for line in lines[1:]:
+        summary = _parse_fs_manager_summary(line)
+        if summary:
+            if current_summary:
+                skaters.append(_merge_fs_manager_summary_and_details(current_summary, current_detail_lines))
+            current_summary = summary
+            current_detail_lines = []
+            continue
+        if current_summary:
+            current_detail_lines.append(line)
+    if current_summary:
+        skaters.append(_merge_fs_manager_summary_and_details(current_summary, current_detail_lines))
+
+    if not skaters:
+        event_name = first_line
+        category = ""
+        segment = ""
+        if report_marker in first_line:
+            event_name, category_segment = first_line.split(report_marker, 1)
+            event_name = _clean_line(event_name)
+            category, segment = _split_category_segment(_clean_line(category_segment))
+        legacy_skaters: list[dict[str, Any]] = []
+        block_pattern = re.compile(r"RankName NationStartingNumber.*?Total\s*Deductions(?P<summary>.*?)#Executed Elements", re.DOTALL)
+        for match in block_pattern.finditer(text):
+            summary = _clean_line(match.group("summary"))
+            parsed = _parse_fs_manager_summary(summary)
+            if parsed:
+                legacy_skaters.append(parsed)
+        if legacy_skaters:
+            skaters = legacy_skaters
 
     return {
         "event_name": event_name,
@@ -537,6 +615,23 @@ def _parse_fs_manager_judges_scores_text(text: str) -> dict[str, Any]:
         "skaters": skaters,
         "printed_at": printed_at,
     }
+
+
+def _merge_fs_manager_summary_and_details(summary: dict[str, Any], detail_lines: list[str]) -> dict[str, Any]:
+    details = _parse_pdfplumber_details("\n".join(detail_lines))
+    deductions_detail = _parse_fs_manager_deductions(detail_lines)
+    return {**summary, **details, "deductions_detail": deductions_detail}
+
+
+def _parse_fs_manager_deductions(lines: list[str]) -> dict[str, Any]:
+    for line in lines:
+        cleaned = _clean_line(line)
+        if not cleaned.startswith("Deductions"):
+            continue
+        body = cleaned.split("Deductions", 1)[1].strip()
+        amounts = [float(token) for token in re.findall(r"-?\d+\.\d{2}", body)]
+        return {"raw": body, "total": abs(amounts[-1]) if amounts else 0.0}
+    return {"raw": "", "total": None}
 
 
 def _parse_fs_manager_summary(summary: str) -> dict[str, Any] | None:

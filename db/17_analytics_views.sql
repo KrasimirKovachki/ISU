@@ -12,8 +12,21 @@ DROP VIEW IF EXISTS analytics.v_skater_elements CASCADE;
 DROP VIEW IF EXISTS analytics.v_skater_segment_scores CASCADE;
 DROP VIEW IF EXISTS analytics.v_skater_category_results CASCADE;
 DROP VIEW IF EXISTS analytics.v_skater_appearances_clean CASCADE;
+DROP VIEW IF EXISTS analytics.v_skater_nation_inference CASCADE;
 DROP VIEW IF EXISTS analytics.v_events CASCADE;
 DROP VIEW IF EXISTS analytics.v_latest_import_runs CASCADE;
+
+CREATE OR REPLACE FUNCTION analytics.normalized_nation_code(raw_nation_code text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT CASE upper(NULLIF(trim(raw_nation_code), ''))
+    WHEN 'BIL' THEN 'BUL'
+    WHEN 'BUK' THEN 'BUL'
+    ELSE upper(NULLIF(trim(raw_nation_code), ''))
+  END;
+$$;
 
 CREATE OR REPLACE VIEW analytics.v_latest_import_runs AS
 SELECT DISTINCT ON (ir.root_url)
@@ -90,6 +103,17 @@ SELECT
   raw
 FROM event_source;
 
+CREATE OR REPLACE VIEW analytics.v_skater_nation_inference AS
+SELECT
+  ssa.normalized_name AS skater_name,
+  max(analytics.normalized_nation_code(ssa.nation_code)) AS inferred_nation_code,
+  count(DISTINCT analytics.normalized_nation_code(ssa.nation_code)) AS observed_nation_count
+FROM ingest.source_skater_appearances ssa
+JOIN analytics.v_events ve ON ve.event_id = ssa.event_id
+WHERE ssa.normalized_name <> ''
+GROUP BY ssa.normalized_name
+HAVING count(DISTINCT analytics.normalized_nation_code(ssa.nation_code)) = 1;
+
 CREATE OR REPLACE VIEW analytics.v_skater_appearances_clean AS
 SELECT
   ssa.id AS skater_appearance_id,
@@ -112,17 +136,40 @@ SELECT
   ssa.appearance_type,
   ssa.source_row_order,
   ssa.raw_name,
-  ssa.normalized_name AS skater_name,
-  NULLIF(ssa.nation_code, '') AS nation_code,
+  -- Alias resolution: if the source rendering matches a row in
+  -- core.skater_aliases (optionally scoped by nation), use the canonical
+  -- spelling. Else keep the source-normalized name. This collapses
+  -- transliteration variants (e.g. ALEKSANDRA FEYGIN -> ALEXANDRA FEIGIN)
+  -- onto a single identity_key downstream.
+  COALESCE(sa.canonical_name, ssa.normalized_name) AS skater_name,
+  COALESCE(analytics.normalized_nation_code(ssa.nation_code), sni.inferred_nation_code) AS nation_code,
+  analytics.normalized_nation_code(ssa.nation_code) IS NULL
+    AND sni.inferred_nation_code IS NOT NULL AS nation_code_inferred,
   NULLIF(ssa.club_name, '') AS club_name,
   ssa.representation_type,
   NULLIF(ssa.representation_value, '') AS representation_value,
-  COALESCE(NULLIF(ssa.club_name, ''), NULLIF(ssa.nation_code, '')) AS display_affiliation,
+  COALESCE(
+    NULLIF(ssa.club_name, ''),
+    analytics.normalized_nation_code(ssa.nation_code),
+    sni.inferred_nation_code
+  ) AS display_affiliation,
   ssa.bio_url,
   ssa.source_skater_id,
-  ssa.raw
+  ssa.raw,
+  ssa.normalized_name AS source_skater_name,
+  sa.canonical_name IS NOT NULL AS skater_name_aliased
 FROM ingest.source_skater_appearances ssa
 JOIN analytics.v_events ve ON ve.event_id = ssa.event_id
+LEFT JOIN analytics.v_skater_nation_inference sni ON sni.skater_name = ssa.normalized_name
+LEFT JOIN core.skater_aliases sa
+  ON sa.alias_normalized = ssa.normalized_name
+ AND (
+   sa.nation_code IS NULL
+   OR sa.nation_code = COALESCE(
+        analytics.normalized_nation_code(ssa.nation_code),
+        sni.inferred_nation_code
+      )
+ )
 LEFT JOIN ingest.categories c ON c.id = ssa.category_id
 LEFT JOIN ingest.segments s ON s.id = ssa.segment_id
 WHERE ssa.normalized_name <> '';

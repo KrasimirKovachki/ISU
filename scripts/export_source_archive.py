@@ -47,15 +47,11 @@ def ensure_parent_dir(path: Path, archive_root: Path) -> None:
 
 
 def fetch_url_bytes(url: str, timeout: int = 60) -> bytes:
-    request = Request(url, headers={"User-Agent": USER_AGENT})
-    try:
-        with urlopen(request, timeout=timeout) as response:
-            return response.read()
-    except URLError as exc:
-        if "CERTIFICATE_VERIFY_FAILED" not in str(exc.reason):
-            raise
-        with urlopen(request, timeout=timeout, context=ssl._create_unverified_context()) as response:  # noqa: S323
-            return response.read()
+    """Pull through the local fetch cache so re-running the export
+    doesn't re-download every PDF over the network."""
+    from isu_parser.fetch_cache import cached_fetch  # local import keeps test imports cheap
+
+    return cached_fetch(url, timeout=timeout)
 
 
 def is_pdf_document(url: str, document_type: str | None) -> bool:
@@ -147,22 +143,40 @@ def export_archive(archive_root: Path, latest_only: bool, fetch_pdfs: bool) -> d
             archive_reason: str | None = None
             payload: bytes | None = None
 
-            if raw_text is not None:
-                payload = raw_text.encode("utf-8")
-            elif fetch_pdfs and is_pdf_document(url, document_type):
-                try:
-                    payload = fetch_url_bytes(url)
-                except Exception as exc:  # noqa: BLE001 - archive manifest should preserve fetch failures.
-                    archive_status = "skipped"
-                    archive_reason = f"pdf_fetch_failed: {exc}"
-                else:
-                    if not payload.startswith(b"%PDF"):
-                        archive_status = "skipped"
-                        archive_reason = "pdf_url_did_not_return_pdf_bytes"
-                        payload = None
+            # Prefer the original source URL so the archive reflects what is
+            # actually published upstream today. The local fetch cache makes
+            # repeat exports cheap. Fall back to the DB-stored raw_text only
+            # if the URL is unreachable, so a deleted upstream still leaves us
+            # with whatever bytes we captured at import time.
+            is_pdf = is_pdf_document(url, document_type)
+            try:
+                payload = fetch_url_bytes(url)
+            except Exception as exc:  # noqa: BLE001 - archive manifest preserves the failure context.
+                payload = None
+                fetch_error = f"url_fetch_failed: {exc}"
             else:
-                archive_status = "skipped"
-                archive_reason = "no_raw_text_or_pdf_fetch_disabled"
+                fetch_error = None
+
+            if is_pdf:
+                if payload is None:
+                    archive_status = "skipped"
+                    archive_reason = fetch_error or "pdf_fetch_failed"
+                elif not payload.startswith(b"%PDF"):
+                    archive_status = "skipped"
+                    archive_reason = "pdf_url_did_not_return_pdf_bytes"
+                    payload = None
+                elif not fetch_pdfs:
+                    archive_status = "skipped"
+                    archive_reason = "pdf_fetch_disabled"
+                    payload = None
+            else:
+                if payload is None:
+                    if raw_text is not None:
+                        payload = raw_text.encode("utf-8")
+                        archive_reason = (fetch_error or "url_unreachable") + "; fell back to db raw_text"
+                    else:
+                        archive_status = "skipped"
+                        archive_reason = fetch_error or "no_raw_text_and_url_unreachable"
 
             if payload is not None:
                 ensure_parent_dir(target_path, archive_root)

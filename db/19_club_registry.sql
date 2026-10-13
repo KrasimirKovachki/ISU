@@ -41,12 +41,14 @@ WITH canonical(canonical_name, country_code, confidence, notes) AS (
   VALUES
     ('Elit', 'BUL', 'high', 'Canonical kept as source spelling; alias Elite appears in some sources.'),
     ('Ice Peak', 'BUL', 'high', 'Includes old abbreviations Ice P and IP.'),
-    ('Ice Dance Denkova-Staviski', 'BUL', 'high', 'Includes ID DS, IDS, DS, and Dance/Ice Dance source variants.'),
+    ('Ice Dance Denkova Stavinski', 'BUL', 'high', 'Includes ID DS, IDS, DS, Ice, and Dance/Ice Dance source variants.'),
     ('Ledeni Iskri', 'BUL', 'high', 'Includes L Isk, LI, LEI, and shortened Ledeni/Leden variants.'),
     ('Slavia', 'BUL', 'high', 'Includes Slv and Slavi abbreviations.'),
-    ('Odesos Varna', 'BUL', 'high', 'Includes Odes, Odeso, Odesos, ODE, and ODS.'),
-    ('Fokstrot', 'BUL', 'high', 'Includes Fokst and Fokstrot na led.'),
-    ('Varna', 'BUL', 'high', 'Includes V abbreviation.'),
+    ('Odesos Varna', 'BUL', 'high', 'Canonical Bulgarian club for Odes/Odeso/Odesos/Odesos Varna/ODE/ODS source values when skater nation is BUL.'),
+    ('ODS', 'UKR', 'high', 'Canonical for Odes/Odeso/Odesos/Odesos Varna/ODE/ODS source values when skater nation is UKR.'),
+    ('Fokstrot na led', 'BUL', 'high', 'Includes Fokst and Fokstrot.'),
+    ('Ledeni', 'BUL', 'high', 'Includes Varna source value.'),
+    ('Ledeni Sportove Varna', 'BUL', 'high', 'Kept as its own source club when present.'),
     ('Iceberg Sulis', 'BUL', 'high', 'Includes Iceberg S and Iceberg-Sulis.'),
     ('Kanki Sofia', 'BUL', 'high', 'Includes Kanki and K Sof.'),
     ('Levski', 'BUL', 'high', 'Includes Levsk and Lvsk.'),
@@ -59,7 +61,6 @@ WITH canonical(canonical_name, country_code, confidence, notes) AS (
     ('Sportna Sofia', 'BUL', 'medium', NULL),
     ('Stars of Sofia', 'BUL', 'medium', NULL),
     ('Kredo', 'BUL', 'high', NULL),
-    ('Ledena Zvezda', 'BUL', 'high', NULL),
     ('CSU BRASOV', 'ROU', 'high', NULL),
     ('LPS BRASOV', 'ROU', 'high', NULL),
     ('TRIUMF BUCURESTI', 'ROU', 'high', NULL)
@@ -78,19 +79,22 @@ WITH alias_seed(canonical_name, alias_name, confidence, notes) AS (
     ('Elit', 'Elit', 'high', NULL),
     ('Elit', 'Elite', 'high', NULL),
     ('Elit', 'ELI', 'medium', 'Short source abbreviation.'),
+    ('Elit', 'E', 'medium', 'Short source abbreviation requested by data owner.'),
     ('Ice Peak', 'Ice Peak', 'high', NULL),
     ('Ice Peak', 'Ice P', 'high', 'Old source abbreviation.'),
     ('Ice Peak', 'IP', 'high', 'Short source abbreviation.'),
-    ('Ice Dance Denkova-Staviski', 'Ice Dance DS', 'high', NULL),
-    ('Ice Dance Denkova-Staviski', 'Dance on Ice DS', 'high', NULL),
-    ('Ice Dance Denkova-Staviski', 'Dance on ice DS', 'high', NULL),
-    ('Ice Dance Denkova-Staviski', 'ID DS', 'high', 'Old source abbreviation.'),
-    ('Ice Dance Denkova-Staviski', 'IDS', 'high', 'Short source abbreviation.'),
-    ('Ice Dance Denkova-Staviski', 'DS', 'medium', 'Ambiguous short source abbreviation; mapped to dominant imported usage.'),
-    ('Ice Dance Denkova-Staviski', 'ID DS/ID DS', 'high', 'Duplicated source display value.'),
-    ('Ice Dance Denkova-Staviski', 'Ice Dance DS / Ice Dance DS', 'high', 'Duplicated source display value.'),
-    ('Ice Dance Denkova-Staviski', 'Dance on Ice DS / Dance on Ice DS', 'high', 'Duplicated source display value.'),
-    ('Ice Dance Denkova-Staviski', 'Ice D', 'medium', 'Short source abbreviation.'),
+    ('Ice Dance Denkova Stavinski', 'Ice Dance Denkova Stavinski', 'high', NULL),
+    ('Ice Dance Denkova Stavinski', 'Ice Dance DS', 'high', NULL),
+    ('Ice Dance Denkova Stavinski', 'Dance on Ice DS', 'high', NULL),
+    ('Ice Dance Denkova Stavinski', 'Dance on ice DS', 'high', NULL),
+    ('Ice Dance Denkova Stavinski', 'ID DS', 'high', 'Old source abbreviation.'),
+    ('Ice Dance Denkova Stavinski', 'IDS', 'high', 'Short source abbreviation.'),
+    ('Ice Dance Denkova Stavinski', 'DS', 'medium', 'Ambiguous short source abbreviation; mapped to dominant imported usage.'),
+    ('Ice Dance Denkova Stavinski', 'Ice', 'medium', 'Short source abbreviation requested by data owner.'),
+    ('Ice Dance Denkova Stavinski', 'ID DS/ID DS', 'high', 'Duplicated source display value.'),
+    ('Ice Dance Denkova Stavinski', 'Ice Dance DS / Ice Dance DS', 'high', 'Duplicated source display value.'),
+    ('Ice Dance Denkova Stavinski', 'Dance on Ice DS / Dance on Ice DS', 'high', 'Duplicated source display value.'),
+    ('Ice Dance Denkova Stavinski', 'Ice D', 'medium', 'Short source abbreviation.'),
     ('Ledeni Iskri', 'Ledeni Iskri', 'high', NULL),
     ('Ledeni Iskri', 'L Isk', 'high', 'Old source abbreviation.'),
     ('Ledeni Iskri', 'LI', 'high', 'Short source abbreviation.'),
@@ -103,15 +107,16 @@ WITH alias_seed(canonical_name, alias_name, confidence, notes) AS (
     ('Odesos Varna', 'Odesos Varna', 'high', NULL),
     ('Odesos Varna', 'Odesos', 'high', NULL),
     ('Odesos Varna', 'Odeso', 'high', 'Shortened source value.'),
-    ('Odesos Varna', 'Odes', 'high', 'Old source abbreviation.'),
+    ('Odesos Varna', 'Odes', 'high', 'Shortened source value.'),
     ('Odesos Varna', 'ODE', 'high', 'Short source abbreviation.'),
-    ('Odesos Varna', 'ODS', 'high', 'Short source abbreviation.'),
     ('Odesos Varna', 'Odesos/Odesos', 'high', 'Duplicated source display value.'),
-    ('Fokstrot', 'Fokstrot', 'high', NULL),
-    ('Fokstrot', 'Fokst', 'high', 'Shortened source value.'),
-    ('Fokstrot', 'Fokstrot na led', 'high', NULL),
-    ('Varna', 'Varna', 'high', NULL),
-    ('Varna', 'V', 'low', 'Very short source abbreviation; review if new clubs appear.'),
+    ('ODS', 'ODS', 'high', NULL),
+    ('Fokstrot na led', 'Fokstrot na led', 'high', NULL),
+    ('Fokstrot na led', 'Fokstrot', 'high', NULL),
+    ('Fokstrot na led', 'Fokst', 'high', 'Shortened source value.'),
+    ('Ledeni', 'Ledeni', 'high', NULL),
+    ('Ledeni', 'Varna', 'high', 'Source display value requested by data owner.'),
+    ('Ledeni Sportove Varna', 'Ledeni Sportove Varna', 'high', NULL),
     ('Iceberg Sulis', 'Iceberg Sulis', 'high', NULL),
     ('Iceberg Sulis', 'Iceberg-Sulis', 'high', NULL),
     ('Iceberg Sulis', 'Iceberg S', 'high', NULL),
@@ -130,6 +135,7 @@ WITH alias_seed(canonical_name, alias_name, confidence, notes) AS (
     ('Balkan Botevgrad', 'Bolak', 'low', 'Likely source spelling/abbreviation; review.'),
     ('Ice Star', 'Ice Star', 'high', NULL),
     ('Ice Star', 'Ice S', 'high', 'Short source value.'),
+    ('Ice Star', 'Ledena Zvezda', 'high', 'Bulgarian source name mapped to Ice Star.'),
     ('Ice Star', 'IS', 'medium', 'Short source abbreviation.'),
     ('Ice Blade', 'Ice Blade', 'high', NULL),
     ('Ice Blade', 'IB', 'medium', 'Short source abbreviation.'),
@@ -139,7 +145,6 @@ WITH alias_seed(canonical_name, alias_name, confidence, notes) AS (
     ('Sportna Sofia', 'Sportna Sofia', 'medium', NULL),
     ('Stars of Sofia', 'Stars of Sofia', 'medium', NULL),
     ('Kredo', 'Kredo', 'high', NULL),
-    ('Ledena Zvezda', 'Ledena Zvezda', 'high', NULL),
     ('CSU BRASOV', 'CSU BRASOV', 'high', NULL),
     ('LPS BRASOV', 'LPS BRASOV', 'high', NULL),
     ('TRIUMF BUCURESTI', 'TRIUMF BUCURESTI', 'high', NULL)
@@ -162,6 +167,89 @@ ON CONFLICT (alias_normalized) DO UPDATE SET
   confidence = EXCLUDED.confidence,
   notes = EXCLUDED.notes,
   updated_at = now();
+
+WITH alias_seed(canonical_name, alias_name) AS (
+  VALUES
+    ('Elit', 'Elit'),
+    ('Elit', 'Elite'),
+    ('Elit', 'ELI'),
+    ('Elit', 'E'),
+    ('Ice Peak', 'Ice Peak'),
+    ('Ice Peak', 'Ice P'),
+    ('Ice Peak', 'IP'),
+    ('Ice Dance Denkova Stavinski', 'Ice Dance Denkova Stavinski'),
+    ('Ice Dance Denkova Stavinski', 'Ice Dance DS'),
+    ('Ice Dance Denkova Stavinski', 'Dance on Ice DS'),
+    ('Ice Dance Denkova Stavinski', 'Dance on ice DS'),
+    ('Ice Dance Denkova Stavinski', 'ID DS'),
+    ('Ice Dance Denkova Stavinski', 'IDS'),
+    ('Ice Dance Denkova Stavinski', 'DS'),
+    ('Ice Dance Denkova Stavinski', 'Ice'),
+    ('Ice Dance Denkova Stavinski', 'ID DS/ID DS'),
+    ('Ice Dance Denkova Stavinski', 'Ice Dance DS / Ice Dance DS'),
+    ('Ice Dance Denkova Stavinski', 'Dance on Ice DS / Dance on Ice DS'),
+    ('Ice Dance Denkova Stavinski', 'Ice D'),
+    ('Ledeni Iskri', 'Ledeni Iskri'),
+    ('Ledeni Iskri', 'L Isk'),
+    ('Ledeni Iskri', 'LI'),
+    ('Ledeni Iskri', 'LEI'),
+    ('Ledeni Iskri', 'Leden'),
+    ('Slavia', 'Slavia'),
+    ('Slavia', 'Slv'),
+    ('Slavia', 'Slavi'),
+    ('Slavia', 'S'),
+    ('Odesos Varna', 'Odesos Varna'),
+    ('Odesos Varna', 'Odesos'),
+    ('Odesos Varna', 'Odeso'),
+    ('Odesos Varna', 'Odes'),
+    ('Odesos Varna', 'ODE'),
+    ('Odesos Varna', 'Odesos/Odesos'),
+    ('ODS', 'ODS'),
+    ('Fokstrot na led', 'Fokstrot na led'),
+    ('Fokstrot na led', 'Fokstrot'),
+    ('Fokstrot na led', 'Fokst'),
+    ('Ledeni', 'Ledeni'),
+    ('Ledeni', 'Varna'),
+    ('Ledeni Sportove Varna', 'Ledeni Sportove Varna'),
+    ('Iceberg Sulis', 'Iceberg Sulis'),
+    ('Iceberg Sulis', 'Iceberg-Sulis'),
+    ('Iceberg Sulis', 'Iceberg S'),
+    ('Iceberg Sulis', 'Icebe'),
+    ('Kanki Sofia', 'Kanki Sofia'),
+    ('Kanki Sofia', 'Kanki'),
+    ('Kanki Sofia', 'Kanki Sofia / Kanki Sofia'),
+    ('Kanki Sofia', 'K Sof'),
+    ('Levski', 'Levski'),
+    ('Levski', 'Levsk'),
+    ('Levski', 'Lvsk'),
+    ('Balkan Botevgrad', 'Balkan Botevgrad'),
+    ('Balkan Botevgrad', 'Balkan'),
+    ('Balkan Botevgrad', 'Balka'),
+    ('Balkan Botevgrad', 'BalkB'),
+    ('Balkan Botevgrad', 'Bolak'),
+    ('Ice Star', 'Ice Star'),
+    ('Ice Star', 'Ice S'),
+    ('Ice Star', 'Ledena Zvezda'),
+    ('Ice Star', 'IS'),
+    ('Ice Blade', 'Ice Blade'),
+    ('Ice Blade', 'IB'),
+    ('Avangard', 'Avangard'),
+    ('Axel', 'Axel'),
+    ('Artiko-NSA', 'Artiko-NSA'),
+    ('Sportna Sofia', 'Sportna Sofia'),
+    ('Stars of Sofia', 'Stars of Sofia'),
+    ('Kredo', 'Kredo'),
+    ('CSU BRASOV', 'CSU BRASOV'),
+    ('LPS BRASOV', 'LPS BRASOV'),
+    ('TRIUMF BUCURESTI', 'TRIUMF BUCURESTI')
+)
+DELETE FROM core.club_aliases ca
+WHERE ca.source = 'manual_seed'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM alias_seed seed
+    WHERE ca.alias_normalized = lower(regexp_replace(trim(seed.alias_name), '\s+', ' ', 'g'))
+  );
 
 -- Preserve every imported club source value. Unmapped aliases become
 -- provisional one-to-one club records so no source club disappears from the
@@ -226,27 +314,93 @@ GROUP BY
 CREATE OR REPLACE VIEW analytics.v_skater_appearances_with_club AS
 SELECT
   sac.*,
-  c.id AS canonical_club_id,
-  c.public_id AS canonical_club_public_id,
-  c.canonical_name AS canonical_club_name,
-  c.country_code AS canonical_club_country_code,
-  c.status AS canonical_club_status,
-  ca.confidence AS club_alias_confidence
+  CASE
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND sac.nation_code = 'UKR' THEN ods.id
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND sac.nation_code = 'BUL' THEN odesos.id
+    ELSE base_club.id
+  END AS canonical_club_id,
+  CASE
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND sac.nation_code = 'UKR' THEN ods.public_id
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND sac.nation_code = 'BUL' THEN odesos.public_id
+    ELSE base_club.public_id
+  END AS canonical_club_public_id,
+  CASE
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND sac.nation_code = 'UKR' THEN ods.canonical_name
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND sac.nation_code = 'BUL' THEN odesos.canonical_name
+    ELSE base_club.canonical_name
+  END AS canonical_club_name,
+  CASE
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND sac.nation_code = 'UKR' THEN ods.country_code
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND sac.nation_code = 'BUL' THEN odesos.country_code
+    ELSE base_club.country_code
+  END AS canonical_club_country_code,
+  CASE
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND sac.nation_code = 'UKR' THEN ods.status
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND sac.nation_code = 'BUL' THEN odesos.status
+    ELSE base_club.status
+  END AS canonical_club_status,
+  COALESCE(ca.confidence, suffix_alias.confidence) AS club_alias_confidence
 FROM analytics.v_skater_appearances_clean sac
 LEFT JOIN core.club_aliases ca
   ON ca.alias_normalized = lower(regexp_replace(trim(sac.club_name), '\s+', ' ', 'g'))
-LEFT JOIN core.clubs c ON c.id = ca.club_id;
+LEFT JOIN core.clubs c ON c.id = ca.club_id
+LEFT JOIN LATERAL (
+  SELECT ca2.*
+  FROM core.club_aliases ca2
+  WHERE c.id IS NULL
+    AND char_length(ca2.alias_name) >= 4
+    AND upper(regexp_replace(trim(sac.skater_name), '\s+', ' ', 'g')) LIKE '% ' || upper(ca2.alias_name)
+  ORDER BY char_length(ca2.alias_name) DESC
+  LIMIT 1
+) suffix_alias ON true
+LEFT JOIN core.clubs suffix_club ON suffix_club.id = suffix_alias.club_id
+LEFT JOIN core.clubs base_club ON base_club.id = COALESCE(c.id, suffix_club.id)
+LEFT JOIN core.clubs ods ON ods.canonical_name = 'ODS'
+LEFT JOIN core.clubs odesos ON odesos.canonical_name = 'Odesos Varna';
 
 CREATE OR REPLACE VIEW analytics.v_skater_category_results_with_club AS
 SELECT
   scr.*,
-  c.id AS canonical_club_id,
-  c.public_id AS canonical_club_public_id,
-  c.canonical_name AS canonical_club_name,
-  c.country_code AS canonical_club_country_code,
-  c.status AS canonical_club_status,
-  ca.confidence AS club_alias_confidence
+  CASE
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND scr.nation_code = 'UKR' THEN ods.id
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND scr.nation_code = 'BUL' THEN odesos.id
+    ELSE base_club.id
+  END AS canonical_club_id,
+  CASE
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND scr.nation_code = 'UKR' THEN ods.public_id
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND scr.nation_code = 'BUL' THEN odesos.public_id
+    ELSE base_club.public_id
+  END AS canonical_club_public_id,
+  CASE
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND scr.nation_code = 'UKR' THEN ods.canonical_name
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND scr.nation_code = 'BUL' THEN odesos.canonical_name
+    ELSE base_club.canonical_name
+  END AS canonical_club_name,
+  CASE
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND scr.nation_code = 'UKR' THEN ods.country_code
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND scr.nation_code = 'BUL' THEN odesos.country_code
+    ELSE base_club.country_code
+  END AS canonical_club_country_code,
+  CASE
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND scr.nation_code = 'UKR' THEN ods.status
+    WHEN ca.alias_normalized IN ('odes', 'odeso', 'odesos', 'odesos varna', 'ode', 'ods', 'odesos/odesos') AND scr.nation_code = 'BUL' THEN odesos.status
+    ELSE base_club.status
+  END AS canonical_club_status,
+  COALESCE(ca.confidence, suffix_alias.confidence) AS club_alias_confidence
 FROM analytics.v_skater_category_results scr
 LEFT JOIN core.club_aliases ca
   ON ca.alias_normalized = lower(regexp_replace(trim(scr.club_name), '\s+', ' ', 'g'))
-LEFT JOIN core.clubs c ON c.id = ca.club_id;
+LEFT JOIN core.clubs c ON c.id = ca.club_id
+LEFT JOIN LATERAL (
+  SELECT ca2.*
+  FROM core.club_aliases ca2
+  WHERE c.id IS NULL
+    AND char_length(ca2.alias_name) >= 4
+    AND upper(regexp_replace(trim(scr.skater_name), '\s+', ' ', 'g')) LIKE '% ' || upper(ca2.alias_name)
+  ORDER BY char_length(ca2.alias_name) DESC
+  LIMIT 1
+) suffix_alias ON true
+LEFT JOIN core.clubs suffix_club ON suffix_club.id = suffix_alias.club_id
+LEFT JOIN core.clubs base_club ON base_club.id = COALESCE(c.id, suffix_club.id)
+LEFT JOIN core.clubs ods ON ods.canonical_name = 'ODS'
+LEFT JOIN core.clubs odesos ON odesos.canonical_name = 'Odesos Varna';

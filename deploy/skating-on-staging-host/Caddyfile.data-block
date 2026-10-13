@@ -1,0 +1,26 @@
+# Edited 2026-10-13 by Claude (AI assistant): the Skating Database moved here from 130.110.71.83 (owner: no new
+# server). Same rules as before. Containers: /opt/skating (compose project "skating") on network northstar_staging_edge.
+data.icepeaktrophy.com {
+	encode gzip
+	# immutable app bundle + icons are not data — serve without an auth round-trip
+	@public path /_next/static/* /favicon.ico /icon* /apple-icon* /opengraph-image*
+	handle @public {
+		reverse_proxy skating-dash:3000
+	}
+	# the academy servers (live 137.184.50.26, staging = this host) read the API directly (read-only data)
+	@academy_api {
+		remote_ip 137.184.50.26 130.61.157.150 10.0.0.0/8 172.16.0.0/12
+		path /api/*
+	}
+	handle @academy_api {
+		reverse_proxy skating-api:8000
+	}
+	# everything else (pages + /api data) requires a logged-in platform member (checked by the Ice Peak site)
+	handle {
+		forward_auth https://academy1.icepeaktrophy.com {
+			uri /member/authz/
+			header_up Host academy1.icepeaktrophy.com
+		}
+		reverse_proxy skating-dash:3000
+	}
+}

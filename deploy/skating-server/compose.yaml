@@ -1,0 +1,56 @@
+# Edited 2026-10-12 by Claude (AI assistant): the Skating Database on its own server (130.110.71.83).
+# Moved off the live academy host 137.184.50.26 (1 CPU / 1 GB) so imports never slow the academy sites.
+# Same parts as before: Postgres (skating_data), API, members-only dashboard, and a Caddy proxy for
+# data.icepeaktrophy.com with the same rules as on prod (member login via academy1, academy servers may read /api).
+# Passwords are in /opt/skating/.env (never in git).
+name: skating
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: skating-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+    command: ["postgres", "-c", "shared_buffers=128MB", "-c", "effective_cache_size=384MB", "-c", "work_mem=8MB", "-c", "maintenance_work_mem=64MB", "-c", "max_connections=40", "-c", "random_page_cost=1.1", "-c", "jit=off"]
+    volumes:
+      - skating_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      retries: 20
+  app:
+    build: { context: ./app }
+    image: skating-api:local
+    container_name: skating-api
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      SKATING_DB_HOST: skating-db
+      SKATING_DB_PORT: "5432"
+      SKATING_DB_NAME: skating_data
+      SKATING_DB_USER: skating_app
+      SKATING_DB_PASSWORD: ${SKATING_APP_PASSWORD}
+  dash:
+    build: { context: ./dashboard }
+    image: skating-dashboard:local
+    container_name: skating-dash
+    restart: unless-stopped
+    environment:
+      SKATING_API_URL: http://skating-api:8000
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+  caddy:
+    image: caddy:2-alpine
+    container_name: skating-caddy
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  skating_pg:
+  caddy_data:
+  caddy_config:
