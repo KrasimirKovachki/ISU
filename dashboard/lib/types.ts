@@ -123,6 +123,9 @@ export type SkaterScoreRow = {
   element_score_total: number | null;
   judge_count: number | null;
   root_url: string | null;
+  // Edited 2026-10-13 by Claude (AI assistant): competition part (db/44), e.g. Non-ISU / National championship
+  group_key?: number | null;
+  part?: string | null;
 };
 
 export type SkaterElementRow = {
@@ -210,8 +213,12 @@ export type SegmentLink = {
   tss?: number | null;
 };
 
+export type EventPart = { event_key: number; part: string; event_name: string | null; current: boolean };
+
 export type EventDetail = EventRow & {
   results: EventResultRow[];
+  // Edited 2026-10-13 by Claude (AI assistant): other result sets of the same competition (ISU / Non-ISU / national)
+  parts?: EventPart[];
 };
 
 export type Judge = {

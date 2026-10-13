@@ -753,11 +753,15 @@ SELECT
   fss.base_value_total,
   fss.element_score_total,
   fss.judge_count,
-  de.root_url
+  de.root_url,
+  ep.group_key,
+  ep.part
 FROM api.mv_skater_search mss
 JOIN api.mv_score_identity si ON si.identity_key = mss.identity_key
 JOIN api.mv_segment_score fss ON fss.segment_score_key = si.segment_score_key
 LEFT JOIN api.mv_dim_event de ON de.event_key = fss.event_key
+-- Edited 2026-10-13 by Claude (AI assistant): which competition part (ISU / Non-ISU / national championship) this is
+LEFT JOIN api.event_part ep ON ep.event_key = fss.event_key
 LEFT JOIN api.mv_dim_category dc ON dc.category_key = fss.category_key
 LEFT JOIN api.mv_dim_segment dseg ON dseg.segment_key = fss.segment_key
 WHERE mss.skater_key = %(skater_key)s
@@ -847,6 +851,25 @@ ORDER BY event_start_date DESC NULLS LAST, event_name, event_key  -- event_key: 
 LIMIT %(limit)s
 """,
         params,
+    )
+
+
+def event_parts(conn: Any, event_key: int) -> list[dict[str, Any]]:
+    """Edited 2026-10-13 by Claude (AI assistant): the other result sets of the same competition (db/44), e.g.
+    Black Sea Ice Cup 2025 = ISU + Non-ISU + national championship. Empty when the competition has one part."""
+    if not conn.execute("SELECT to_regclass('api.event_part') IS NOT NULL").fetchone()[0]:
+        return []
+    return fetch_all(
+        conn,
+        """
+SELECT p2.event_key, p2.part, e.event_name, p2.event_key = %(event_key)s AS current
+FROM api.event_part p
+JOIN api.event_part p2 ON p2.group_key = p.group_key
+JOIN api.mv_dim_event e ON e.event_key = p2.event_key
+WHERE p.event_key = %(event_key)s
+ORDER BY p2.part_order, p2.event_key
+""",
+        {"event_key": event_key},
     )
 
 

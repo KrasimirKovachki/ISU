@@ -308,6 +308,7 @@ def get_event(event_key: int, conn: Any = Depends(connection_dependency)) -> dic
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
     event["results"] = repository.event_results(conn, event_key, 500)
+    event["parts"] = repository.event_parts(conn, event_key)
     return event
 
 
