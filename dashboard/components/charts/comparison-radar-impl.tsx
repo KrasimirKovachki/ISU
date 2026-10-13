@@ -1,4 +1,5 @@
 "use client";
+// Edited 2026-10-13 by Claude (AI assistant): radar leaves room for its labels; no radius numbers over the shape
 /**
  * Skater-vs-skater comparison radar.
  *
@@ -57,10 +58,10 @@ export function ComparisonRadar({ primaryName, primaryRows, primarySkaterKey }: 
     <div className="space-y-3">
       <ChartFrame>
         <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 400, height: 288 }}>
-          <RadarChart data={data}>
+          <RadarChart data={data} outerRadius="62%" margin={{ top: 12, right: 36, bottom: 12, left: 36 }}>
             <PolarGrid stroke="var(--border)" />
             <PolarAngleAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
-            <PolarRadiusAxis stroke="var(--muted-foreground)" tick={{ fontSize: 10 }} domain={[0, 10]} />
+            <PolarRadiusAxis stroke="var(--muted-foreground)" tick={false} axisLine={false} domain={[0, 10]} />
             <Radar name={primaryName} dataKey="primary" stroke="var(--chart-1)" fill="var(--chart-1)" fillOpacity={0.35} />
             {second.data ? (
               <Radar name={second.data.skater_name} dataKey="other" stroke="var(--chart-2)" fill="var(--chart-2)" fillOpacity={0.25} />

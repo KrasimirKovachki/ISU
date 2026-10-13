@@ -917,7 +917,7 @@ LEFT JOIN api.mv_dim_category dc ON dc.category_key = fcr.category_key
 LEFT JOIN profile p ON p.category_id = fcr.category_key AND p.skater_name = fcr.skater_name
 LEFT JOIN segment_scores sc ON sc.category_key = fcr.category_key AND sc.skater_name = fcr.skater_name
 WHERE fcr.event_key = %(event_key)s
-ORDER BY dc.category_name, fcr.final_place NULLS LAST, fcr.points DESC NULLS LAST
+ORDER BY dc.category_name, fcr.final_place NULLS LAST, fcr.points DESC NULLS LAST, fcr.competition_result_key
 LIMIT %(limit)s
 """,
         {"event_key": event_key, "limit": clamp_limit(limit)},
